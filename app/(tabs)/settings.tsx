@@ -1,7 +1,7 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Settings Screen
  * 
- * Export data, view about info, manage preferences.
+ * Export data, manage AI reflection, view about info.
  * No analytics dashboard, no stats - per 363 philosophy.
  */
 
@@ -14,32 +14,40 @@ import {
   Pressable,
   Alert,
   Share,
-  Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   Download,
-  FileText,
-  FileJson,
   Trash2,
   Info,
   ChevronRight,
+  Sparkles,
+  Shield,
+  Lock,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
+import { AIOptInModal } from '@/components/AIOptInModal';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { exportEntries, getEntryCount, ExportFormat } from '@/store/entries';
-import { clearAllData, resetOnboarding } from '@/store/onboarding';
+import {
+  clearAllData,
+  getPreferences,
+  updatePreferences,
+} from '@/store/onboarding';
+import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  onPress: () => void;
+  onPress?: () => void;
   destructive?: boolean;
   showChevron?: boolean;
+  rightElement?: React.ReactNode;
 }
 
 function SettingsRow({
@@ -49,17 +57,13 @@ function SettingsRow({
   onPress,
   destructive = false,
   showChevron = true,
+  rightElement,
 }: SettingsRowProps) {
   const scheme = useColorScheme() ?? 'dark';
   const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
 
-  return (
-    <Pressable
-      style={[styles.row, { backgroundColor: activeColors.surface }]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
+  const content = (
+    <>
       <View style={styles.rowIcon}>{icon}</View>
       <View style={styles.rowContent}>
         <Text
@@ -75,10 +79,30 @@ function SettingsRow({
           </Text>
         )}
       </View>
-      {showChevron && (
+      {rightElement}
+      {showChevron && !rightElement && (
         <ChevronRight size={20} color={activeColors.textTertiary} />
       )}
-    </Pressable>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        style={[styles.row, { backgroundColor: activeColors.surface }]}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={[styles.row, { backgroundColor: activeColors.surface }]}>
+      {content}
+    </View>
   );
 }
 
@@ -87,18 +111,47 @@ export default function SettingsScreen() {
   const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
 
   const [entryCount, setEntryCount] = useState(0);
+  const [reflectionCount, setReflectionCount] = useState(0);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [showAIOptInModal, setShowAIOptInModal] = useState(false);
 
-  // Load entry count
-  const loadStats = useCallback(async () => {
-    const count = await getEntryCount();
+  // Load stats and preferences
+  const loadData = useCallback(async () => {
+    const [count, refCount, prefs] = await Promise.all([
+      getEntryCount(),
+      getReflectionCount(),
+      getPreferences(),
+    ]);
     setEntryCount(count);
+    setReflectionCount(refCount);
+    setAiEnabled(prefs.aiReflectionEnabled);
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadStats();
-    }, [loadStats])
+      loadData();
+    }, [loadData])
   );
+
+  // Toggle AI reflection
+  const handleAIToggle = async (value: boolean) => {
+    if (value) {
+      // Show opt-in modal
+      setShowAIOptInModal(true);
+    } else {
+      // Disable directly
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await updatePreferences({ aiReflectionEnabled: false });
+      setAiEnabled(false);
+    }
+  };
+
+  const handleAIOptInConfirm = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await updatePreferences({ aiReflectionEnabled: true });
+    setAiEnabled(true);
+    setShowAIOptInModal(false);
+  };
 
   // Export entries
   const handleExport = async (format: ExportFormat) => {
@@ -106,11 +159,9 @@ export default function SettingsScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const data = await exportEntries(format);
       
-      const filename = `three-sentences-export-${new Date().toISOString().split('T')[0]}.${format === 'json' ? 'json' : 'txt'}`;
-      
       await Share.share({
         message: data,
-        title: filename,
+        title: `three-sentences-export.${format === 'json' ? 'json' : 'txt'}`,
       });
     } catch (error) {
       console.error('Export failed:', error);
@@ -124,17 +175,34 @@ export default function SettingsScreen() {
       'Export Entries',
       'Choose your export format',
       [
+        { text: 'Plain Text', onPress: () => handleExport('text') },
+        { text: 'JSON', onPress: () => handleExport('json') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  // Delete all reflections
+  const handleDeleteReflections = () => {
+    if (reflectionCount === 0) {
+      Alert.alert('No Reflections', 'You don\'t have any reflections to delete.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete All Reflections',
+      `This will permanently delete all ${reflectionCount} AI-generated reflection${reflectionCount !== 1 ? 's' : ''}. Your journal entries will not be affected.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Plain Text',
-          onPress: () => handleExport('text'),
-        },
-        {
-          text: 'JSON',
-          onPress: () => handleExport('json'),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
+          text: 'Delete Reflections',
+          style: 'destructive',
+          onPress: async () => {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            await deleteAllReflections();
+            setReflectionCount(0);
+            Alert.alert('Deleted', 'All reflections have been removed.');
+          },
         },
       ]
     );
@@ -144,12 +212,9 @@ export default function SettingsScreen() {
   const handleDeleteData = () => {
     Alert.alert(
       'Delete All Data',
-      'This will permanently delete all your journal entries and settings. This action cannot be undone.',
+      'This will permanently delete all your journal entries, reflections, and settings. This action cannot be undone.',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete Everything',
           style: 'destructive',
@@ -157,7 +222,7 @@ export default function SettingsScreen() {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await clearAllData();
             Alert.alert('Data Deleted', 'All your data has been removed.');
-            loadStats();
+            loadData();
           },
         },
       ]
@@ -200,7 +265,43 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Export Section */}
+        {/* AI Reflection Section */}
+        <View style={styles.section}>
+          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+            AI REFLECTION
+          </Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<Sparkles size={22} color={activeColors.textPrimary} />}
+              title="AI Reflection"
+              subtitle={aiEnabled ? 'Enabled' : 'Disabled'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={aiEnabled}
+                  onValueChange={handleAIToggle}
+                  trackColor={{
+                    false: activeColors.border,
+                    true: activeColors.accent,
+                  }}
+                  thumbColor={activeColors.textPrimary}
+                />
+              }
+            />
+            {aiEnabled && reflectionCount > 0 && (
+              <SettingsRow
+                icon={<Trash2 size={22} color={activeColors.error} />}
+                title="Delete All Reflections"
+                subtitle={`${reflectionCount} reflection${reflectionCount !== 1 ? 's' : ''}`}
+                onPress={handleDeleteReflections}
+                destructive
+                showChevron={false}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Data Section */}
         <View style={styles.section}>
           <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
             YOUR DATA
@@ -211,6 +312,12 @@ export default function SettingsScreen() {
               title="Export Entries"
               subtitle="Download your journal as text or JSON"
               onPress={showExportOptions}
+            />
+            <SettingsRow
+              icon={<Lock size={22} color={activeColors.accent} />}
+              title="Encryption"
+              subtitle="Your entries are encrypted at rest"
+              showChevron={false}
             />
           </View>
         </View>
@@ -239,7 +346,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Trash2 size={22} color={activeColors.error} />}
               title="Delete All Data"
-              subtitle="Permanently remove all entries"
+              subtitle="Permanently remove all entries and settings"
               onPress={handleDeleteData}
               destructive
               showChevron={false}
@@ -257,6 +364,13 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* AI Opt-In Modal */}
+      <AIOptInModal
+        visible={showAIOptInModal}
+        onCancel={() => setShowAIOptInModal(false)}
+        onConfirm={handleAIOptInConfirm}
+      />
     </SafeAreaView>
   );
 }

@@ -1,13 +1,13 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Tab Layout
  * 
- * Three tabs: Today, History, Settings
+ * Four tabs: Today, History, Reflect (AI), Settings
  */
 
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { colors } from '@/theme/colors';
-import { PenTool, Calendar, Settings } from 'lucide-react-native';
+import { PenTool, Calendar, Settings, Sparkles } from 'lucide-react-native';
 
 export default function TabLayout() {
   const scheme = useColorScheme() ?? 'dark';
@@ -52,6 +52,16 @@ export default function TabLayout() {
             <Calendar color={color} size={size} />
           ),
           tabBarAccessibilityLabel: 'History tab - view past entries',
+        }}
+      />
+      <Tabs.Screen
+        name="reflect"
+        options={{
+          title: 'Reflect',
+          tabBarIcon: ({ color, size }) => (
+            <Sparkles color={color} size={size} />
+          ),
+          tabBarAccessibilityLabel: 'Reflect tab - AI-powered insights',
         }}
       />
       <Tabs.Screen
