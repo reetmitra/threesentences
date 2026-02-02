@@ -2,11 +2,10 @@
  * ThreeSixtyThree™ Three Sentences - Reflection Card
  * 
  * Displays AI-generated reflection with mandatory disclaimer.
- * Per PRD FR-AI-05: Every reflection includes disclaimer footer.
  */
 
 import React from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -17,8 +16,7 @@ interface ReflectionCardProps {
 }
 
 export function ReflectionCard({ reflection }: ReflectionCardProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const formatDate = () => {
     const date = new Date(reflection.generatedAt);
@@ -50,8 +48,8 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
         <Text variant="sm" color="secondary">
           {formatDate()}
         </Text>
-        <View style={[styles.badge, { backgroundColor: activeColors.accentSubtle }]}>
-          <Text variant="xs" style={{ color: activeColors.accent }}>
+        <View style={[styles.badge, { backgroundColor: activeColors.surfaceHover }]}>
+          <Text variant="xs" color="secondary">
             {getTimeRangeLabel()}
           </Text>
         </View>
@@ -70,7 +68,7 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
         Based on {reflection.entriesAnalyzed} {reflection.entriesAnalyzed === 1 ? 'entry' : 'entries'}
       </Text>
 
-      {/* Mandatory disclaimer (FR-AI-05) */}
+      {/* Mandatory disclaimer */}
       <View style={[styles.disclaimer, { borderTopColor: activeColors.border }]}>
         <Text variant="xs" color="tertiary" style={styles.disclaimerText}>
           {REFLECTION_DISCLAIMER}
@@ -97,7 +95,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   content: {
-    lineHeight: 24,
+    lineHeight: 26,
     marginBottom: spacing[3],
   },
   meta: {

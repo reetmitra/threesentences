@@ -5,11 +5,10 @@
  * Minimal chrome - just the writing space.
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   TextInput,
   StyleSheet,
-  useColorScheme,
   View,
   Platform,
 } from 'react-native';
@@ -32,8 +31,7 @@ export function EntryInput({
   placeholder = 'Write your three sentences...',
   autoFocus = false,
 }: EntryInputProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
   const inputRef = useRef<TextInput>(null);
 
   // Auto-focus on mount if specified
@@ -70,6 +68,7 @@ export function EntryInput({
         autoCorrect
         spellCheck
         selectionColor={activeColors.accent}
+        cursorColor={activeColors.accent}
         accessibilityLabel="Journal entry input"
         accessibilityHint="Write your three sentences for today"
       />
@@ -86,7 +85,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.primary,
-    lineHeight: typography.fontSize.lg * 1.6,
+    lineHeight: typography.fontSize.lg * 1.7,
     borderRadius: 12,
     borderWidth: 1,
     minHeight: 200,

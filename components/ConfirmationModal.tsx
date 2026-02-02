@@ -10,7 +10,6 @@ import {
   Modal,
   View,
   StyleSheet,
-  useColorScheme,
   Pressable,
   Platform,
 } from 'react-native';
@@ -33,8 +32,7 @@ export function ConfirmationModal({
   onConfirm,
   loading = false,
 }: ConfirmationModalProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const handleConfirm = async () => {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -50,45 +48,31 @@ export function ConfirmationModal({
       statusBarTranslucent
     >
       <Pressable
-        style={styles.overlay}
+        style={[styles.overlay, { backgroundColor: 'rgba(6, 20, 27, 0.9)' }]}
         onPress={onCancel}
         accessibilityLabel="Close modal"
       >
         <Pressable
-          style={[
-            styles.content,
-            { backgroundColor: activeColors.surface },
-          ]}
+          style={[styles.content, { backgroundColor: activeColors.surface }]}
           onPress={(e) => e.stopPropagation()}
         >
-          <Text
-            variant="xl"
-            weight="bold"
-            style={styles.title}
-          >
+          <Text variant="xl" weight="bold" style={styles.title}>
             Submit Entry
           </Text>
 
-          <Text
-            variant="base"
-            color="secondary"
-            style={styles.message}
-          >
+          <Text variant="base" color="secondary" style={styles.message}>
             Once submitted, this entry cannot be edited or deleted. Your words
             will stand as written, capturing how you felt in this moment.
           </Text>
 
-          <View style={[styles.philosophy, { backgroundColor: activeColors.accentSubtle }]}>
-            <Text
-              variant="base"
-              style={[styles.philosophyText, { color: activeColors.accent }]}
-            >
+          <View style={[styles.philosophy, { backgroundColor: activeColors.surfaceHover }]}>
+            <Text variant="base" color="secondary" style={styles.philosophyText}>
               This is the ThreeSixtyThree™ way:
             </Text>
             <Text
               variant="lg"
               weight="semibold"
-              style={[styles.philosophyHighlight, { color: activeColors.accent }]}
+              style={[styles.philosophyHighlight, { color: activeColors.textPrimary }]}
             >
               Presence over perfection.
             </Text>
@@ -118,7 +102,6 @@ export function ConfirmationModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing[4],
@@ -131,12 +114,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 8,
+        elevation: 12,
       },
     }),
   },

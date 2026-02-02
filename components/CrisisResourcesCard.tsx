@@ -2,11 +2,10 @@
  * ThreeSixtyThree™ Three Sentences - Crisis Resources Card
  * 
  * Displays crisis support resources when indicators are detected.
- * Per PRD FR-AI-06: Crisis detection triggers resource display instead of analysis.
  */
 
 import React from 'react';
-import { View, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
+import { View, StyleSheet, Linking, Pressable } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/colors';
@@ -19,17 +18,13 @@ interface CrisisResourcesCardProps {
 }
 
 export function CrisisResourcesCard({ onDismiss }: CrisisResourcesCardProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const handleResourcePress = async (resource: typeof CRISIS_RESOURCES.resources[0]) => {
     try {
       switch (resource.type) {
         case 'call':
           await Linking.openURL(`tel:${resource.contact}`);
-          break;
-        case 'text':
-          // Can't directly open SMS with specific message, just show info
           break;
         case 'website':
           await Linking.openURL(resource.contact);
@@ -95,7 +90,7 @@ export function CrisisResourcesCard({ onDismiss }: CrisisResourcesCardProps) {
       {/* Dismiss button */}
       <Button
         title="I Understand"
-        variant="ghost"
+        variant="outline"
         onPress={onDismiss}
         style={styles.dismissButton}
       />

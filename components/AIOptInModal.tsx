@@ -1,7 +1,7 @@
 /**
  * ThreeSixtyThree™ Three Sentences - AI Opt-In Modal
  * 
- * Per PRD FR-AI-02: Clear explanation of data usage before opt-in.
+ * Clear explanation of data usage before enabling AI reflection.
  */
 
 import React from 'react';
@@ -9,7 +9,6 @@ import {
   Modal,
   View,
   StyleSheet,
-  useColorScheme,
   Pressable,
   ScrollView,
   Platform,
@@ -30,8 +29,7 @@ export function AIOptInModal({
   onCancel,
   onConfirm,
 }: AIOptInModalProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   return (
     <Modal
@@ -42,7 +40,7 @@ export function AIOptInModal({
       statusBarTranslucent
     >
       <Pressable
-        style={styles.overlay}
+        style={[styles.overlay, { backgroundColor: 'rgba(6, 20, 27, 0.9)' }]}
         onPress={onCancel}
         accessibilityLabel="Close modal"
       >
@@ -96,8 +94,8 @@ export function AIOptInModal({
             </View>
 
             {/* Warning box */}
-            <View style={[styles.warningBox, { backgroundColor: activeColors.accentSubtle }]}>
-              <Text variant="sm" style={{ color: activeColors.accent }}>
+            <View style={[styles.warningBox, { backgroundColor: activeColors.surfaceHover }]}>
+              <Text variant="sm" color="secondary">
                 By enabling this feature, you consent to having your journal entries 
                 analyzed by AI when you request a reflection.
               </Text>
@@ -113,7 +111,7 @@ export function AIOptInModal({
               style={styles.button}
             />
             <Button
-              title="Enable AI Reflection"
+              title="Enable"
               variant="primary"
               onPress={onConfirm}
               style={styles.button}
@@ -128,7 +126,6 @@ export function AIOptInModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing[4],
@@ -142,12 +139,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 8,
+        elevation: 12,
       },
     }),
   },

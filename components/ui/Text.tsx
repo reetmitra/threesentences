@@ -1,12 +1,11 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Text Component
  * 
- * Per PRD Section 7.3: Dynamic type support - interface scales with system font size.
- * Per PRD Section 8.2: Typography guidelines.
+ * Typography with dynamic type support and dark-only styling.
  */
 
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, useColorScheme } from 'react-native';
+import { Text as RNText, TextProps as RNTextProps } from 'react-native';
 import { colors } from '@/theme/colors';
 import { typography, getScaledFontSizes } from '@/theme/typography';
 
@@ -33,8 +32,7 @@ export function Text({
   allowFontScaling = true,
   ...props
 }: TextProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark; // Always dark mode
 
   // Get font size - either scaled or fixed based on prop
   const scaledSizes = getScaledFontSizes();

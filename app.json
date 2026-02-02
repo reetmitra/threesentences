@@ -5,29 +5,31 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "scheme": "threesentences",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D0D0D"
+      "backgroundColor": "#06141B"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.threesixtythree.threesentences"
+      "bundleIdentifier": "com.threesixtythree.threesentences",
+      "backgroundColor": "#06141B"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D0D0D"
+        "backgroundColor": "#06141B"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.threesixtythree.threesentences"
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "backgroundColor": "#06141B"
     },
     "plugins": [
       "expo-router"

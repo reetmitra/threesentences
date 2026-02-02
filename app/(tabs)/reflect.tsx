@@ -2,14 +2,12 @@
  * ThreeSixtyThree™ Three Sentences - Reflect Screen
  * 
  * AI-powered reflection on journal entries.
- * Only visible when AI reflection is enabled in settings.
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  useColorScheme,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
@@ -25,9 +23,8 @@ import { spacing } from '@/theme/spacing';
 import { getEntriesForReflection } from '@/store/entries';
 import { getPreferences } from '@/store/onboarding';
 import {
-  getAllReflections,
-  saveReflection,
   getLatestReflection,
+  saveReflection,
 } from '@/store/reflections';
 import {
   generateReflection,
@@ -47,10 +44,8 @@ const TIME_RANGES: TimeRangeOption[] = [
 ];
 
 export default function ReflectScreen() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
-  // State
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -59,7 +54,6 @@ export default function ReflectScreen() {
   const [showCrisisResources, setShowCrisisResources] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load state
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -87,7 +81,6 @@ export default function ReflectScreen() {
     }, [loadData])
   );
 
-  // Generate reflection
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
@@ -116,7 +109,6 @@ export default function ReflectScreen() {
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <SafeAreaView
@@ -130,7 +122,6 @@ export default function ReflectScreen() {
     );
   }
 
-  // Not enabled state
   if (!isEnabled) {
     return (
       <SafeAreaView
@@ -171,7 +162,7 @@ export default function ReflectScreen() {
           </Text>
         </View>
 
-        {/* Crisis resources (if detected) */}
+        {/* Crisis resources */}
         {showCrisisResources && (
           <View style={styles.section}>
             <CrisisResourcesCard onDismiss={() => setShowCrisisResources(false)} />
@@ -210,7 +201,6 @@ export default function ReflectScreen() {
               style={styles.generateButton}
             />
 
-            {/* Error message */}
             {error && (
               <Text variant="sm" style={[styles.error, { color: activeColors.error }]}>
                 {error}

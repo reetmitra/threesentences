@@ -2,12 +2,11 @@
  * ThreeSixtyThree™ Three Sentences - Entry Card
  * 
  * Read-only display of a submitted entry.
- * Uses serif font for reading mode (per PRD 8.2).
- * No edit button, no delete button - by design.
+ * Uses serif font for reading mode.
  */
 
 import React from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -19,8 +18,7 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, showDate = false }: EntryCardProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   // Format date for display
   const formatDate = () => {
@@ -50,7 +48,7 @@ export function EntryCard({ entry, showDate = false }: EntryCardProps) {
       accessibilityLabel={`Journal entry from ${formatDate()}. ${entry.content}`}
     >
       {showDate && (
-        <View style={styles.dateHeader}>
+        <View style={[styles.dateHeader, { borderBottomColor: activeColors.border }]}>
           <Text variant="base" weight="semibold">
             {formatDate()}
           </Text>
@@ -65,7 +63,7 @@ export function EntryCard({ entry, showDate = false }: EntryCardProps) {
         {entry.content}
       </Text>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: activeColors.border }]}>
         <Text variant="xs" color="tertiary">
           Submitted at {formatTime()}
         </Text>
@@ -83,15 +81,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
     paddingBottom: spacing[3],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
   },
   content: {
-    lineHeight: 28,
+    lineHeight: 30,
   },
   footer: {
     marginTop: spacing[4],
     paddingTop: spacing[3],
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128, 128, 128, 0.2)',
   },
 });

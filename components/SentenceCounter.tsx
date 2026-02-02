@@ -2,11 +2,11 @@
  * ThreeSixtyThree™ Three Sentences - Sentence Counter
  * 
  * Displays current sentence count in "X/3" format.
- * Uses monospace numerals to prevent layout shift (per PRD 8.2).
+ * Uses monospace numerals to prevent layout shift.
  */
 
 import React from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 
@@ -16,8 +16,7 @@ interface SentenceCounterProps {
 }
 
 export function SentenceCounter({ count, target = 3 }: SentenceCounterProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const isComplete = count === target;
   const isOver = count > target;
@@ -32,8 +31,9 @@ export function SentenceCounter({ count, target = 3 }: SentenceCounterProps) {
     <View style={styles.container}>
       <Text
         variant="xl"
-        weight="medium"
+        weight="bold"
         mono
+        fixedSize
         style={[styles.count, { color: getColor() }]}
         accessibilityLabel={`${count} of ${target} sentences`}
         accessibilityRole="text"
@@ -41,19 +41,12 @@ export function SentenceCounter({ count, target = 3 }: SentenceCounterProps) {
         {count}/{target}
       </Text>
       {isComplete && (
-        <Text
-          variant="sm"
-          color="secondary"
-          style={styles.hint}
-        >
+        <Text variant="sm" color="secondary" style={styles.hint}>
           Ready to submit
         </Text>
       )}
       {isOver && (
-        <Text
-          variant="sm"
-          style={[styles.hint, { color: activeColors.error }]}
-        >
+        <Text variant="sm" style={[styles.hint, { color: activeColors.error }]}>
           Too many sentences
         </Text>
       )}
@@ -68,6 +61,7 @@ const styles = StyleSheet.create({
   },
   count: {
     fontVariant: ['tabular-nums'],
+    letterSpacing: 2,
   },
   hint: {
     marginTop: 4,

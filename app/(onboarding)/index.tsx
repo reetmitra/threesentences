@@ -2,14 +2,12 @@
  * ThreeSixtyThree™ Three Sentences - Onboarding Flow
  * 
  * Introduces the 363 philosophy before first use.
- * "Show up. Do the work. Let go of perfection."
  */
 
 import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  useColorScheme,
   Dimensions,
   FlatList,
   ViewToken,
@@ -53,21 +51,20 @@ const SLIDES: OnboardingSlide[] = [
     id: '3',
     title: 'Presence Over Perfection',
     description:
-      'Once submitted, your entry cannot be edited. Your words stand as written, capturing how you felt in that moment. This creates an honest record, not a curated narrative.',
+      'Once submitted, your entry cannot be edited. Your words stand as written, capturing how you felt in that moment.',
     highlight: 'Done is better than perfect.',
   },
   {
     id: '4',
     title: 'Grace Without Guilt',
     description:
-      'The 363 philosophy means committing to 363 days out of 365. Missed days are simply empty—not failures, not broken streaks. Return when you return, without shame.',
-    highlight: 'You cannot be perfect, but you can return without guilt.',
+      'The 363 philosophy means committing to 363 days out of 365. Missed days are simply empty—not failures, not broken streaks.',
+    highlight: 'Return when you return, without shame.',
   },
 ];
 
 export default function OnboardingScreen() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -115,16 +112,11 @@ export default function OnboardingScreen() {
           {item.description}
         </Text>
         {item.highlight && (
-          <View
-            style={[
-              styles.highlightBox,
-              { backgroundColor: activeColors.accentSubtle },
-            ]}
-          >
+          <View style={[styles.highlightBox, { backgroundColor: activeColors.surface }]}>
             <Text
               variant="base"
               weight="medium"
-              style={[styles.highlight, { color: activeColors.accent }]}
+              style={[styles.highlight, { color: activeColors.textPrimary }]}
             >
               {item.highlight}
             </Text>
@@ -145,7 +137,7 @@ export default function OnboardingScreen() {
               backgroundColor:
                 index === currentIndex
                   ? activeColors.accent
-                  : activeColors.border,
+                  : activeColors.surfaceHover,
             },
             index === currentIndex && styles.dotActive,
           ]}

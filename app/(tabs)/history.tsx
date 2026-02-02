@@ -2,14 +2,12 @@
  * ThreeSixtyThree™ Three Sentences - History Screen
  * 
  * Calendar view of past entries.
- * Empty past days are shown as empty (no backfill - 363 philosophy).
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  useColorScheme,
   ScrollView,
   Pressable,
 } from 'react-native';
@@ -25,23 +23,17 @@ import { getEntryDatesForMonth, getEntryForDate } from '@/store/entries';
 import { Entry } from '@/types/entry';
 
 export default function HistoryScreen() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
-  // Current viewing month
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1; // 1-12
+  const month = currentDate.getMonth() + 1;
 
-  // Entry dates for current month
   const [entryDates, setEntryDates] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
-
-  // Selected entry
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
 
-  // Load entry dates for current month
   const loadEntryDates = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -54,22 +46,18 @@ export default function HistoryScreen() {
     }
   }, [year, month]);
 
-  // Load on mount and when month changes
   useEffect(() => {
     loadEntryDates();
   }, [loadEntryDates]);
 
-  // Reload when screen focuses
   useFocusEffect(
     useCallback(() => {
       loadEntryDates();
-      // Clear selection when refocusing
       setSelectedDate(null);
       setSelectedEntry(null);
     }, [loadEntryDates])
   );
 
-  // Load selected entry
   const handleSelectDate = useCallback(async (date: string) => {
     setSelectedDate(date);
     try {
@@ -81,7 +69,6 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  // Navigate months
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
     setSelectedDate(null);
@@ -91,7 +78,6 @@ export default function HistoryScreen() {
   const goToNextMonth = () => {
     const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
     const now = new Date();
-    // Don't go beyond current month
     if (nextMonth <= new Date(now.getFullYear(), now.getMonth() + 1, 0)) {
       setCurrentDate(nextMonth);
       setSelectedDate(null);
@@ -99,13 +85,11 @@ export default function HistoryScreen() {
     }
   };
 
-  // Check if we can go to next month
   const canGoNext = () => {
     const now = new Date();
     return !(year === now.getFullYear() && month === now.getMonth() + 1);
   };
 
-  // Format month header
   const formatMonthHeader = () => {
     return currentDate.toLocaleDateString('en-US', {
       month: 'long',
@@ -139,7 +123,6 @@ export default function HistoryScreen() {
             onPress={goToPreviousMonth}
             style={[styles.navButton, { backgroundColor: activeColors.surface }]}
             accessibilityLabel="Previous month"
-            accessibilityRole="button"
           >
             <ChevronLeft size={24} color={activeColors.textPrimary} />
           </Pressable>
@@ -157,7 +140,6 @@ export default function HistoryScreen() {
             ]}
             disabled={!canGoNext()}
             accessibilityLabel="Next month"
-            accessibilityRole="button"
           >
             <ChevronRight
               size={24}
@@ -202,7 +184,7 @@ export default function HistoryScreen() {
 
         {/* Entry count */}
         {entryDates.size > 0 && (
-          <View style={styles.statsSection}>
+          <View style={[styles.statsSection, { borderTopColor: activeColors.border }]}>
             <Text variant="sm" color="tertiary" centered>
               {entryDates.size} {entryDates.size === 1 ? 'entry' : 'entries'} this month
             </Text>
@@ -272,6 +254,5 @@ const styles = StyleSheet.create({
     marginTop: spacing[6],
     paddingTop: spacing[4],
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(128, 128, 128, 0.2)',
   },
 });

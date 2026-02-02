@@ -2,14 +2,12 @@
  * ThreeSixtyThree™ Three Sentences - Settings Screen
  * 
  * Export data, manage AI reflection, view about info.
- * No analytics dashboard, no stats - per 363 philosophy.
  */
 
 import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  useColorScheme,
   ScrollView,
   Pressable,
   Alert,
@@ -24,7 +22,6 @@ import {
   Info,
   ChevronRight,
   Sparkles,
-  Shield,
   Lock,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -59,8 +56,7 @@ function SettingsRow({
   showChevron = true,
   rightElement,
 }: SettingsRowProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const content = (
     <>
@@ -107,15 +103,13 @@ function SettingsRow({
 }
 
 export default function SettingsScreen() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const [entryCount, setEntryCount] = useState(0);
   const [reflectionCount, setReflectionCount] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
 
-  // Load stats and preferences
   const loadData = useCallback(async () => {
     const [count, refCount, prefs] = await Promise.all([
       getEntryCount(),
@@ -133,13 +127,10 @@ export default function SettingsScreen() {
     }, [loadData])
   );
 
-  // Toggle AI reflection
   const handleAIToggle = async (value: boolean) => {
     if (value) {
-      // Show opt-in modal
       setShowAIOptInModal(true);
     } else {
-      // Disable directly
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await updatePreferences({ aiReflectionEnabled: false });
       setAiEnabled(false);
@@ -153,7 +144,6 @@ export default function SettingsScreen() {
     setShowAIOptInModal(false);
   };
 
-  // Export entries
   const handleExport = async (format: ExportFormat) => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -165,11 +155,10 @@ export default function SettingsScreen() {
       });
     } catch (error) {
       console.error('Export failed:', error);
-      Alert.alert('Export Failed', 'Unable to export your entries. Please try again.');
+      Alert.alert('Export Failed', 'Unable to export your entries.');
     }
   };
 
-  // Show export options
   const showExportOptions = () => {
     Alert.alert(
       'Export Entries',
@@ -182,7 +171,6 @@ export default function SettingsScreen() {
     );
   };
 
-  // Delete all reflections
   const handleDeleteReflections = () => {
     if (reflectionCount === 0) {
       Alert.alert('No Reflections', 'You don\'t have any reflections to delete.');
@@ -191,11 +179,11 @@ export default function SettingsScreen() {
 
     Alert.alert(
       'Delete All Reflections',
-      `This will permanently delete all ${reflectionCount} AI-generated reflection${reflectionCount !== 1 ? 's' : ''}. Your journal entries will not be affected.`,
+      `This will permanently delete all ${reflectionCount} AI-generated reflections.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Reflections',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -208,11 +196,10 @@ export default function SettingsScreen() {
     );
   };
 
-  // Delete all data
   const handleDeleteData = () => {
     Alert.alert(
       'Delete All Data',
-      'This will permanently delete all your journal entries, reflections, and settings. This action cannot be undone.',
+      'This will permanently delete all your journal entries, reflections, and settings.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -229,11 +216,10 @@ export default function SettingsScreen() {
     );
   };
 
-  // Show about info
   const showAbout = () => {
     Alert.alert(
       'About ThreeSixtyThree™',
-      'Three Sentences is the official journaling application of the ThreeSixtyThree™ self-improvement system.\n\nVersion 1.0.0\n\n"Show up. Do the work. Let go of perfection."\n\n— The ThreeSixtyThree™ Principle',
+      'Three Sentences is the official journaling application of the ThreeSixtyThree™ self-improvement system.\n\nVersion 1.0.0\n\n"Show up. Do the work. Let go of perfection."',
       [{ text: 'OK' }]
     );
   };
@@ -255,7 +241,7 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Stats - minimal, not gamified */}
+        {/* Stats */}
         <View style={[styles.statsCard, { backgroundColor: activeColors.surface }]}>
           <Text variant="3xl" weight="bold" style={{ color: activeColors.accent }}>
             {entryCount}
@@ -281,7 +267,7 @@ export default function SettingsScreen() {
                   value={aiEnabled}
                   onValueChange={handleAIToggle}
                   trackColor={{
-                    false: activeColors.border,
+                    false: activeColors.surfaceHover,
                     true: activeColors.accent,
                   }}
                   thumbColor={activeColors.textPrimary}
@@ -310,13 +296,13 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Download size={22} color={activeColors.textPrimary} />}
               title="Export Entries"
-              subtitle="Download your journal as text or JSON"
+              subtitle="Download as text or JSON"
               onPress={showExportOptions}
             />
             <SettingsRow
-              icon={<Lock size={22} color={activeColors.accent} />}
+              icon={<Lock size={22} color={activeColors.textSecondary} />}
               title="Encryption"
-              subtitle="Your entries are encrypted at rest"
+              subtitle="Entries encrypted at rest"
               showChevron={false}
             />
           </View>
@@ -346,7 +332,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Trash2 size={22} color={activeColors.error} />}
               title="Delete All Data"
-              subtitle="Permanently remove all entries and settings"
+              subtitle="Permanently remove everything"
               onPress={handleDeleteData}
               destructive
               showChevron={false}
@@ -365,7 +351,6 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      {/* AI Opt-In Modal */}
       <AIOptInModal
         visible={showAIOptInModal}
         onCancel={() => setShowAIOptInModal(false)}

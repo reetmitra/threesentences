@@ -2,11 +2,11 @@
  * ThreeSixtyThree™ Three Sentences - Calendar Component
  * 
  * Monthly calendar grid showing entry dates.
- * Days with entries are marked. Empty past days stay empty (no backfill).
+ * Days with entries are marked with white dot.
  */
 
 import React, { useMemo } from 'react';
-import { View, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -23,7 +23,7 @@ interface CalendarProps {
 }
 
 interface DayCell {
-  date: string | null; // YYYY-MM-DD or null for empty cells
+  date: string | null;
   day: number | null;
   isToday: boolean;
   hasEntry: boolean;
@@ -38,8 +38,7 @@ export function Calendar({
   selectedDate,
   onSelectDate,
 }: CalendarProps) {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
   const todayStr = getTodayDateString();
 
   // Generate calendar grid
@@ -47,7 +46,7 @@ export function Calendar({
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay(); // 0 = Sunday
+    const startingDay = firstDay.getDay();
 
     const days: DayCell[] = [];
 
@@ -111,16 +110,15 @@ export function Calendar({
     }
 
     const isSelected = cell.date === selectedDate;
-    const canSelect = cell.hasEntry; // Can only select days with entries
+    const canSelect = cell.hasEntry;
 
     return (
       <Pressable
         key={cell.date}
         style={[
           styles.dayCell,
-          cell.isToday && styles.todayCell,
-          cell.isToday && { borderColor: activeColors.accent },
-          isSelected && { backgroundColor: activeColors.accentSubtle },
+          cell.isToday && [styles.todayCell, { borderColor: activeColors.accent }],
+          isSelected && { backgroundColor: activeColors.surfaceHover },
         ]}
         onPress={() => canSelect && cell.date && onSelectDate(cell.date)}
         disabled={!canSelect}
@@ -130,7 +128,7 @@ export function Calendar({
       >
         <Text
           variant="base"
-          weight={cell.isToday ? 'semibold' : 'regular'}
+          weight={cell.isToday ? 'bold' : 'regular'}
           style={[
             styles.dayText,
             { color: activeColors.textPrimary },
@@ -195,7 +193,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 8,
     margin: 2,
-    minHeight: 44, // Accessibility minimum
+    minHeight: 44,
     minWidth: 44,
   },
   todayCell: {

@@ -2,7 +2,6 @@
  * ThreeSixtyThree™ Three Sentences - Today Screen
  * 
  * The main entry screen. Write three sentences, submit, done.
- * Minimal chrome - just the input, counter, and submit button.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,7 +10,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  useColorScheme,
   ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -30,15 +28,13 @@ import {
   saveEntry,
   saveDraft,
   getDraft,
-  clearDraft,
 } from '@/store/entries';
-import { Entry, getTodayDateString } from '@/types/entry';
+import { Entry } from '@/types/entry';
 
-const AUTO_SAVE_INTERVAL = 5000; // 5 seconds per PRD
+const AUTO_SAVE_INTERVAL = 5000;
 
 export default function TodayScreen() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   // State
   const [content, setContent] = useState('');
@@ -59,13 +55,11 @@ export default function TodayScreen() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Check if entry exists for today
       const existing = await getTodayEntry();
       if (existing) {
         setTodayEntry(existing);
         setContent('');
       } else {
-        // Load draft if no entry
         const draft = await getDraft();
         if (draft) {
           setContent(draft.content);
@@ -79,7 +73,6 @@ export default function TodayScreen() {
     }
   }, []);
 
-  // Load on mount and when screen focuses
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -92,14 +85,12 @@ export default function TodayScreen() {
 
   // Auto-save draft
   useEffect(() => {
-    if (todayEntry) return; // Don't auto-save if already submitted
+    if (todayEntry) return;
 
-    // Clear existing timer
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
     }
 
-    // Set new timer
     autoSaveTimer.current = setTimeout(async () => {
       if (content !== lastSavedContent.current && content.trim()) {
         await saveDraft(content);
@@ -126,13 +117,12 @@ export default function TodayScreen() {
       setShowConfirmation(false);
     } catch (error) {
       console.error('Failed to save entry:', error);
-      // TODO: Show error toast
     } finally {
       setIsSubmitting(false);
     }
   }, [content, canSubmit, isSubmitting]);
 
-  // Format today's date for display
+  // Format today's date
   const formatTodayDate = () => {
     const now = new Date();
     return now.toLocaleDateString('en-US', {
@@ -156,7 +146,7 @@ export default function TodayScreen() {
     );
   }
 
-  // Entry already submitted for today
+  // Entry already submitted
   if (todayEntry) {
     return (
       <SafeAreaView
@@ -172,7 +162,7 @@ export default function TodayScreen() {
             <Text variant="sm" color="secondary" style={styles.dateLabel}>
               {formatTodayDate()}
             </Text>
-            <Text variant="2xl" weight="bold" style={styles.title}>
+            <Text variant="2xl" weight="bold">
               Today's Entry
             </Text>
           </View>
@@ -206,7 +196,7 @@ export default function TodayScreen() {
             <Text variant="sm" color="secondary" style={styles.dateLabel}>
               {formatTodayDate()}
             </Text>
-            <Text variant="2xl" weight="bold" style={styles.title}>
+            <Text variant="2xl" weight="bold">
               Three Sentences
             </Text>
           </View>
@@ -216,7 +206,7 @@ export default function TodayScreen() {
               value={content}
               onChangeText={setContent}
               autoFocus={!content}
-              placeholder="What's on your mind today? Write exactly three sentences..."
+              placeholder="What's on your mind today?"
             />
           </View>
 
@@ -274,13 +264,12 @@ const styles = StyleSheet.create({
     padding: spacing[4],
   },
   header: {
-    marginBottom: spacing[4],
+    marginBottom: spacing[5],
   },
   dateLabel: {
     marginBottom: spacing[1],
-  },
-  title: {
-    // No additional styles needed
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   inputContainer: {
     flex: 1,

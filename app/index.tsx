@@ -5,14 +5,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Redirect } from 'expo-router';
 import { hasCompletedOnboarding } from '@/store/onboarding';
 import { colors } from '@/theme/colors';
 
 export default function Index() {
-  const scheme = useColorScheme() ?? 'dark';
-  const activeColors = colors[scheme === 'dark' ? 'dark' : 'light'];
+  const activeColors = colors.dark;
 
   const [isLoading, setIsLoading] = useState(true);
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false);
@@ -24,7 +23,6 @@ export default function Index() {
         setShouldShowOnboarding(!completed);
       } catch (error) {
         console.error('Error checking onboarding state:', error);
-        // Default to showing onboarding if there's an error
         setShouldShowOnboarding(true);
       } finally {
         setIsLoading(false);
@@ -34,7 +32,6 @@ export default function Index() {
     checkOnboarding();
   }, []);
 
-  // Show loading spinner while checking onboarding state
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: activeColors.background }]}>
@@ -43,7 +40,6 @@ export default function Index() {
     );
   }
 
-  // Redirect based on onboarding state
   if (shouldShowOnboarding) {
     return <Redirect href="/(onboarding)" />;
   }
