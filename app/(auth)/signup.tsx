@@ -30,11 +30,14 @@ export default function SignupScreen() {
         try {
             setLoading(true);
             await signUp(email, password, name);
-            router.replace('/');
+            setLoading(false); // Stop loading spinner so we can just pause
+            // Brief pause before redirecting
+            setTimeout(() => {
+                router.replace('/(tabs)');
+            }, 4000);
         } catch (error) {
-            Alert.alert('Signup Failed', (error as Error).message);
-        } finally {
             setLoading(false);
+            Alert.alert('Signup Failed', (error as Error).message);
         }
     };
 

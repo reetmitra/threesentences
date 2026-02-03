@@ -17,6 +17,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Calendar } from '@/components/Calendar';
 import { EntryCard } from '@/components/EntryCard';
+import { DailyRules } from '@/components/DailyRules';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { getEntryDatesForMonth, getEntryForDate } from '@/store/entries';
@@ -109,11 +110,11 @@ export default function HistoryScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text variant="2xl" weight="bold">
-            History
+          <Text variant="2xl" weight="bold" style={styles.headerTitle}>
+            PROJECT 363
           </Text>
           <Text variant="sm" color="secondary" style={styles.subtitle}>
-            Your journal entries
+            363 DAYS TO BETTER
           </Text>
         </View>
 
@@ -190,6 +191,9 @@ export default function HistoryScreen() {
             </Text>
           </View>
         )}
+
+        {/* Daily Rules Footer */}
+        <DailyRules />
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,8 +213,13 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[4],
   },
+  headerTitle: {
+    letterSpacing: 1,
+  },
   subtitle: {
     marginTop: spacing[1],
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   monthNav: {
     flexDirection: 'row',

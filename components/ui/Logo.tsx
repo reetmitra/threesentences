@@ -48,22 +48,25 @@ export function Logo({ size = 64, color = colors.dark.accent, animated = false }
             ]}
         >
             <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+                {/* Top Face */}
                 <Path
-                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    d="M12 2L20 6.5L12 11L4 6.5L12 2Z"
                     stroke={color}
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 />
+                {/* Right Face */}
                 <Path
-                    d="M2 17L12 22L22 17"
+                    d="M13 12L21 7.5V16.5L13 21V12Z"
                     stroke={color}
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 />
+                {/* Left Face */}
                 <Path
-                    d="M2 12L12 17L22 12"
+                    d="M11 12L3 7.5V16.5L11 21V12Z"
                     stroke={color}
                     strokeWidth="2"
                     strokeLinecap="round"

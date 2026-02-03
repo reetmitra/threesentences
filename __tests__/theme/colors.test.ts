@@ -10,69 +10,60 @@ describe('colors theme', () => {
   describe('dark theme colors', () => {
     describe('core palette', () => {
       it('has background color defined', () => {
-        expect(colors.dark.background).toBe('#06141B');
+        expect(colors.dark.background).toBe('#000000');
       });
 
       it('has surface color defined', () => {
-        expect(colors.dark.surface).toBe('#11212D');
+        expect(colors.dark.surface).toBe('#121212');
       });
 
       it('has surfaceHover color defined', () => {
-        expect(colors.dark.surfaceHover).toBe('#253745');
+        expect(colors.dark.surfaceHover).toBe('#1E1E1E');
       });
 
       it('has border color defined', () => {
-        expect(colors.dark.border).toBe('#253745');
+        expect(colors.dark.border).toBe('#2A2A2A');
       });
 
       it('background is darkest in palette', () => {
-        // Background should be darker than surface
-        const bgValue = parseInt(colors.dark.background.slice(1), 16);
-        const surfaceValue = parseInt(colors.dark.surface.slice(1), 16);
-        expect(bgValue).toBeLessThan(surfaceValue);
-      });
-
-      it('surface is lighter than background', () => {
-        const bgValue = parseInt(colors.dark.background.slice(1), 16);
-        const surfaceValue = parseInt(colors.dark.surface.slice(1), 16);
-        expect(surfaceValue).toBeGreaterThan(bgValue);
+        // Simple check that background is darker than surface (lexicographical check works for hex if purely brightness, but here 000000 < 121212)
+        expect(colors.dark.background < colors.dark.surface).toBe(true);
       });
     });
 
+    // 2. Text colors from PRD 8.4
     describe('text hierarchy', () => {
       it('has textPrimary color defined', () => {
-        expect(colors.dark.textPrimary).toBe('#E0E0E0');
+        expect(colors.dark.textPrimary).toBe('#FFFFFF');
       });
 
       it('has textSecondary color defined', () => {
-        expect(colors.dark.textSecondary).toBe('#8899A6');
+        expect(colors.dark.textSecondary).toBe('#A0A0A0');
       });
 
       it('has textTertiary color defined', () => {
-        expect(colors.dark.textTertiary).toBe('#4A5568');
+        expect(colors.dark.textTertiary).toBe('#666666');
       });
 
       it('primary text is brightest', () => {
-        const primary = parseInt(colors.dark.textPrimary.slice(1), 16);
-        const secondary = parseInt(colors.dark.textSecondary.slice(1), 16);
-        const tertiary = parseInt(colors.dark.textTertiary.slice(1), 16);
-
-        expect(primary).toBeGreaterThan(secondary);
-        expect(secondary).toBeGreaterThan(tertiary);
+        // FFFFFF > A0A0A0 > 666666
+        expect(colors.dark.textPrimary > colors.dark.textSecondary).toBe(true);
+        expect(colors.dark.textSecondary > colors.dark.textTertiary).toBe(true);
       });
     });
 
+    // 3. Accent colors
     describe('accent colors', () => {
-      it('has white accent for buttons', () => {
+      it('has white accent', () => {
         expect(colors.dark.accent).toBe('#FFFFFF');
       });
 
-      it('has accent hover state', () => {
+      it('has accentHover defined', () => {
         expect(colors.dark.accentHover).toBe('#E0E0E0');
       });
 
       it('has subtle accent for backgrounds', () => {
-        expect(colors.dark.accentSubtle).toBe('#253745');
+        expect(colors.dark.accentSubtle).toBe('#333333');
       });
     });
 

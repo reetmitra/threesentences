@@ -35,9 +35,9 @@ export async function getAllEntries(): Promise<Entry[]> {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.ENTRIES);
     if (!data) return [];
-    
+
     const storedEntries = JSON.parse(data) as (StoredEntry | Entry)[];
-    
+
     // Decrypt all entries
     const entries: Entry[] = await Promise.all(
       storedEntries.map(async (stored) => {
@@ -69,7 +69,7 @@ export async function getAllEntries(): Promise<Entry[]> {
         }
       })
     );
-    
+
     return entries;
   } catch (error) {
     console.error('Failed to load entries:', error);
@@ -109,35 +109,53 @@ export async function hasEntryForToday(): Promise<boolean> {
  */
 export async function saveEntry(content: string): Promise<Entry> {
   const today = getTodayDateString();
-  
-  // Check if entry already exists (one per day rule)
+
+  // Check if entry exists
   const existing = await getEntryForDate(today);
-  if (existing) {
-    throw new Error('Entry already exists for today. ThreeSixtyThree™: One entry per day.');
-  }
 
   // Encrypt the content
   const encryptedContent = await encryptContent(content);
 
-  const storedEntry: StoredEntry = {
-    id: generateId(),
-    date: today,
-    encryptedContent,
-    submittedAt: new Date().toISOString(),
-    timezone: getCurrentTimezone(),
-  };
+  let storedEntry: StoredEntry;
 
-  // Load existing entries (raw, without decryption for efficiency)
+  if (existing) {
+    // Update existing entry
+    storedEntry = {
+      id: existing.id, // Keep same ID
+      date: today,
+      encryptedContent,
+      submittedAt: new Date().toISOString(), // Update submission time
+      timezone: existing.timezone,
+    };
+  } else {
+    // Create new entry
+    storedEntry = {
+      id: generateId(),
+      date: today,
+      encryptedContent,
+      submittedAt: new Date().toISOString(),
+      timezone: getCurrentTimezone(),
+    };
+  }
+
+  // Load existing entries (raw)
   const data = await AsyncStorage.getItem(STORAGE_KEYS.ENTRIES);
-  const storedEntries: StoredEntry[] = data ? JSON.parse(data) : [];
-  storedEntries.push(storedEntry);
-  
+  let storedEntries: StoredEntry[] = data ? JSON.parse(data) : [];
+
+  if (existing) {
+    // Replace the existing entry in the array
+    storedEntries = storedEntries.map(e => e.date === today ? storedEntry : e);
+  } else {
+    // Add new entry
+    storedEntries.push(storedEntry);
+  }
+
   await AsyncStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(storedEntries));
-  
+
   // Clear draft after successful submission
   await clearDraft();
-  
-  // Return the entry with decrypted content for immediate display
+
+  // Return the entry with decrypted content
   return {
     id: storedEntry.id,
     date: storedEntry.date,
@@ -168,11 +186,11 @@ export async function getEntryDatesForMonth(year: number, month: number): Promis
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.ENTRIES);
     if (!data) return new Set();
-    
+
     const storedEntries = JSON.parse(data) as (StoredEntry | Entry)[];
     const monthStr = String(month).padStart(2, '0');
     const prefix = `${year}-${monthStr}`;
-    
+
     return new Set(
       storedEntries
         .filter((e) => e.date.startsWith(prefix))
@@ -205,9 +223,9 @@ export async function getDraft(): Promise<Draft | null> {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.DRAFT);
     if (!data) return null;
-    
+
     const stored = JSON.parse(data);
-    
+
     // Handle both old (unencrypted) and new (encrypted) formats
     if (stored.encryptedContent) {
       const content = await decryptContent(stored.encryptedContent);
@@ -219,7 +237,7 @@ export async function getDraft(): Promise<Draft | null> {
       // Legacy unencrypted draft
       return stored as Draft;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Failed to load draft:', error);
@@ -244,7 +262,7 @@ export type ExportFormat = 'json' | 'text';
  */
 export async function exportEntries(format: ExportFormat): Promise<string> {
   const entries = await getAllEntries();
-  
+
   // Sort by date (oldest first)
   entries.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -288,11 +306,11 @@ export async function getEntryCount(): Promise<number> {
  */
 export async function getEntriesForReflection(days: number): Promise<Entry[]> {
   const entries = await getAllEntries();
-  
+
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
   const cutoffStr = cutoffDate.toISOString().split('T')[0];
-  
+
   return entries
     .filter((e) => e.date >= cutoffStr)
     .sort((a, b) => a.date.localeCompare(b.date));

@@ -11,11 +11,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
+  Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Check } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
 import { EntryInput } from '@/components/EntryInput';
 import { SentenceCounter } from '@/components/SentenceCounter';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
@@ -33,6 +36,113 @@ import { Entry } from '@/types/entry';
 
 const AUTO_SAVE_INTERVAL = 5000;
 
+// Custom Animated Button Component
+const AnimatedButton = ({
+  status,
+  onPress,
+  disabled
+}: {
+  status: 'idle' | 'submitting' | 'success';
+  onPress: () => void;
+  disabled: boolean;
+}) => {
+  const [initialWidth, setInitialWidth] = useState<number | null>(null);
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const fadeValue = useRef(new Animated.Value(1)).current;
+  const widthAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (status === 'success') {
+      Animated.parallel([
+        Animated.timing(widthAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: false, // Changed to false to match width animation and avoid error
+        }),
+        Animated.timing(fadeValue, {
+          toValue: 0,
+          duration: 400,
+          delay: 800,
+          useNativeDriver: false, // Changed to false for consistency
+        }),
+      ]).start();
+    } else if (status === 'idle') {
+      widthAnim.setValue(1);
+      spinValue.setValue(0);
+      fadeValue.setValue(1);
+    }
+  }, [status]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const animatedWidth = initialWidth
+    ? widthAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [56, initialWidth],
+    })
+    : '100%';
+
+  const renderContent = () => {
+    if (status === 'submitting') {
+      return <ActivityIndicator color="#FFFFFF" size="small" />;
+    }
+    if (status === 'success') {
+      return (
+        <Animated.View style={{ transform: [{ rotate: spin }] }}>
+          <Check color="#FFFFFF" size={24} />
+        </Animated.View>
+      );
+    }
+    return (
+      <Animated.View style={{ opacity: status === 'success' ? 0 : 1 }}>
+        <Text variant="base" weight="medium" style={{ color: '#FFFFFF' }}>Done</Text>
+      </Animated.View>
+    );
+  };
+
+  return (
+    <View
+      style={{ width: '100%', alignItems: 'center' }}
+      onLayout={(e) => {
+        if (!initialWidth) setInitialWidth(e.nativeEvent.layout.width);
+      }}
+    >
+      <Animated.View
+        style={{
+          opacity: fadeValue,
+          width: animatedWidth,
+          height: 56,
+        }}
+      >
+        <TouchableOpacity
+          onPress={onPress}
+          disabled={disabled || status !== 'idle'}
+          style={[
+            styles.animatedButton,
+            {
+              backgroundColor: disabled ? '#2A2A2A' : '#333333',
+              opacity: disabled && status === 'idle' ? 0.5 : 1,
+              width: '100%',
+              marginTop: 0,
+            }
+          ]}
+        >
+          {renderContent()}
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
+
+
 export default function TodayScreen() {
   const activeColors = colors.dark;
 
@@ -40,7 +150,7 @@ export default function TodayScreen() {
   const [content, setContent] = useState('');
   const [todayEntry, setTodayEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Refs for auto-save
@@ -107,20 +217,27 @@ export default function TodayScreen() {
 
   // Handle submission
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || isSubmitting) return;
+    if (!canSubmit || submissionStatus !== 'idle') return;
 
-    setIsSubmitting(true);
+    setShowConfirmation(false);
+    setSubmissionStatus('submitting');
+
     try {
       const entry = await saveEntry(content);
-      setTodayEntry(entry);
-      setContent('');
-      setShowConfirmation(false);
+
+      setSubmissionStatus('success');
+
+      // Wait for animation to finish before switching screens
+      setTimeout(() => {
+        setTodayEntry(entry);
+        setContent('');
+        setSubmissionStatus('idle'); // Reset for next time (though screen changes)
+      }, 1500); // 1.5s delay
     } catch (error) {
       console.error('Failed to save entry:', error);
-    } finally {
-      setIsSubmitting(false);
+      setSubmissionStatus('idle');
     }
-  }, [content, canSubmit, isSubmitting]);
+  }, [content, canSubmit, submissionStatus]);
 
   // Format today's date
   const formatTodayDate = () => {
@@ -174,6 +291,19 @@ export default function TodayScreen() {
               You've already journaled today.{'\n'}
               See you tomorrow.
             </Text>
+
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                if (todayEntry) setContent(todayEntry.content);
+                setTodayEntry(null);
+                setSubmissionStatus('idle');
+              }}
+            >
+              <Text variant="xs" color="tertiary" style={{ textDecorationLine: 'underline' }}>
+                Edit Entry
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -213,14 +343,13 @@ export default function TodayScreen() {
           <View style={styles.footer}>
             <SentenceCounter count={sentenceCount} target={3} />
 
-            <Button
-              title="Submit Entry"
+            <AnimatedButton
+              status={submissionStatus}
               onPress={() => setShowConfirmation(true)}
               disabled={!canSubmit}
-              style={styles.submitButton}
             />
 
-            {content.trim() && !canSubmit && (
+            {content.trim() && !canSubmit && submissionStatus === 'idle' && (
               <Text variant="xs" color="tertiary" centered style={styles.hint}>
                 {sentenceCount < 3
                   ? `${3 - sentenceCount} more sentence${3 - sentenceCount !== 1 ? 's' : ''} to go`
@@ -235,7 +364,7 @@ export default function TodayScreen() {
         visible={showConfirmation}
         onCancel={() => setShowConfirmation(false)}
         onConfirm={handleSubmit}
-        loading={isSubmitting}
+        loading={submissionStatus === 'submitting'}
       />
     </SafeAreaView>
   );
@@ -276,16 +405,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   footer: {
-    paddingTop: spacing[2],
+    paddingTop: spacing[6], // Increased to separate button from input
   },
-  submitButton: {
-    marginTop: spacing[3],
+  animatedButton: {
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hint: {
-    marginTop: spacing[2],
+    marginTop: spacing[4],
   },
   submittedMessage: {
     marginTop: spacing[6],
     paddingVertical: spacing[4],
+  },
+  editButton: {
+    marginTop: spacing[4],
+    alignSelf: 'center',
+    padding: spacing[2],
   },
 });

@@ -207,22 +207,32 @@ describe('entries store', () => {
       expect(entry.timezone).toBeDefined();
     });
 
-    it('throws error if entry already exists for today', async () => {
+    it('updates existing entry for today instead of throwing error', async () => {
       const today = getTodayDateString();
+      const originalContent = 'Original content.';
       const storedEntries = [
         {
           id: 'existing',
           date: today,
-          encryptedContent: `encrypted:${btoa('Existing.')}:checksum`,
+          encryptedContent: `encrypted:${btoa(originalContent)}:checksum`,
           submittedAt: new Date().toISOString(),
           timezone: 'America/New_York',
         },
       ];
       await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
 
-      await expect(saveEntry('New content.')).rejects.toThrow(
-        'Entry already exists for today'
-      );
+      const updatedContent = 'Updated content.';
+      const entry = await saveEntry(updatedContent);
+
+      // Should return updated entry
+      expect(entry.content).toBe(updatedContent);
+      expect(entry.id).toBe('existing'); // Same ID preserved
+      expect(entry.date).toBe(today);
+
+      // Verify only one entry exists in storage
+      const allEntries = await getAllEntries();
+      expect(allEntries).toHaveLength(1);
+      expect(allEntries[0].content).toBe(updatedContent);
     });
 
     it('clears draft after successful save', async () => {
