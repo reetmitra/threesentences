@@ -80,6 +80,109 @@ jest.mock('expo-haptics', () => ({
   },
 }));
 
+// Mock Firebase
+const mockFirebaseUser = {
+  uid: 'test-user-id',
+  email: 'test@example.com',
+  displayName: 'Test User',
+};
+
+let mockCurrentUser = null;
+let mockAuthStateCallback = null;
+
+jest.mock('firebase/auth', () => ({
+  initializeAuth: jest.fn(() => ({
+    currentUser: null,
+  })),
+  getReactNativePersistence: jest.fn(() => ({})),
+  createUserWithEmailAndPassword: jest.fn((auth, email, password) => {
+    if (password.length < 6) {
+      const error = new Error('Password should be at least 6 characters');
+      error.code = 'auth/weak-password';
+      return Promise.reject(error);
+    }
+    if (!email.includes('@')) {
+      const error = new Error('Invalid email');
+      error.code = 'auth/invalid-email';
+      return Promise.reject(error);
+    }
+    mockCurrentUser = { ...mockFirebaseUser, email };
+    return Promise.resolve({ user: mockCurrentUser });
+  }),
+  signInWithEmailAndPassword: jest.fn((auth, email, password) => {
+    if (email === 'notfound@example.com') {
+      const error = new Error('User not found');
+      error.code = 'auth/user-not-found';
+      return Promise.reject(error);
+    }
+    if (password === 'wrongpassword') {
+      const error = new Error('Wrong password');
+      error.code = 'auth/invalid-credential';
+      return Promise.reject(error);
+    }
+    mockCurrentUser = { ...mockFirebaseUser, email };
+    return Promise.resolve({ user: mockCurrentUser });
+  }),
+  signOut: jest.fn(() => {
+    mockCurrentUser = null;
+    return Promise.resolve();
+  }),
+  onAuthStateChanged: jest.fn((auth, callback) => {
+    mockAuthStateCallback = callback;
+    const unsubscribe = jest.fn();
+    // Call callback asynchronously to allow unsubscribe to be assigned first
+    setTimeout(() => callback(mockCurrentUser), 0);
+    return unsubscribe;
+  }),
+  updateProfile: jest.fn(() => Promise.resolve()),
+  signInWithCredential: jest.fn(() => Promise.resolve({ user: mockFirebaseUser })),
+  OAuthProvider: jest.fn(() => ({
+    credential: jest.fn(() => ({})),
+  })),
+}));
+
+// Helper to reset Firebase mock state
+global.resetFirebaseMock = () => {
+  mockCurrentUser = null;
+  mockAuthStateCallback = null;
+};
+
+global.setMockFirebaseUser = (user) => {
+  mockCurrentUser = user;
+  if (mockAuthStateCallback) {
+    mockAuthStateCallback(user);
+  }
+};
+
+// Mock Firebase config
+jest.mock('@/config/firebase', () => ({
+  app: {},
+  auth: { currentUser: null },
+  isConfigured: true,
+}));
+
+// Mock expo-apple-authentication
+jest.mock('expo-apple-authentication', () => ({
+  signInAsync: jest.fn(() => Promise.resolve({
+    identityToken: 'mock-identity-token',
+    fullName: { givenName: 'Test', familyName: 'User' },
+  })),
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+  AppleAuthenticationScope: {
+    FULL_NAME: 0,
+    EMAIL: 1,
+  },
+  AppleAuthenticationButtonType: {
+    SIGN_IN: 0,
+    SIGN_UP: 1,
+  },
+  AppleAuthenticationButtonStyle: {
+    WHITE: 0,
+    BLACK: 1,
+  },
+  AppleAuthenticationButton: 'AppleAuthenticationButton',
+}));
+
 // Mock expo-router
 jest.mock('expo-router', () => ({
   useRouter: jest.fn(() => ({
@@ -111,6 +214,10 @@ jest.mock('lucide-react-native', () => ({
   Info: 'Info',
   X: 'X',
   Check: 'Check',
+  Lock: 'Lock',
+  LogOut: 'LogOut',
+  User: 'User',
+  PenTool: 'PenTool',
 }));
 
 // Mock TextEncoder/TextDecoder for encryption tests

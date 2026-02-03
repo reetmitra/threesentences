@@ -4,13 +4,14 @@
  * Introduces the 363 philosophy before first use.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   Dimensions,
   FlatList,
   ViewToken,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -65,28 +66,61 @@ const SLIDES: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const activeColors = colors.dark;
-  
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const isLastSlide = currentIndex === SLIDES.length - 1;
+  // Auto-rotation logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
 
-  const handleNext = async () => {
-    if (isLastSlide) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await completeOnboarding();
-      router.replace('/(tabs)');
-    } else {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
+    if (isAutoPlaying) {
+      interval = setInterval(() => {
+        if (currentIndex < SLIDES.length - 1) {
+          flatListRef.current?.scrollToIndex({
+            index: currentIndex + 1,
+            animated: true,
+          });
+        } else {
+          // Loop back to start? Or stop? 
+          // Usually auto-rotation loops.
+          flatListRef.current?.scrollToIndex({
+            index: 0,
+            animated: true,
+          });
+        }
+      }, 4000); // 4 seconds per slide
     }
+
+    return () => clearInterval(interval);
+  }, [currentIndex, isAutoPlaying]);
+
+  const handleGetStarted = async () => {
+    await completeOnboarding();
+    router.replace('/(auth)/signup');
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const handleSkip = async () => {
-    await completeOnboarding();
-    router.replace('/(tabs)');
+  const handleScrollBegin = () => {
+    setIsAutoPlaying(false);
+  };
+
+  const handleScrollEnd = () => {
+    // Optionally resume auto-play after a delay? 
+    // Or just keep it paused if user interacted.
+    // Let's keep it paused to not annoy user.
+    // Or resume after 5 seconds of inactivity.
+    // For simplicity, let's keep it paused if user swipes manually.
+    setIsAutoPlaying(false);
+  };
+
+  const handleDotPress = (index: number) => {
+    setIsAutoPlaying(false);
+    flatListRef.current?.scrollToIndex({
+      index,
+      animated: true,
+    });
   };
 
   const onViewableItemsChanged = useRef(
@@ -129,19 +163,24 @@ export default function OnboardingScreen() {
   const renderPagination = () => (
     <View style={styles.pagination}>
       {SLIDES.map((_, index) => (
-        <View
+        <TouchableOpacity
           key={index}
-          style={[
-            styles.dot,
-            {
-              backgroundColor:
-                index === currentIndex
-                  ? activeColors.accent
-                  : activeColors.surfaceHover,
-            },
-            index === currentIndex && styles.dotActive,
-          ]}
-        />
+          onPress={() => handleDotPress(index)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <View
+            style={[
+              styles.dot,
+              {
+                backgroundColor:
+                  index === currentIndex
+                    ? activeColors.accent
+                    : activeColors.surfaceHover,
+              },
+              index === currentIndex && styles.dotActive,
+            ]}
+          />
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -151,18 +190,6 @@ export default function OnboardingScreen() {
       style={[styles.container, { backgroundColor: activeColors.background }]}
       edges={['top', 'bottom']}
     >
-      {/* Skip button */}
-      {!isLastSlide && (
-        <View style={styles.skipContainer}>
-          <Button
-            title="Skip"
-            variant="ghost"
-            onPress={handleSkip}
-          />
-        </View>
-      )}
-
-      {/* Slides */}
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -174,14 +201,16 @@ export default function OnboardingScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
         bounces={false}
+        onScrollBeginDrag={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
       />
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
         {renderPagination()}
         <Button
-          title={isLastSlide ? 'Get Started' : 'Continue'}
-          onPress={handleNext}
+          title="Get Started"
+          onPress={handleGetStarted}
           style={styles.nextButton}
         />
       </View>
@@ -193,12 +222,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  skipContainer: {
-    position: 'absolute',
-    top: spacing[2],
-    right: spacing[4],
-    zIndex: 10,
-  },
+  // skipContainer removed
   slide: {
     flex: 1,
     justifyContent: 'center',
@@ -235,7 +259,7 @@ const styles = StyleSheet.create({
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: spacing[4],
+    marginBottom: spacing[6], // Increased spacing for clear separation
   },
   dot: {
     width: 8,

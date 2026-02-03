@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
 import {
   Download,
   Trash2,
@@ -23,6 +24,8 @@ import {
   ChevronRight,
   Sparkles,
   Lock,
+  LogOut,
+  User,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
@@ -36,6 +39,7 @@ import {
   updatePreferences,
 } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
+import { getCurrentUser, signOut, User as AuthUser } from '@/store/auth';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -109,6 +113,7 @@ export default function SettingsScreen() {
   const [reflectionCount, setReflectionCount] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   const loadData = useCallback(async () => {
     const [count, refCount, prefs] = await Promise.all([
@@ -119,7 +124,27 @@ export default function SettingsScreen() {
     setEntryCount(count);
     setReflectionCount(refCount);
     setAiEnabled(prefs.aiReflectionEnabled);
+    setCurrentUser(getCurrentUser());
   }, []);
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            await signOut();
+            router.replace('/(auth)/login');
+          },
+        },
+      ]
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -251,6 +276,28 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+            ACCOUNT
+          </Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<User size={22} color={activeColors.textPrimary} />}
+              title={currentUser?.name || currentUser?.email || 'Not signed in'}
+              subtitle={currentUser?.name ? currentUser.email : undefined}
+              showChevron={false}
+            />
+            <SettingsRow
+              icon={<LogOut size={22} color={activeColors.error} />}
+              title="Sign Out"
+              onPress={handleSignOut}
+              destructive
+              showChevron={false}
+            />
+          </View>
+        </View>
+
         {/* AI Reflection Section */}
         <View style={styles.section}>
           <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
@@ -339,6 +386,7 @@ export default function SettingsScreen() {
             />
           </View>
         </View>
+
 
         {/* Footer */}
         <View style={styles.footer}>
