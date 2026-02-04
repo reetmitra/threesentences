@@ -7,11 +7,13 @@ export default function AuthLayout() {
             screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: colors.dark.background },
-                animation: 'fade',
+                animation: 'slide_from_right',
             }}
         >
-            <Stack.Screen name="login" />
-            <Stack.Screen name="signup" />
+            <Stack.Screen name="login" options={{ animation: 'fade' }} />
+            <Stack.Screen name="signup" options={{ animation: 'fade' }} />
+            <Stack.Screen name="interests" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="profile-setup" options={{ animation: 'slide_from_right' }} />
         </Stack>
     );
 }

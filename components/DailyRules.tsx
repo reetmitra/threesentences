@@ -61,10 +61,6 @@ export function DailyRules() {
                     </View>
                 ))}
             </View>
-
-            <Text variant="xs" color="tertiary" style={styles.footer}>
-                BY @363v1
-            </Text>
         </Animated.View>
     );
 }
@@ -97,7 +93,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing[2],
     },
     item: {
-        width: '48%', // Two columns
+        width: '48%',
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: spacing[4],
@@ -109,10 +105,5 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
         textTransform: 'uppercase',
     },
-    footer: {
-        textAlign: 'center',
-        marginTop: spacing[6],
-        letterSpacing: 2,
-        opacity: 0.5,
-    },
 });
+

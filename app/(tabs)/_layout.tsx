@@ -1,14 +1,14 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Tab Layout
  * 
- * Four tabs: Today, History, Reflect (AI), Settings
+ * Five tabs: Today, History, Social, Guide, Settings
  * Dark-only UI with white accents.
  */
 
 import { View, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
-import { PenTool, Calendar, Settings, Sparkles, Compass } from 'lucide-react-native';
+import { PenTool, Calendar, Settings, Compass, Users } from 'lucide-react-native';
 
 export default function TabLayout() {
   const activeColors = colors.dark;
@@ -19,15 +19,15 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: activeColors.background, // Match screen background for seamless flow
-            borderTopWidth: 0, // Remove top border separator
-            elevation: 0, // Remove shadow on Android
+            backgroundColor: activeColors.background,
+            borderTopWidth: 0,
+            elevation: 0,
             paddingTop: 8,
             paddingBottom: 8,
             height: 64,
           },
-          tabBarActiveTintColor: '#FFFFFF', // Pure White for active
-          tabBarInactiveTintColor: '#888888', // Off-white/Gray for inactive
+          tabBarActiveTintColor: '#FFFFFF',
+          tabBarInactiveTintColor: '#888888',
           tabBarShowLabel: false,
         }}
       >
@@ -52,6 +52,16 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="social"
+          options={{
+            title: 'Social',
+            tabBarIcon: ({ color }) => (
+              <Users color={color} size={24} strokeWidth={1.5} />
+            ),
+            tabBarAccessibilityLabel: 'Social tab - friends and chat',
+          }}
+        />
+        <Tabs.Screen
           name="guide"
           options={{
             title: 'Guide',
@@ -62,16 +72,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="reflect"
-          options={{
-            title: 'Reflect',
-            tabBarIcon: ({ color }) => (
-              <Sparkles color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'Reflect tab - AI-powered insights',
-          }}
-        />
-        <Tabs.Screen
           name="settings"
           options={{
             title: 'Settings',
@@ -79,6 +79,35 @@ export default function TabLayout() {
               <Settings color={color} size={24} strokeWidth={1.5} />
             ),
             tabBarAccessibilityLabel: 'Settings tab - export data and preferences',
+          }}
+        />
+        {/* Hidden screens - accessed via navigation */}
+        <Tabs.Screen
+          name="profile"
+          options={{
+            href: null,
+            title: 'Profile',
+          }}
+        />
+        <Tabs.Screen
+          name="reflect"
+          options={{
+            href: null,
+            title: 'Reflect',
+          }}
+        />
+        <Tabs.Screen
+          name="conversations"
+          options={{
+            href: null,
+            title: 'Messages',
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            href: null,
+            title: 'Chat',
           }}
         />
       </Tabs>
@@ -92,11 +121,11 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000', // Ensure background prevents white flashes
+    backgroundColor: '#000000',
   },
   brandingContainer: {
     position: 'absolute',
-    bottom: 64, // Just above the tab bar height (64)
+    bottom: 64,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -105,9 +134,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   brandingText: {
-    color: '#333333', // Very dark gray for subtle visibility
+    color: '#333333',
     fontSize: 10,
     fontWeight: '500',
     letterSpacing: 1,
   },
 });
+

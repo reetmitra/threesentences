@@ -161,6 +161,31 @@ jest.mock('@/config/firebase', () => ({
   isConfigured: true,
 }));
 
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
+  requestMediaLibraryPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted' })
+  ),
+  launchCameraAsync: jest.fn(() =>
+    Promise.resolve({
+      canceled: false,
+      assets: [{ uri: 'file://mock-camera-image.jpg' }],
+    })
+  ),
+  launchImageLibraryAsync: jest.fn(() =>
+    Promise.resolve({
+      canceled: false,
+      assets: [{ uri: 'file://mock-library-image.jpg' }],
+    })
+  ),
+  MediaTypeOptions: {
+    Images: 'Images',
+  },
+}));
+
 // Mock expo-apple-authentication
 jest.mock('expo-apple-authentication', () => ({
   signInAsync: jest.fn(() => Promise.resolve({
@@ -218,7 +243,83 @@ jest.mock('lucide-react-native', () => ({
   LogOut: 'LogOut',
   User: 'User',
   PenTool: 'PenTool',
+  // New icons for profile/community features
+  ArrowLeft: 'ArrowLeft',
+  Plus: 'Plus',
+  Edit3: 'Edit3',
+  Hash: 'Hash',
+  Heart: 'Heart',
+  Brain: 'Brain',
+  Dumbbell: 'Dumbbell',
+  Palette: 'Palette',
+  Target: 'Target',
+  Briefcase: 'Briefcase',
+  TrendingUp: 'TrendingUp',
+  Activity: 'Activity',
+  BookOpen: 'BookOpen',
+  Sun: 'Sun',
+  Compass: 'Compass',
+  Users: 'Users',
+  Camera: 'Camera',
+  ImageIcon: 'ImageIcon',
 }));
+
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+  const View = require('react-native').View;
+  const Text = require('react-native').Text;
+  const Pressable = require('react-native').Pressable;
+
+  return {
+    default: {
+      createAnimatedComponent: (component) => component,
+      addWhitelistedUIProps: () => {},
+      addWhitelistedNativeProps: () => {},
+    },
+    useSharedValue: jest.fn((initialValue) => ({ value: initialValue })),
+    useAnimatedStyle: jest.fn(() => ({})),
+    withSpring: jest.fn((value) => value),
+    withTiming: jest.fn((value) => value),
+    withDelay: jest.fn((delay, value) => value),
+    withSequence: jest.fn((...values) => values[0]),
+    interpolate: jest.fn((value, inputRange, outputRange) => outputRange[0]),
+    interpolateColor: jest.fn((value, inputRange, outputRange) => outputRange[0]),
+    Easing: {
+      linear: jest.fn(),
+      ease: jest.fn(),
+      quad: jest.fn(),
+      cubic: jest.fn(),
+      poly: jest.fn(),
+      sin: jest.fn(),
+      circle: jest.fn(),
+      exp: jest.fn(),
+      elastic: jest.fn(),
+      back: jest.fn(),
+      bounce: jest.fn(),
+      bezier: jest.fn(() => jest.fn()),
+      in: jest.fn((easing) => easing),
+      out: jest.fn((easing) => easing),
+      inOut: jest.fn((easing) => easing),
+    },
+    FadeIn: { delay: jest.fn(() => ({ duration: jest.fn(() => ({})) })), duration: jest.fn(() => ({})) },
+    FadeInDown: { delay: jest.fn(() => ({ duration: jest.fn(() => ({})) })), duration: jest.fn(() => ({})) },
+    SlideInUp: { delay: jest.fn(() => ({ duration: jest.fn(() => ({})) })), duration: jest.fn(() => ({})) },
+    SlideInRight: { delay: jest.fn(() => ({ duration: jest.fn(() => ({})) })), duration: jest.fn(() => ({})) },
+    Layout: { springify: jest.fn(() => ({})) },
+    createAnimatedComponent: (component) => component,
+  };
+});
+
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const View = require('react-native').View;
+  return {
+    SafeAreaView: ({ children, ...props }) => React.createElement(View, props, children),
+    SafeAreaProvider: ({ children }) => children,
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  };
+});
 
 // Mock TextEncoder/TextDecoder for encryption tests
 if (typeof global.TextEncoder === 'undefined') {

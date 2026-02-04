@@ -26,6 +26,7 @@ import {
   Lock,
   LogOut,
   User,
+  Edit3,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
@@ -40,6 +41,7 @@ import {
 } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getCurrentUser, signOut, User as AuthUser } from '@/store/auth';
+import { getProfile } from '@/store/profile';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -114,6 +116,7 @@ export default function SettingsScreen() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name?: string } | null>(null);
 
   const loadData = useCallback(async () => {
     const [count, refCount, prefs] = await Promise.all([
@@ -124,7 +127,12 @@ export default function SettingsScreen() {
     setEntryCount(count);
     setReflectionCount(refCount);
     setAiEnabled(prefs.aiReflectionEnabled);
-    setCurrentUser(getCurrentUser());
+    const user = getCurrentUser();
+    setCurrentUser(user);
+    if (user) {
+      const profile = await getProfile(user.id);
+      setUserProfile(profile);
+    }
   }, []);
 
   const handleSignOut = () => {
@@ -173,7 +181,7 @@ export default function SettingsScreen() {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const data = await exportEntries(format);
-      
+
       await Share.share({
         message: data,
         title: `three-sentences-export.${format === 'json' ? 'json' : 'txt'}`,
@@ -284,9 +292,14 @@ export default function SettingsScreen() {
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<User size={22} color={activeColors.textPrimary} />}
-              title={currentUser?.name || currentUser?.email || 'Not signed in'}
-              subtitle={currentUser?.name ? currentUser.email : undefined}
+              title={userProfile?.name || currentUser?.name || currentUser?.email || 'Not signed in'}
+              subtitle={userProfile?.name ? currentUser?.email : undefined}
               showChevron={false}
+            />
+            <SettingsRow
+              icon={<Edit3 size={22} color={activeColors.textPrimary} />}
+              title="Edit Profile"
+              onPress={() => router.push('/(tabs)/profile')}
             />
             <SettingsRow
               icon={<LogOut size={22} color={activeColors.error} />}

@@ -30,11 +30,12 @@ export default function SignupScreen() {
         try {
             setLoading(true);
             await signUp(email, password, name);
-            setLoading(false); // Stop loading spinner so we can just pause
-            // Brief pause before redirecting
-            setTimeout(() => {
-                router.replace('/(tabs)');
-            }, 4000);
+            setLoading(false);
+            // Navigate to interest selection
+            router.push({
+                pathname: '/(auth)/interests',
+                params: { name },
+            });
         } catch (error) {
             setLoading(false);
             Alert.alert('Signup Failed', (error as Error).message);

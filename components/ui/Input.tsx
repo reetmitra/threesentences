@@ -1,10 +1,10 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Input Component
- * 
+ *
  * Styled text input for dark UI.
  */
 
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { TextInput, TextInputProps, StyleSheet, ViewStyle, View, Text } from 'react-native';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
@@ -16,13 +16,10 @@ interface InputProps extends TextInputProps {
   containerStyle?: ViewStyle;
 }
 
-export function Input({
-  style,
-  label,
-  error,
-  containerStyle,
-  ...props
-}: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  { style, label, error, containerStyle, ...props },
+  ref
+) {
   const activeColors = colors.dark; // Always dark mode
 
   return (
@@ -38,6 +35,7 @@ export function Input({
         </Text>
       )}
       <TextInput
+        ref={ref}
         style={[
           styles.input,
           {
@@ -55,7 +53,7 @@ export function Input({
       />
     </View>
   );
-}
+});
 
 
 
