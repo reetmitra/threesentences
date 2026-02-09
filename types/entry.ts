@@ -8,16 +8,16 @@
 export interface Entry {
   /** Unique identifier (UUID v4) */
   id: string;
-  
+
   /** Local date in YYYY-MM-DD format */
   date: string;
-  
+
   /** The three sentences - encrypted at rest */
   content: string;
-  
+
   /** ISO 8601 timestamp of submission */
   submittedAt: string;
-  
+
   /** IANA timezone identifier (e.g., 'America/New_York') */
   timezone: string;
 }
@@ -25,7 +25,10 @@ export interface Entry {
 export interface Draft {
   /** Current draft content (not yet submitted) */
   content: string;
-  
+
+  /** The date this draft is for (YYYY-MM-DD) */
+  date: string;
+
   /** ISO 8601 timestamp of last auto-save */
   lastSaved: string;
 }
@@ -33,7 +36,7 @@ export interface Draft {
 export interface OnboardingState {
   /** Whether user has completed onboarding */
   hasCompleted: boolean;
-  
+
   /** ISO 8601 timestamp of completion */
   completedAt?: string;
 }
@@ -41,7 +44,7 @@ export interface OnboardingState {
 export interface UserPreferences {
   /** AI reflection feature opt-in (default: false) */
   aiReflectionEnabled: boolean;
-  
+
   /** Preferred theme (null = follow system) */
   theme: 'light' | 'dark' | null;
 }

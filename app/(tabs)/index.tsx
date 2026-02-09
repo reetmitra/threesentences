@@ -18,6 +18,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
+import { useAuth } from '@clerk/clerk-expo';
 import { Text } from '@/components/ui/Text';
 import { EntryInput } from '@/components/EntryInput';
 import { SentenceCounter } from '@/components/SentenceCounter';
@@ -32,7 +33,7 @@ import {
   saveDraft,
   getDraft,
 } from '@/store/entries';
-import { Entry } from '@/types/entry';
+import { Entry, getTodayDateString } from '@/types/entry';
 
 const AUTO_SAVE_INTERVAL = 5000;
 
@@ -144,6 +145,7 @@ const AnimatedButton = ({
 
 
 export default function TodayScreen() {
+  const { userId } = useAuth();
   const activeColors = colors.dark;
 
   // State
@@ -163,9 +165,10 @@ export default function TodayScreen() {
 
   // Load existing entry or draft on mount
   const loadData = useCallback(async () => {
+    if (!userId) return;
     setIsLoading(true);
     try {
-      const existing = await getTodayEntry();
+      const existing = await getTodayEntry(userId);
       if (existing) {
         setTodayEntry(existing);
         setContent('');
@@ -181,7 +184,7 @@ export default function TodayScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     loadData();
@@ -203,7 +206,11 @@ export default function TodayScreen() {
 
     autoSaveTimer.current = setTimeout(async () => {
       if (content !== lastSavedContent.current && content.trim()) {
-        await saveDraft(content);
+        await saveDraft({
+          content,
+          date: getTodayDateString(),
+          lastSaved: new Date().toISOString()
+        });
         lastSavedContent.current = content;
       }
     }, AUTO_SAVE_INTERVAL);
@@ -217,13 +224,13 @@ export default function TodayScreen() {
 
   // Handle submission
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || submissionStatus !== 'idle') return;
+    if (!canSubmit || submissionStatus !== 'idle' || !userId) return;
 
     setShowConfirmation(false);
     setSubmissionStatus('submitting');
 
     try {
-      const entry = await saveEntry(content);
+      const entry = await saveEntry(userId, content);
 
       setSubmissionStatus('success');
 
@@ -237,7 +244,7 @@ export default function TodayScreen() {
       console.error('Failed to save entry:', error);
       setSubmissionStatus('idle');
     }
-  }, [content, canSubmit, submissionStatus]);
+  }, [content, canSubmit, submissionStatus, userId]);
 
   // Format today's date
   const formatTodayDate = () => {

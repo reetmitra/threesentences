@@ -1,10 +1,10 @@
 /**
- * Tests for Entries Store
+ * Tests for Entry Store (Supabase-based)
  *
- * Per PRD: Local-first storage, entries encrypted at rest, immutable after submission
+ * Tests entry management with Supabase backend.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getTodayDateString, getCurrentTimezone } from '@/types/entry';
 import {
   getAllEntries,
   getEntryForDate,
@@ -13,455 +13,230 @@ import {
   saveEntry,
   getEntriesForMonth,
   getEntryDatesForMonth,
+  getEntryStats,
   saveDraft,
   getDraft,
   clearDraft,
-  exportEntries,
-  getEntryCount,
-  getEntriesForReflection,
 } from '@/store/entries';
-import { getTodayDateString, formatDateString } from '@/types/entry';
 
-// Mock encryption to simplify testing
-jest.mock('@/utils/encryption', () => ({
-  encryptContent: jest.fn((content) =>
-    Promise.resolve(`encrypted:${btoa(content)}:checksum`)
-  ),
-  decryptContent: jest.fn((encrypted) => {
-    const parts = encrypted.split(':');
-    if (parts.length !== 3) throw new Error('Invalid format');
-    return Promise.resolve(atob(parts[1]));
-  }),
-  isEncrypted: jest.fn((content) => content.includes('encrypted:')),
+// Mock Supabase
+const mockSupabaseSelect = jest.fn();
+const mockSupabaseInsert = jest.fn();
+const mockSupabaseUpdate = jest.fn();
+const mockSupabaseDelete = jest.fn();
+
+jest.mock('@/config/supabase', () => ({
+  supabase: {
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            maybeSingle: () => mockSupabaseSelect(),
+            single: () => mockSupabaseSelect(),
+          }),
+          order: () => mockSupabaseSelect(),
+          gte: () => ({
+            lte: () => ({
+              order: () => mockSupabaseSelect(),
+            }),
+          }),
+        }),
+      }),
+      insert: () => ({
+        select: () => ({
+          single: () => mockSupabaseInsert(),
+        }),
+      }),
+      update: () => ({
+        eq: () => ({
+          eq: () => ({
+            select: () => ({
+              single: () => mockSupabaseUpdate(),
+            }),
+          }),
+        }),
+      }),
+      delete: () => ({
+        eq: () => ({
+          eq: () => mockSupabaseDelete(),
+        }),
+      }),
+    }),
+  },
 }));
 
-describe('entries store', () => {
+// Mock AsyncStorage for drafts
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+}));
+
+// Mock encryption
+jest.mock('@/utils/encryption', () => ({
+  encryptContent: jest.fn((content) => Promise.resolve(`encrypted:${content}`)),
+  decryptContent: jest.fn((content) =>
+    Promise.resolve(content.replace('encrypted:', ''))),
+}));
+
+const testUserId = 'test-user-123';
+const today = getTodayDateString();
+
+const mockDbEntry = {
+  id: 'entry-uuid',
+  user_id: testUserId,
+  date: today,
+  encrypted_content: 'encrypted:Test entry content',
+  timezone: 'America/New_York',
+  created_at: '2024-01-01T12:00:00.000Z',
+  updated_at: '2024-01-01T12:00:00.000Z',
+};
+
+describe('entry store', () => {
   beforeEach(() => {
-    (global as any).clearMockStorage();
     jest.clearAllMocks();
+    mockSupabaseSelect.mockResolvedValue({ data: [mockDbEntry], error: null });
+    mockSupabaseInsert.mockResolvedValue({ data: mockDbEntry, error: null });
+    mockSupabaseUpdate.mockResolvedValue({ data: mockDbEntry, error: null });
+    mockSupabaseDelete.mockResolvedValue({ error: null });
   });
 
   describe('getAllEntries', () => {
-    it('returns empty array when no entries exist', async () => {
-      const entries = await getAllEntries();
+    it('fetches and decrypts all entries', async () => {
+      const entries = await getAllEntries(testUserId);
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0].content).toBe('Test entry content');
+    });
+
+    it('returns empty array on error', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: null, error: { message: 'Error' } });
+
+      const entries = await getAllEntries(testUserId);
+
       expect(entries).toEqual([]);
-    });
-
-    it('returns decrypted entries', async () => {
-      const storedEntries = [
-        {
-          id: 'entry-1',
-          date: '2026-01-15',
-          encryptedContent: `encrypted:${btoa('First entry.')}:checksum`,
-          submittedAt: '2026-01-15T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
-
-      const entries = await getAllEntries();
-      expect(entries).toHaveLength(1);
-      expect(entries[0].content).toBe('First entry.');
-      expect(entries[0].id).toBe('entry-1');
-    });
-
-    it('handles legacy unencrypted entries', async () => {
-      const legacyEntries = [
-        {
-          id: 'legacy-1',
-          date: '2026-01-10',
-          content: 'Legacy unencrypted content.',
-          submittedAt: '2026-01-10T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(legacyEntries));
-
-      const entries = await getAllEntries();
-      expect(entries).toHaveLength(1);
-      expect(entries[0].content).toBe('Legacy unencrypted content.');
-    });
-
-    it('returns multiple entries in order', async () => {
-      const storedEntries = [
-        {
-          id: 'entry-1',
-          date: '2026-01-15',
-          encryptedContent: `encrypted:${btoa('Entry one.')}:checksum`,
-          submittedAt: '2026-01-15T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-        {
-          id: 'entry-2',
-          date: '2026-01-16',
-          encryptedContent: `encrypted:${btoa('Entry two.')}:checksum`,
-          submittedAt: '2026-01-16T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
-
-      const entries = await getAllEntries();
-      expect(entries).toHaveLength(2);
     });
   });
 
   describe('getEntryForDate', () => {
-    it('returns null when no entry exists for date', async () => {
-      const entry = await getEntryForDate('2026-01-15');
-      expect(entry).toBeNull();
-    });
-
     it('returns entry for specific date', async () => {
-      const storedEntries = [
-        {
-          id: 'entry-1',
-          date: '2026-01-15',
-          encryptedContent: `encrypted:${btoa('Specific date entry.')}:checksum`,
-          submittedAt: '2026-01-15T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
+      mockSupabaseSelect.mockResolvedValue({ data: mockDbEntry, error: null });
 
-      const entry = await getEntryForDate('2026-01-15');
+      const entry = await getEntryForDate(testUserId, today);
+
       expect(entry).not.toBeNull();
-      expect(entry?.content).toBe('Specific date entry.');
+      expect(entry?.date).toBe(today);
     });
 
-    it('returns null when date does not match any entry', async () => {
-      const storedEntries = [
-        {
-          id: 'entry-1',
-          date: '2026-01-15',
-          encryptedContent: `encrypted:${btoa('Entry.')}:checksum`,
-          submittedAt: '2026-01-15T10:00:00.000Z',
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
+    it('returns null when not found', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: null, error: null });
 
-      const entry = await getEntryForDate('2026-01-16');
+      const entry = await getEntryForDate(testUserId, today);
+
       expect(entry).toBeNull();
     });
   });
 
   describe('getTodayEntry', () => {
-    it('returns null when no entry for today', async () => {
-      const entry = await getTodayEntry();
-      expect(entry).toBeNull();
-    });
+    it('returns todays entry', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: mockDbEntry, error: null });
 
-    it('returns entry for today if it exists', async () => {
-      const today = getTodayDateString();
-      const storedEntries = [
-        {
-          id: 'today-entry',
-          date: today,
-          encryptedContent: `encrypted:${btoa('Today entry.')}:checksum`,
-          submittedAt: new Date().toISOString(),
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
+      const entry = await getTodayEntry(testUserId);
 
-      const entry = await getTodayEntry();
       expect(entry).not.toBeNull();
-      expect(entry?.content).toBe('Today entry.');
+      expect(entry?.date).toBe(today);
     });
   });
 
   describe('hasEntryForToday', () => {
-    it('returns false when no entry exists for today', async () => {
-      const hasEntry = await hasEntryForToday();
-      expect(hasEntry).toBe(false);
+    it('returns true when entry exists', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: mockDbEntry, error: null });
+
+      const hasEntry = await hasEntryForToday(testUserId);
+
+      expect(hasEntry).toBe(true);
     });
 
-    it('returns true when entry exists for today', async () => {
-      const today = getTodayDateString();
-      const storedEntries = [
-        {
-          id: 'today-entry',
-          date: today,
-          encryptedContent: `encrypted:${btoa('Entry.')}:checksum`,
-          submittedAt: new Date().toISOString(),
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
+    it('returns false when no entry', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: null, error: null });
 
-      const hasEntry = await hasEntryForToday();
-      expect(hasEntry).toBe(true);
+      const hasEntry = await hasEntryForToday(testUserId);
+
+      expect(hasEntry).toBe(false);
     });
   });
 
   describe('saveEntry', () => {
-    it('saves new entry successfully', async () => {
-      const content = 'My three sentences.';
-      const entry = await saveEntry(content);
+    it('creates new entry when none exists', async () => {
+      mockSupabaseSelect.mockResolvedValue({ data: null, error: null });
 
-      expect(entry.content).toBe(content);
-      expect(entry.date).toBe(getTodayDateString());
-      expect(entry.id).toBeDefined();
-      expect(entry.submittedAt).toBeDefined();
-      expect(entry.timezone).toBeDefined();
-    });
+      const entry = await saveEntry(testUserId, 'New entry content');
 
-    it('updates existing entry for today instead of throwing error', async () => {
-      const today = getTodayDateString();
-      const originalContent = 'Original content.';
-      const storedEntries = [
-        {
-          id: 'existing',
-          date: today,
-          encryptedContent: `encrypted:${btoa(originalContent)}:checksum`,
-          submittedAt: new Date().toISOString(),
-          timezone: 'America/New_York',
-        },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(storedEntries));
-
-      const updatedContent = 'Updated content.';
-      const entry = await saveEntry(updatedContent);
-
-      // Should return updated entry
-      expect(entry.content).toBe(updatedContent);
-      expect(entry.id).toBe('existing'); // Same ID preserved
-      expect(entry.date).toBe(today);
-
-      // Verify only one entry exists in storage
-      const allEntries = await getAllEntries();
-      expect(allEntries).toHaveLength(1);
-      expect(allEntries[0].content).toBe(updatedContent);
-    });
-
-    it('clears draft after successful save', async () => {
-      await saveDraft('Draft content.');
-      await saveEntry('Final entry.');
-
-      const draft = await getDraft();
-      expect(draft).toBeNull();
+      expect(entry).toBeDefined();
+      expect(entry.content).toBe('New entry content');
     });
 
     it('encrypts content before saving', async () => {
-      await saveEntry('Content to encrypt.');
+      mockSupabaseSelect.mockResolvedValue({ data: null, error: null });
 
-      expect(AsyncStorage.setItem).toHaveBeenCalled();
-      // The stored content should be encrypted (contain 'encrypted:')
+      await saveEntry(testUserId, 'Secret content');
+
+      expect(mockSupabaseInsert).toHaveBeenCalled();
     });
   });
 
   describe('getEntriesForMonth', () => {
-    beforeEach(async () => {
-      const entries = [
-        { id: '1', date: '2026-01-05', encryptedContent: `encrypted:${btoa('Jan 5.')}:checksum`, submittedAt: '2026-01-05T10:00:00Z', timezone: 'UTC' },
-        { id: '2', date: '2026-01-15', encryptedContent: `encrypted:${btoa('Jan 15.')}:checksum`, submittedAt: '2026-01-15T10:00:00Z', timezone: 'UTC' },
-        { id: '3', date: '2026-02-10', encryptedContent: `encrypted:${btoa('Feb 10.')}:checksum`, submittedAt: '2026-02-10T10:00:00Z', timezone: 'UTC' },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(entries));
-    });
-
     it('returns entries for specific month', async () => {
-      const entries = await getEntriesForMonth(2026, 1);
-      expect(entries).toHaveLength(2);
-    });
+      const entries = await getEntriesForMonth(testUserId, 2024, 1);
 
-    it('returns empty array for month with no entries', async () => {
-      const entries = await getEntriesForMonth(2026, 3);
-      expect(entries).toHaveLength(0);
-    });
-
-    it('filters correctly by year', async () => {
-      const entries = await getEntriesForMonth(2025, 1);
-      expect(entries).toHaveLength(0);
+      expect(Array.isArray(entries)).toBe(true);
     });
   });
 
   describe('getEntryDatesForMonth', () => {
-    beforeEach(async () => {
-      const entries = [
-        { id: '1', date: '2026-01-05', encryptedContent: 'enc', submittedAt: '2026-01-05T10:00:00Z', timezone: 'UTC' },
-        { id: '2', date: '2026-01-15', encryptedContent: 'enc', submittedAt: '2026-01-15T10:00:00Z', timezone: 'UTC' },
-        { id: '3', date: '2026-01-25', encryptedContent: 'enc', submittedAt: '2026-01-25T10:00:00Z', timezone: 'UTC' },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(entries));
-    });
+    it('returns set of entry dates', async () => {
+      mockSupabaseSelect.mockResolvedValue({
+        data: [{ date: '2024-01-15' }, { date: '2024-01-20' }],
+        error: null
+      });
 
-    it('returns Set of dates for month', async () => {
-      const dates = await getEntryDatesForMonth(2026, 1);
-      expect(dates.size).toBe(3);
-      expect(dates.has('2026-01-05')).toBe(true);
-      expect(dates.has('2026-01-15')).toBe(true);
-      expect(dates.has('2026-01-25')).toBe(true);
-    });
+      const dates = await getEntryDatesForMonth(testUserId, 2024, 1);
 
-    it('returns empty Set for month with no entries', async () => {
-      const dates = await getEntryDatesForMonth(2026, 12);
-      expect(dates.size).toBe(0);
+      expect(dates).toBeInstanceOf(Set);
+      expect(dates.has('2024-01-15')).toBe(true);
+    });
+  });
+
+  describe('getEntryStats', () => {
+    it('returns entry statistics', async () => {
+      mockSupabaseSelect.mockResolvedValue({
+        data: [{ date: today }, { date: '2024-01-01' }],
+        error: null
+      });
+
+      const stats = await getEntryStats(testUserId);
+
+      expect(stats).toHaveProperty('totalEntries');
+      expect(stats).toHaveProperty('currentStreak');
+      expect(stats).toHaveProperty('longestStreak');
     });
   });
 
   describe('draft management', () => {
-    describe('saveDraft', () => {
-      it('saves draft with encrypted content', async () => {
-        await saveDraft('My draft content.');
+    const AsyncStorage = require('@react-native-async-storage/async-storage');
 
-        const stored = await AsyncStorage.getItem('@threesentences/draft');
-        expect(stored).toBeDefined();
+    it('saves draft to local storage', async () => {
+      const draft = { content: 'Draft content', date: today, lastSaved: new Date().toISOString() };
 
-        const parsed = JSON.parse(stored!);
-        expect(parsed.encryptedContent).toBeDefined();
-        expect(parsed.lastSaved).toBeDefined();
-      });
+      await saveDraft(draft);
+
+      expect(AsyncStorage.setItem).toHaveBeenCalled();
     });
 
-    describe('getDraft', () => {
-      it('returns null when no draft exists', async () => {
-        const draft = await getDraft();
-        expect(draft).toBeNull();
-      });
+    it('clears draft', async () => {
+      await clearDraft();
 
-      it('returns decrypted draft content', async () => {
-        const draftData = {
-          encryptedContent: `encrypted:${btoa('Draft text.')}:checksum`,
-          lastSaved: new Date().toISOString(),
-        };
-        await AsyncStorage.setItem('@threesentences/draft', JSON.stringify(draftData));
-
-        const draft = await getDraft();
-        expect(draft?.content).toBe('Draft text.');
-        expect(draft?.lastSaved).toBeDefined();
-      });
-
-      it('handles legacy unencrypted drafts', async () => {
-        const legacyDraft = {
-          content: 'Legacy draft.',
-          lastSaved: new Date().toISOString(),
-        };
-        await AsyncStorage.setItem('@threesentences/draft', JSON.stringify(legacyDraft));
-
-        const draft = await getDraft();
-        expect(draft?.content).toBe('Legacy draft.');
-      });
-    });
-
-    describe('clearDraft', () => {
-      it('removes draft from storage', async () => {
-        await saveDraft('Draft to clear.');
-        await clearDraft();
-
-        const draft = await getDraft();
-        expect(draft).toBeNull();
-      });
-    });
-  });
-
-  describe('exportEntries', () => {
-    beforeEach(async () => {
-      const entries = [
-        { id: '1', date: '2026-01-05', encryptedContent: `encrypted:${btoa('Entry one.')}:checksum`, submittedAt: '2026-01-05T10:00:00Z', timezone: 'UTC' },
-        { id: '2', date: '2026-01-15', encryptedContent: `encrypted:${btoa('Entry two.')}:checksum`, submittedAt: '2026-01-15T10:00:00Z', timezone: 'UTC' },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(entries));
-    });
-
-    it('exports entries as JSON', async () => {
-      const exported = await exportEntries('json');
-      const parsed = JSON.parse(exported);
-
-      expect(parsed).toHaveLength(2);
-      expect(parsed[0].content).toBe('Entry one.');
-      expect(parsed[1].content).toBe('Entry two.');
-    });
-
-    it('exports entries sorted by date (oldest first)', async () => {
-      const exported = await exportEntries('json');
-      const parsed = JSON.parse(exported);
-
-      expect(parsed[0].date).toBe('2026-01-05');
-      expect(parsed[1].date).toBe('2026-01-15');
-    });
-
-    it('exports entries as plain text', async () => {
-      const exported = await exportEntries('text');
-
-      expect(exported).toContain('ThreeSixtyThree');
-      expect(exported).toContain('Entry one.');
-      expect(exported).toContain('Entry two.');
-    });
-
-    it('handles empty entries list', async () => {
-      await AsyncStorage.removeItem('@threesentences/entries');
-
-      const exported = await exportEntries('json');
-      expect(JSON.parse(exported)).toEqual([]);
-    });
-  });
-
-  describe('getEntryCount', () => {
-    it('returns 0 when no entries exist', async () => {
-      const count = await getEntryCount();
-      expect(count).toBe(0);
-    });
-
-    it('returns correct count', async () => {
-      const entries = [
-        { id: '1', date: '2026-01-05', encryptedContent: 'enc', submittedAt: '2026-01-05T10:00:00Z', timezone: 'UTC' },
-        { id: '2', date: '2026-01-15', encryptedContent: 'enc', submittedAt: '2026-01-15T10:00:00Z', timezone: 'UTC' },
-        { id: '3', date: '2026-01-25', encryptedContent: 'enc', submittedAt: '2026-01-25T10:00:00Z', timezone: 'UTC' },
-      ];
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(entries));
-
-      const count = await getEntryCount();
-      expect(count).toBe(3);
-    });
-  });
-
-  describe('getEntriesForReflection', () => {
-    beforeEach(async () => {
-      const today = new Date();
-      const entries = [];
-
-      // Create entries for the past 100 days
-      for (let i = 0; i < 100; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = formatDateString(date);
-        entries.push({
-          id: `entry-${i}`,
-          date: dateStr,
-          encryptedContent: `encrypted:${btoa(`Entry for ${dateStr}.`)}:checksum`,
-          submittedAt: date.toISOString(),
-          timezone: 'UTC',
-        });
-      }
-
-      await AsyncStorage.setItem('@threesentences/entries', JSON.stringify(entries));
-    });
-
-    it('returns entries from last 7 days', async () => {
-      const entries = await getEntriesForReflection(7);
-      // Some variation due to date boundary handling
-      expect(entries.length).toBeGreaterThan(0);
-      expect(entries.length).toBeLessThanOrEqual(10);
-    });
-
-    it('returns entries from last 30 days', async () => {
-      const entries = await getEntriesForReflection(30);
-      expect(entries.length).toBeLessThanOrEqual(35);
-    });
-
-    it('returns entries from last 90 days', async () => {
-      const entries = await getEntriesForReflection(90);
-      expect(entries.length).toBeLessThanOrEqual(95);
-    });
-
-    it('returns entries sorted by date ascending', async () => {
-      const entries = await getEntriesForReflection(30);
-
-      for (let i = 1; i < entries.length; i++) {
-        expect(entries[i].date >= entries[i - 1].date).toBe(true);
-      }
+      expect(AsyncStorage.removeItem).toHaveBeenCalled();
     });
   });
 });

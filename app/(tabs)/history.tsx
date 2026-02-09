@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useAuth } from '@clerk/clerk-expo';
 import { Text } from '@/components/ui/Text';
 import { Calendar } from '@/components/Calendar';
 import { EntryCard } from '@/components/EntryCard';
@@ -24,6 +25,7 @@ import { getEntryDatesForMonth, getEntryForDate } from '@/store/entries';
 import { Entry } from '@/types/entry';
 
 export default function HistoryScreen() {
+  const { userId } = useAuth();
   const activeColors = colors.dark;
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
@@ -36,16 +38,17 @@ export default function HistoryScreen() {
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
 
   const loadEntryDates = useCallback(async () => {
+    if (!userId) return;
     setIsLoading(true);
     try {
-      const dates = await getEntryDatesForMonth(year, month);
+      const dates = await getEntryDatesForMonth(userId, year, month);
       setEntryDates(dates);
     } catch (error) {
       console.error('Failed to load entry dates:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [year, month]);
+  }, [userId, year, month]);
 
   useEffect(() => {
     loadEntryDates();
@@ -60,15 +63,16 @@ export default function HistoryScreen() {
   );
 
   const handleSelectDate = useCallback(async (date: string) => {
+    if (!userId) return;
     setSelectedDate(date);
     try {
-      const entry = await getEntryForDate(date);
+      const entry = await getEntryForDate(userId, date);
       setSelectedEntry(entry);
     } catch (error) {
       console.error('Failed to load entry:', error);
       setSelectedEntry(null);
     }
-  }, []);
+  }, [userId]);
 
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));

@@ -120,8 +120,9 @@ export default function SettingsScreen() {
   const [userProfile, setUserProfile] = useState<{ name?: string } | null>(null);
 
   const loadData = useCallback(async () => {
+    if (!userId) return;
     const [count, refCount, prefs] = await Promise.all([
-      getEntryCount(),
+      getEntryCount(userId),
       getReflectionCount(),
       getPreferences(),
     ]);
@@ -177,9 +178,10 @@ export default function SettingsScreen() {
   };
 
   const handleExport = async (format: ExportFormat) => {
+    if (!userId) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const data = await exportEntries(format);
+      const data = await exportEntries(userId, format);
 
       await Share.share({
         message: data,
@@ -196,7 +198,7 @@ export default function SettingsScreen() {
       'Export Entries',
       'Choose your export format',
       [
-        { text: 'Plain Text', onPress: () => handleExport('text') },
+        { text: 'Plain Text', onPress: () => handleExport('txt') },
         { text: 'JSON', onPress: () => handleExport('json') },
         { text: 'Cancel', style: 'cancel' },
       ]

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Sparkles } from 'lucide-react-native';
+import { useAuth } from '@clerk/clerk-expo';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { ReflectionCard } from '@/components/ReflectionCard';
@@ -44,6 +45,7 @@ const TIME_RANGES: TimeRangeOption[] = [
 ];
 
 export default function ReflectScreen() {
+  const { userId } = useAuth();
   const activeColors = colors.dark;
 
   const [isEnabled, setIsEnabled] = useState(false);
@@ -82,12 +84,13 @@ export default function ReflectScreen() {
   );
 
   const handleGenerate = async () => {
+    if (!userId) return;
     setIsGenerating(true);
     setError(null);
     setShowCrisisResources(false);
 
     try {
-      const entries = await getEntriesForReflection(selectedRange);
+      const entries = await getEntriesForReflection(userId, selectedRange);
       const result = await generateReflection(entries, selectedRange);
 
       if (result.crisisDetected) {
