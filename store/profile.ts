@@ -1,43 +1,77 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Profile Store
+ * Three™ - Profile Store
  *
- * Manages user profile data with AsyncStorage.
+ * Manages user profile data with Supabase backend.
  * Handles profile creation, updates, and validation.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updateProfile as updateFirebaseProfile } from 'firebase/auth';
-import { auth } from '@/config/firebase';
+import { supabase } from '@/config/supabase';
 import {
   UserProfile,
   ProfileUpdate,
-  CategoryId,
+  InterestId,
   createDefaultProfile,
   validateProfile,
   validateUsername,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
 
-const STORAGE_KEYS = {
-  PROFILE: '@threesentences/profile',
-  USERNAME_CHECK: '@threesentences/usernames', // For local username tracking
-} as const;
+/**
+ * Database profile row type
+ */
+interface DbProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  username: string;
+  age: number | null;
+  bio: string | null;
+  profile_image: string | null;
+  interests: string[];
+  is_complete: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Convert database profile to app UserProfile type
+ */
+function mapToUserProfile(dbProfile: DbProfile): UserProfile {
+  return {
+    userId: dbProfile.user_id,
+    name: dbProfile.name,
+    username: dbProfile.username,
+    age: dbProfile.age ?? undefined,
+    bio: dbProfile.bio ?? undefined,
+    profileImage: dbProfile.profile_image ?? undefined,
+    interests: dbProfile.interests as InterestId[],
+    createdAt: dbProfile.created_at,
+    updatedAt: dbProfile.updated_at,
+    isComplete: dbProfile.is_complete,
+  };
+}
 
 /**
  * Get the current user's profile
  */
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE);
-    if (!data) return null;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-    const profile = JSON.parse(data) as UserProfile;
-    // Verify this profile belongs to the current user
-    if (profile.userId !== userId) {
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - profile doesn't exist
+        return null;
+      }
+      console.error('Failed to get profile:', error);
       return null;
     }
 
-    return profile;
+    return data ? mapToUserProfile(data as DbProfile) : null;
   } catch (error) {
     console.error('Failed to get profile:', error);
     return null;
@@ -51,9 +85,39 @@ export async function createProfile(
   userId: string,
   name?: string
 ): Promise<UserProfile> {
+  // Check if profile already exists
+  const existing = await getProfile(userId);
+  if (existing) {
+    return existing;
+  }
+
   const profile = createDefaultProfile(userId, name);
-  await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
-  return profile;
+
+  const insertData = {
+    user_id: profile.userId,
+    name: profile.name,
+    username: profile.username,
+    age: profile.age ?? null,
+    bio: profile.bio ?? null,
+    profile_image: profile.profileImage ?? null,
+    interests: profile.interests,
+    is_complete: profile.isComplete,
+    created_at: profile.createdAt,
+    updated_at: profile.updatedAt,
+  };
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to create profile:', error);
+    throw new Error('Failed to create profile');
+  }
+
+  return mapToUserProfile(data as DbProfile);
 }
 
 /**
@@ -63,13 +127,16 @@ export async function updateProfile(
   userId: string,
   updates: ProfileUpdate
 ): Promise<UserProfile> {
-  let profile = await getProfile(userId);
+  const profile = await getProfile(userId);
 
   if (!profile) {
-    profile = createDefaultProfile(userId);
+    // Create profile if it doesn't exist
+    const newProfile = createDefaultProfile(userId);
+    const merged = { ...newProfile, ...updates };
+    return createProfile(userId, merged.name);
   }
 
-  // Apply updates
+  // Apply updates for validation
   const updatedProfile: UserProfile = {
     ...profile,
     ...updates,
@@ -85,22 +152,31 @@ export async function updateProfile(
     throw new Error(firstError || 'Invalid profile data');
   }
 
-  // Save to AsyncStorage
-  await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updatedProfile));
+  // Build update data object with only changed fields
+  const updateData: Record<string, unknown> = {
+    name: updatedProfile.name,
+    username: updatedProfile.username,
+    age: updatedProfile.age ?? null,
+    bio: updatedProfile.bio ?? null,
+    profile_image: updatedProfile.profileImage ?? null,
+    interests: updatedProfile.interests,
+    is_complete: updatedProfile.isComplete,
+    updated_at: updatedProfile.updatedAt,
+  };
 
-  // Sync name to Firebase Auth if it changed
-  if (updates.name && auth.currentUser) {
-    try {
-      await updateFirebaseProfile(auth.currentUser, {
-        displayName: updates.name,
-      });
-    } catch (error) {
-      console.error('Failed to sync name to Firebase:', error);
-      // Don't throw - local profile is still saved
-    }
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('user_id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to update profile:', error);
+    throw new Error('Failed to update profile');
   }
 
-  return updatedProfile;
+  return mapToUserProfile(data as DbProfile);
 }
 
 /**
@@ -108,88 +184,13 @@ export async function updateProfile(
  */
 export async function saveInterests(
   userId: string,
-  interests: CategoryId[]
+  interests: InterestId[]
 ): Promise<UserProfile> {
-  let profile = await getProfile(userId);
-
-  if (!profile) {
-    profile = createDefaultProfile(userId);
-  }
-
-  const updatedProfile: UserProfile = {
-    ...profile,
-    interests,
-    updatedAt: new Date().toISOString(),
-  };
-
-  await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updatedProfile));
-  return updatedProfile;
+  return updateProfile(userId, { interests });
 }
 
 /**
- * Update hobbies (max 5)
- */
-export async function updateHobbies(
-  userId: string,
-  hobbies: string[]
-): Promise<UserProfile> {
-  if (hobbies.length > PROFILE_CONSTRAINTS.hobbies.maxCount) {
-    throw new Error(`Maximum ${PROFILE_CONSTRAINTS.hobbies.maxCount} hobbies allowed`);
-  }
-
-  // Filter out empty hobbies and trim
-  const cleanedHobbies = hobbies
-    .map(h => h.trim())
-    .filter(h => h.length > 0);
-
-  return updateProfile(userId, { hobbies: cleanedHobbies });
-}
-
-/**
- * Add a single hobby
- */
-export async function addHobby(userId: string, hobby: string): Promise<UserProfile> {
-  const profile = await getProfile(userId);
-  const currentHobbies = profile?.hobbies || [];
-
-  if (currentHobbies.length >= PROFILE_CONSTRAINTS.hobbies.maxCount) {
-    throw new Error(`Maximum ${PROFILE_CONSTRAINTS.hobbies.maxCount} hobbies allowed`);
-  }
-
-  const trimmedHobby = hobby.trim();
-  if (!trimmedHobby) {
-    throw new Error('Hobby cannot be empty');
-  }
-
-  if (trimmedHobby.length > PROFILE_CONSTRAINTS.hobbies.maxLength) {
-    throw new Error(`Hobby must be ${PROFILE_CONSTRAINTS.hobbies.maxLength} characters or less`);
-  }
-
-  // Check for duplicates
-  if (currentHobbies.some(h => h.toLowerCase() === trimmedHobby.toLowerCase())) {
-    throw new Error('This hobby is already added');
-  }
-
-  return updateProfile(userId, { hobbies: [...currentHobbies, trimmedHobby] });
-}
-
-/**
- * Remove a hobby
- */
-export async function removeHobby(userId: string, hobby: string): Promise<UserProfile> {
-  const profile = await getProfile(userId);
-  const currentHobbies = profile?.hobbies || [];
-
-  const updatedHobbies = currentHobbies.filter(
-    h => h.toLowerCase() !== hobby.toLowerCase()
-  );
-
-  return updateProfile(userId, { hobbies: updatedHobbies });
-}
-
-/**
- * Check if a username is available (local check)
- * In a real app, this would check against a backend
+ * Check if a username is available
  */
 export async function isUsernameAvailable(username: string): Promise<boolean> {
   const validation = validateUsername(username);
@@ -197,9 +198,18 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
     return false;
   }
 
-  // For local-first approach, we just check format validity
-  // In production, this would call an API
-  return true;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to check username:', error);
+    return false;
+  }
+
+  return data === null;
 }
 
 /**
@@ -238,8 +248,10 @@ export async function completeProfileSetup(userId: string): Promise<UserProfile>
   if (!profile.username) {
     throw new Error('Username is required to complete profile');
   }
-  if (profile.interests.length === 0) {
-    throw new Error('Please select at least one interest');
+  if (profile.interests.length < PROFILE_CONSTRAINTS.interests.minCount) {
+    throw new Error(
+      `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`
+    );
   }
 
   return updateProfile(userId, { isComplete: true });
@@ -260,7 +272,6 @@ export async function getProfileSummary(userId: string): Promise<{
   name: string;
   username: string;
   interestCount: number;
-  hobbyCount: number;
 } | null> {
   const profile = await getProfile(userId);
   if (!profile) return null;
@@ -269,15 +280,22 @@ export async function getProfileSummary(userId: string): Promise<{
     name: profile.name,
     username: profile.username,
     interestCount: profile.interests.length,
-    hobbyCount: profile.hobbies.length,
   };
 }
 
 /**
  * Delete profile data
  */
-export async function deleteProfile(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEYS.PROFILE);
+export async function deleteProfile(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Failed to delete profile:', error);
+    throw new Error('Failed to delete profile');
+  }
 }
 
 /**
@@ -297,20 +315,7 @@ export async function updateProfileImage(
   userId: string,
   imageUri: string | null
 ): Promise<UserProfile> {
-  let profile = await getProfile(userId);
-
-  if (!profile) {
-    profile = createDefaultProfile(userId);
-  }
-
-  const updatedProfile: UserProfile = {
-    ...profile,
-    profileImage: imageUri || undefined,
-    updatedAt: new Date().toISOString(),
-  };
-
-  await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updatedProfile));
-  return updatedProfile;
+  return updateProfile(userId, { profileImage: imageUri ?? undefined });
 }
 
 /**
@@ -318,4 +323,47 @@ export async function updateProfileImage(
  */
 export async function removeProfileImage(userId: string): Promise<UserProfile> {
   return updateProfileImage(userId, null);
+}
+
+/**
+ * Search profiles by username or name
+ */
+export async function searchProfiles(query: string, limit = 20): Promise<UserProfile[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
+    .eq('is_complete', true)
+    .limit(limit);
+
+  if (error) {
+    console.error('Failed to search profiles:', error);
+    return [];
+  }
+
+  return (data as DbProfile[]).map(mapToUserProfile);
+}
+
+/**
+ * Get profiles by interest for discovery
+ */
+export async function getProfilesByInterest(
+  interest: InterestId,
+  excludeUserId: string,
+  limit = 20
+): Promise<UserProfile[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .contains('interests', [interest])
+    .neq('user_id', excludeUserId)
+    .eq('is_complete', true)
+    .limit(limit);
+
+  if (error) {
+    console.error('Failed to get profiles by interest:', error);
+    return [];
+  }
+
+  return (data as DbProfile[]).map(mapToUserProfile);
 }

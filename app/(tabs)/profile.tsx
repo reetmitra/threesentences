@@ -1,18 +1,17 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Profile Editing Screen
+ * Three™ - Profile Editing Screen
  *
  * Allows users to view and edit their complete profile.
  * Accessible from the Settings screen.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TextInput,
   Alert,
   Pressable,
   Image,
@@ -25,38 +24,36 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withSequence,
   FadeIn,
   FadeInDown,
-  Layout,
   SlideInRight,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import {
   ArrowLeft,
-  Check,
-  Plus,
   Edit3,
   User,
   Hash,
   Calendar,
-  Heart,
   Sparkles,
   Camera,
   ImageIcon,
   Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { CategoryChip, HobbyChip } from '@/components/CategoryChip';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import {
   UserProfile,
   INTEREST_CATEGORIES,
-  CategoryId,
+  INTEREST_GROUPS,
+  InterestId,
+  InterestCategoryGroup,
   validateUsername,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
@@ -79,13 +76,12 @@ export default function ProfileScreen() {
   const [age, setAge] = useState('');
   const [ageError, setAgeError] = useState<string | undefined>();
   const [bio, setBio] = useState('');
-  const [selectedInterests, setSelectedInterests] = useState<CategoryId[]>([]);
-  const [hobbies, setHobbies] = useState<string[]>([]);
-  const [newHobby, setNewHobby] = useState('');
+  const [selectedInterests, setSelectedInterests] = useState<InterestId[]>([]);
   const [profileImage, setProfileImage] = useState<string | undefined>();
   const [showImageOptions, setShowImageOptions] = useState(false);
-
-  const hobbyInputRef = useRef<TextInput>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<InterestCategoryGroup>>(
+    new Set()
+  );
 
   // Animations
   const saveButtonScale = useSharedValue(1);
@@ -112,7 +108,6 @@ export default function ProfileScreen() {
         setAge(userProfile.age?.toString() || '');
         setBio(userProfile.bio || '');
         setSelectedInterests(userProfile.interests);
-        setHobbies(userProfile.hobbies);
         setProfileImage(userProfile.profileImage);
       }
     } catch (error) {
@@ -152,47 +147,36 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleToggleInterest = useCallback((id: string) => {
+  const handleToggleInterest = useCallback((id: InterestId) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedInterests((prev) => {
-      if (prev.includes(id as CategoryId)) {
-        // Don't allow removing last interest
-        if (prev.length === 1) {
+      if (prev.includes(id)) {
+        // Don't allow going below minimum
+        if (prev.length <= PROFILE_CONSTRAINTS.interests.minCount) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           return prev;
         }
         return prev.filter((i) => i !== id);
       }
-      return [...prev, id as CategoryId];
+      if (prev.length >= PROFILE_CONSTRAINTS.interests.maxCount) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return prev;
+      }
+      return [...prev, id];
     });
   }, []);
 
-  const handleAddHobby = useCallback(() => {
-    const trimmed = newHobby.trim();
-    if (!trimmed) return;
-
-    if (hobbies.length >= PROFILE_CONSTRAINTS.hobbies.maxCount) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-
-    if (trimmed.length > PROFILE_CONSTRAINTS.hobbies.maxLength) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-
-    if (hobbies.some((h) => h.toLowerCase() === trimmed.toLowerCase())) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-
+  const handleToggleGroup = useCallback((group: InterestCategoryGroup) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHobbies((prev) => [...prev, trimmed]);
-    setNewHobby('');
-    hobbyInputRef.current?.focus();
-  }, [newHobby, hobbies]);
-
-  const handleRemoveHobby = useCallback((hobby: string) => {
-    setHobbies((prev) => prev.filter((h) => h !== hobby));
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
   }, []);
 
   const handleAvatarPress = () => {
@@ -333,7 +317,6 @@ export default function ProfileScreen() {
         setAge(profile.age?.toString() || '');
         setBio(profile.bio || '');
         setSelectedInterests(profile.interests);
-        setHobbies(profile.hobbies);
       }
       setUsernameError(undefined);
       setAgeError(undefined);
@@ -356,8 +339,11 @@ export default function ProfileScreen() {
       return;
     }
 
-    if (selectedInterests.length === 0) {
-      Alert.alert('Error', 'Please select at least one interest');
+    if (selectedInterests.length < PROFILE_CONSTRAINTS.interests.minCount) {
+      Alert.alert(
+        'Error',
+        `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`
+      );
       return;
     }
 
@@ -374,7 +360,6 @@ export default function ProfileScreen() {
         age: age ? parseInt(age, 10) : undefined,
         bio: bio.trim() || undefined,
         interests: selectedInterests,
-        hobbies,
       });
 
       setProfile(updatedProfile);
@@ -397,6 +382,26 @@ export default function ProfileScreen() {
   const saveButtonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: saveButtonScale.value }],
   }));
+
+  // Get interests for a specific group
+  const getInterestsForGroup = (group: InterestCategoryGroup) => {
+    return INTEREST_CATEGORIES.filter((i) => i.group === group);
+  };
+
+  // Count selected in a group
+  const getSelectedCountForGroup = (group: InterestCategoryGroup) => {
+    return selectedInterests.filter(
+      (id) => INTEREST_CATEGORIES.find((i) => i.id === id)?.group === group
+    ).length;
+  };
+
+  // Get selected interests formatted for display
+  const getSelectedInterestsDisplay = () => {
+    return selectedInterests
+      .map((id) => INTEREST_CATEGORIES.find((i) => i.id === id)?.label)
+      .filter(Boolean)
+      .join(', ');
+  };
 
   if (loading) {
     return (
@@ -463,17 +468,20 @@ export default function ProfileScreen() {
               ]}
             >
               {profileImage ? (
-                <Image
-                  source={{ uri: profileImage }}
-                  style={styles.avatarImage}
-                />
+                <Image source={{ uri: profileImage }} style={styles.avatarImage} />
               ) : (
-                <Text variant="3xl" weight="bold" style={{ color: activeColors.accent }}>
+                <Text
+                  variant="3xl"
+                  weight="bold"
+                  style={{ color: activeColors.accent }}
+                >
                   {name.charAt(0).toUpperCase() || '?'}
                 </Text>
               )}
               {/* Camera overlay */}
-              <View style={[styles.avatarOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+              <View
+                style={[styles.avatarOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
+              >
                 <Camera size={20} color="#FFFFFF" strokeWidth={2} />
               </View>
             </Pressable>
@@ -483,10 +491,18 @@ export default function ProfileScreen() {
           </Animated.View>
 
           {/* Name Section */}
-          <Animated.View entering={FadeIn.delay(100).duration(300)} style={styles.section}>
+          <Animated.View
+            entering={FadeIn.delay(100).duration(300)}
+            style={styles.section}
+          >
             <View style={styles.sectionHeader}>
               <User size={16} color={activeColors.textSecondary} />
-              <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+              <Text
+                variant="sm"
+                color="secondary"
+                weight="medium"
+                style={styles.sectionTitle}
+              >
                 NAME
               </Text>
             </View>
@@ -505,10 +521,18 @@ export default function ProfileScreen() {
           </Animated.View>
 
           {/* Username Section */}
-          <Animated.View entering={FadeIn.delay(150).duration(300)} style={styles.section}>
+          <Animated.View
+            entering={FadeIn.delay(150).duration(300)}
+            style={styles.section}
+          >
             <View style={styles.sectionHeader}>
               <Hash size={16} color={activeColors.textSecondary} />
-              <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+              <Text
+                variant="sm"
+                color="secondary"
+                weight="medium"
+                style={styles.sectionTitle}
+              >
                 USERNAME
               </Text>
             </View>
@@ -532,7 +556,10 @@ export default function ProfileScreen() {
                   />
                 </View>
                 {usernameError && (
-                  <Text variant="xs" style={[styles.errorText, { color: activeColors.error }]}>
+                  <Text
+                    variant="xs"
+                    style={[styles.errorText, { color: activeColors.error }]}
+                  >
                     {usernameError}
                   </Text>
                 )}
@@ -545,10 +572,18 @@ export default function ProfileScreen() {
           </Animated.View>
 
           {/* Age Section */}
-          <Animated.View entering={FadeIn.delay(200).duration(300)} style={styles.section}>
+          <Animated.View
+            entering={FadeIn.delay(200).duration(300)}
+            style={styles.section}
+          >
             <View style={styles.sectionHeader}>
               <Calendar size={16} color={activeColors.textSecondary} />
-              <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+              <Text
+                variant="sm"
+                color="secondary"
+                weight="medium"
+                style={styles.sectionTitle}
+              >
                 AGE
               </Text>
             </View>
@@ -563,7 +598,10 @@ export default function ProfileScreen() {
                   containerStyle={styles.ageInput}
                 />
                 {ageError && (
-                  <Text variant="xs" style={[styles.errorText, { color: activeColors.error }]}>
+                  <Text
+                    variant="xs"
+                    style={[styles.errorText, { color: activeColors.error }]}
+                  >
                     {ageError}
                   </Text>
                 )}
@@ -576,104 +614,124 @@ export default function ProfileScreen() {
           </Animated.View>
 
           {/* Interests Section */}
-          <Animated.View entering={FadeIn.delay(250).duration(300)} style={styles.section}>
+          <Animated.View
+            entering={FadeIn.delay(250).duration(300)}
+            style={styles.section}
+          >
             <View style={styles.sectionHeader}>
               <Sparkles size={16} color={activeColors.textSecondary} />
-              <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+              <Text
+                variant="sm"
+                color="secondary"
+                weight="medium"
+                style={styles.sectionTitle}
+              >
                 INTERESTS
               </Text>
               <Text variant="xs" color="tertiary" style={styles.sectionCount}>
                 {selectedInterests.length} selected
               </Text>
             </View>
+
             {isEditing ? (
-              <View style={styles.categoriesContainer}>
-                {INTEREST_CATEGORIES.map((category, index) => (
-                  <CategoryChip
-                    key={category.id}
-                    id={category.id}
-                    label={category.label}
-                    icon={category.icon}
-                    selected={selectedInterests.includes(category.id)}
-                    onPress={handleToggleInterest}
-                    index={index}
-                  />
-                ))}
+              // Editing mode - show grouped interests
+              <View style={styles.interestGroups}>
+                {(Object.keys(INTEREST_GROUPS) as InterestCategoryGroup[]).map(
+                  (groupKey) => {
+                    const group = INTEREST_GROUPS[groupKey];
+                    const interests = getInterestsForGroup(groupKey);
+                    const isExpanded = expandedGroups.has(groupKey);
+                    const selectedCount = getSelectedCountForGroup(groupKey);
+
+                    return (
+                      <View key={groupKey} style={styles.groupContainer}>
+                        <Pressable
+                          onPress={() => handleToggleGroup(groupKey)}
+                          style={[
+                            styles.groupHeader,
+                            { borderColor: activeColors.border },
+                          ]}
+                        >
+                          <View style={styles.groupHeaderLeft}>
+                            <Text variant="sm" weight="medium">
+                              {group.label}
+                            </Text>
+                            {selectedCount > 0 && (
+                              <View
+                                style={[
+                                  styles.selectedBadge,
+                                  { backgroundColor: activeColors.accent },
+                                ]}
+                              >
+                                <Text
+                                  variant="xs"
+                                  weight="semibold"
+                                  style={{ color: '#000' }}
+                                >
+                                  {selectedCount}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          {isExpanded ? (
+                            <ChevronUp size={18} color={activeColors.textSecondary} />
+                          ) : (
+                            <ChevronDown size={18} color={activeColors.textSecondary} />
+                          )}
+                        </Pressable>
+
+                        {isExpanded && (
+                          <View style={styles.interestsGrid}>
+                            {interests.map((interest) => {
+                              const isSelected = selectedInterests.includes(interest.id);
+                              return (
+                                <Pressable
+                                  key={interest.id}
+                                  onPress={() => handleToggleInterest(interest.id)}
+                                  style={[
+                                    styles.interestChip,
+                                    {
+                                      backgroundColor: isSelected
+                                        ? activeColors.accent
+                                        : activeColors.surface,
+                                      borderColor: isSelected
+                                        ? activeColors.accent
+                                        : activeColors.border,
+                                    },
+                                  ]}
+                                >
+                                  <Text
+                                    variant="sm"
+                                    weight={isSelected ? 'semibold' : 'regular'}
+                                    style={{
+                                      color: isSelected ? '#000' : activeColors.textPrimary,
+                                    }}
+                                  >
+                                    {interest.label}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  }
+                )}
               </View>
             ) : (
-              <View style={styles.categoriesContainer}>
-                {profile?.interests.map((interestId) => {
-                  const category = INTEREST_CATEGORIES.find((c) => c.id === interestId);
-                  if (!category) return null;
-                  return (
-                    <CategoryChip
-                      key={category.id}
-                      id={category.id}
-                      label={category.label}
-                      icon={category.icon}
-                      selected={true}
-                      onPress={() => { }}
-                    />
-                  );
-                })}
+              // View mode - show selected interests as chips
+              <View style={styles.interestsDisplay}>
+                {selectedInterests.length > 0 ? (
+                  <Text variant="base" color="primary" style={{ lineHeight: 24 }}>
+                    {getSelectedInterestsDisplay()}
+                  </Text>
+                ) : (
+                  <Text variant="base" color="tertiary">
+                    No interests selected
+                  </Text>
+                )}
               </View>
-            )}
-          </Animated.View>
-
-          {/* Hobbies Section */}
-          <Animated.View entering={FadeIn.delay(300).duration(300)} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Heart size={16} color={activeColors.textSecondary} />
-              <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-                HOBBIES
-              </Text>
-              <Text variant="xs" color="tertiary" style={styles.sectionCount}>
-                {hobbies.length}/{PROFILE_CONSTRAINTS.hobbies.maxCount}
-              </Text>
-            </View>
-            {hobbies.length > 0 && (
-              <Animated.View layout={Layout.springify()} style={styles.hobbiesContainer}>
-                {hobbies.map((hobby, index) => (
-                  <HobbyChip
-                    key={hobby}
-                    label={hobby}
-                    onRemove={isEditing ? () => handleRemoveHobby(hobby) : undefined}
-                    index={index}
-                  />
-                ))}
-              </Animated.View>
-            )}
-            {isEditing && hobbies.length < PROFILE_CONSTRAINTS.hobbies.maxCount && (
-              <View style={styles.addHobbyRow}>
-                <Input
-                  ref={hobbyInputRef}
-                  placeholder="Add a hobby..."
-                  value={newHobby}
-                  onChangeText={setNewHobby}
-                  onSubmitEditing={handleAddHobby}
-                  returnKeyType="done"
-                  containerStyle={styles.hobbyInput}
-                />
-                <Pressable
-                  onPress={handleAddHobby}
-                  disabled={!newHobby.trim()}
-                  style={[
-                    styles.addButton,
-                    { backgroundColor: newHobby.trim() ? activeColors.accent : activeColors.surface },
-                  ]}
-                >
-                  <Plus
-                    size={20}
-                    color={newHobby.trim() ? activeColors.background : activeColors.textTertiary}
-                    strokeWidth={2.5}
-                  />
-                </Pressable>
-              </View>
-            )}
-            {!isEditing && hobbies.length === 0 && (
-              <Text variant="base" color="tertiary">
-                No hobbies added yet
-              </Text>
             )}
           </Animated.View>
         </ScrollView>
@@ -743,7 +801,10 @@ export default function ProfileScreen() {
                 onPress={handleRemovePhoto}
               >
                 <Trash2 size={22} color={activeColors.error} />
-                <Text variant="base" style={[styles.modalOptionText, { color: activeColors.error }]}>
+                <Text
+                  variant="base"
+                  style={[styles.modalOptionText, { color: activeColors.error }]}
+                >
                   Remove Photo
                 </Text>
               </Pressable>
@@ -862,29 +923,45 @@ const styles = StyleSheet.create({
     marginTop: spacing[1],
     marginLeft: spacing[1],
   },
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  interestGroups: {
+    gap: spacing[2],
   },
-  hobbiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  groupContainer: {
+    marginBottom: spacing[2],
   },
-  addHobbyRow: {
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[3],
+    borderBottomWidth: 1,
+  },
+  groupHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
-    marginTop: spacing[2],
   },
-  hobbyInput: {
-    flex: 1,
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  selectedBadge: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  interestsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingTop: spacing[3],
+    gap: spacing[2],
+  },
+  interestChip: {
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  interestsDisplay: {
+    paddingVertical: spacing[2],
   },
   bottomSection: {
     padding: spacing[6],

@@ -1,6 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+/**
+ * Three™ - Login Screen
+ *
+ * Sign in using Clerk authentication.
+ * Supports email/password and OAuth (Apple, Google).
+ */
+
+import React, { useState, useCallback } from 'react';
+import {
+    View,
+    StyleSheet,
+    TouchableOpacity,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+} from 'react-native';
 import { router } from 'expo-router';
+import { useSignIn, useSSO } from '@clerk/clerk-expo';
+import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
@@ -8,20 +25,22 @@ import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { signIn, signInWithApple, isAppleSignInAvailable } from '@/store/auth';
+
+// Warm up browser for OAuth
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
+    const { signIn, setActive, isLoaded } = useSignIn();
+    const { startSSOFlow } = useSSO();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [appleLoading, setAppleLoading] = useState(false);
-    const [appleAvailable, setAppleAvailable] = useState(false);
 
-    useEffect(() => {
-        isAppleSignInAvailable().then(setAppleAvailable);
-    }, []);
+    const handleLogin = useCallback(async () => {
+        if (!isLoaded || !signIn) return;
 
-    const handleLogin = async () => {
         if (!email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
@@ -29,29 +48,57 @@ export default function LoginScreen() {
 
         try {
             setLoading(true);
-            await signIn(email, password);
-            router.replace('/');
-        } catch (error) {
-            Alert.alert('Login Failed', (error as Error).message);
+
+            const signInAttempt = await signIn.create({
+                identifier: email,
+                password,
+            });
+
+            if (signInAttempt.status === 'complete') {
+                await setActive({ session: signInAttempt.createdSessionId });
+                router.replace('/');
+            } else {
+                // Handle additional steps if needed (e.g., 2FA)
+                console.log('Sign in requires additional steps:', signInAttempt.status);
+                Alert.alert('Sign In', 'Additional verification required');
+            }
+        } catch (error: any) {
+            console.error('Sign in error:', error);
+            Alert.alert(
+                'Login Failed',
+                error.errors?.[0]?.message || error.message || 'An error occurred'
+            );
         } finally {
             setLoading(false);
         }
-    };
+    }, [isLoaded, signIn, setActive, email, password]);
 
-    const handleAppleSignIn = async () => {
+    const handleAppleSignIn = useCallback(async () => {
+        if (!isLoaded) return;
+
         try {
             setAppleLoading(true);
-            await signInWithApple();
-            router.replace('/');
-        } catch (error) {
-            const message = (error as Error).message;
-            if (message !== 'Sign in was cancelled') {
-                Alert.alert('Apple Sign In Failed', message);
+
+            const { createdSessionId, setActive: ssoSetActive } = await startSSOFlow({
+                strategy: 'oauth_apple',
+            });
+
+            if (createdSessionId) {
+                await ssoSetActive!({ session: createdSessionId });
+                router.replace('/');
+            }
+        } catch (error: any) {
+            console.error('Apple sign in error:', error);
+            if (error.message !== 'Sign in was cancelled') {
+                Alert.alert(
+                    'Apple Sign In Failed',
+                    error.errors?.[0]?.message || error.message || 'An error occurred'
+                );
             }
         } finally {
             setAppleLoading(false);
         }
-    };
+    }, [isLoaded, startSSOFlow]);
 
     return (
         <KeyboardAvoidingView
@@ -89,7 +136,9 @@ export default function LoginScreen() {
 
                     <View style={styles.forgotPassword}>
                         <TouchableOpacity>
-                            <Text variant="sm" color="secondary">Forgot Password?</Text>
+                            <Text variant="sm" color="secondary">
+                                Forgot Password?
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
@@ -97,14 +146,17 @@ export default function LoginScreen() {
                         title="Sign In"
                         onPress={handleLogin}
                         loading={loading}
+                        disabled={!isLoaded}
                         style={styles.button}
                     />
 
-                    {appleAvailable && (
+                    {Platform.OS === 'ios' && (
                         <>
                             <View style={styles.divider}>
                                 <View style={styles.dividerLine} />
-                                <Text variant="sm" color="secondary" style={styles.dividerText}>or</Text>
+                                <Text variant="sm" color="secondary" style={styles.dividerText}>
+                                    or
+                                </Text>
                                 <View style={styles.dividerLine} />
                             </View>
 
@@ -119,9 +171,13 @@ export default function LoginScreen() {
                     )}
 
                     <View style={styles.footer}>
-                        <Text variant="sm" color="secondary">Don't have an account? </Text>
+                        <Text variant="sm" color="secondary">
+                            Don't have an account?{' '}
+                        </Text>
                         <TouchableOpacity onPress={() => router.push('/signup')}>
-                            <Text variant="sm" weight="bold" color="primary">Sign Up</Text>
+                            <Text variant="sm" weight="bold" color="primary">
+                                Sign Up
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>

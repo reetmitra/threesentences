@@ -1,51 +1,51 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Root Index
+ * Three™ - Root Index
  *
- * Handles initial routing based on auth and onboarding state.
+ * Handles initial routing based on Clerk auth and onboarding state.
  * Shows loading screen on every app launch.
  */
 
 import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import { hasCompletedOnboarding } from '@/store/onboarding';
-import { getSession } from '@/store/auth';
 import { isProfileComplete } from '@/store/profile';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 const MINIMUM_LOADING_TIME = 7000; // 7 seconds
 
 export default function Index() {
+  const { isSignedIn, isLoaded: authLoaded, userId } = useAuth();
+  const { user } = useUser();
+
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
+  const [checksComplete, setChecksComplete] = useState(false);
 
   useEffect(() => {
-    async function checkAuthAndOnboarding() {
+    async function checkOnboarding() {
+      if (!authLoaded) return;
+
       const startTime = Date.now();
 
       try {
-        // Check authentication first
-        const session = await getSession();
-
-        if (!session) {
-          setIsAuthenticated(false);
-        } else {
-          setIsAuthenticated(true);
+        if (isSignedIn && userId) {
           // Check onboarding state
           const completed = await hasCompletedOnboarding();
           setShouldShowOnboarding(!completed);
 
           // Check if profile setup is complete
           if (completed) {
-            const profileComplete = await isProfileComplete(session.user.id);
+            const profileComplete = await isProfileComplete(userId);
             setNeedsProfileSetup(!profileComplete);
           }
         }
       } catch (error) {
-        console.error('Error checking auth/onboarding state:', error);
-        setIsAuthenticated(false);
+        console.error('Error checking onboarding state:', error);
       }
+
+      setChecksComplete(true);
 
       // Ensure minimum loading time for branding
       const elapsed = Date.now() - startTime;
@@ -58,17 +58,20 @@ export default function Index() {
       }
     }
 
-    checkAuthAndOnboarding();
-  }, []);
+    checkOnboarding();
+  }, [authLoaded, isSignedIn, userId]);
 
-  if (isLoading) {
+  // Show loading while auth is loading or checks are in progress
+  if (!authLoaded || isLoading || !checksComplete) {
     return <LoadingScreen />;
   }
 
-  if (!isAuthenticated) {
+  // Not signed in - go to login
+  if (!isSignedIn) {
     return <Redirect href="/(auth)/login" />;
   }
 
+  // Need onboarding
   if (shouldShowOnboarding) {
     return <Redirect href="/(onboarding)" />;
   }
@@ -78,5 +81,6 @@ export default function Index() {
     return <Redirect href="/(auth)/interests" />;
   }
 
+  // All good - go to main app
   return <Redirect href="/(tabs)" />;
 }

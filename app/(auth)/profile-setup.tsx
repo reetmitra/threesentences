@@ -1,23 +1,23 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Profile Setup Screen
+ * Three™ - Profile Setup Screen
  *
  * Final signup step where users complete their profile.
- * Includes username, age (optional), and hobbies.
+ * Includes username, age (optional), and bio.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TextInput,
   Alert,
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useUser } from '@clerk/clerk-expo';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,14 +27,12 @@ import Animated, {
   withSequence,
   FadeIn,
   FadeInDown,
-  Layout,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Plus, Check } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { HobbyChip } from '@/components/CategoryChip';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import {
@@ -42,16 +40,12 @@ import {
   suggestUsername,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
-import {
-  updateProfile,
-  completeProfileSetup,
-  getProfile,
-} from '@/store/profile';
-import { getCurrentUser } from '@/store/auth';
+import { updateProfile, completeProfileSetup } from '@/store/profile';
 
 export default function ProfileSetupScreen() {
   const activeColors = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
+  const { user } = useUser();
 
   // Form state
   const [username, setUsername] = useState('');
@@ -59,11 +53,8 @@ export default function ProfileSetupScreen() {
   const [usernameValid, setUsernameValid] = useState(false);
   const [age, setAge] = useState('');
   const [ageError, setAgeError] = useState<string | undefined>();
-  const [hobbies, setHobbies] = useState<string[]>([]);
-  const [newHobby, setNewHobby] = useState('');
+  const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const hobbyInputRef = useRef<TextInput>(null);
 
   // Animations
   const formOpacity = useSharedValue(0);
@@ -82,21 +73,24 @@ export default function ProfileSetupScreen() {
     }
   }, [formOpacity, params.name]);
 
-  const validateUsernameInput = useCallback((value: string) => {
-    const result = validateUsername(value);
-    setUsernameError(result.valid ? undefined : result.error);
-    setUsernameValid(result.valid);
+  const validateUsernameInput = useCallback(
+    (value: string) => {
+      const result = validateUsername(value);
+      setUsernameError(result.valid ? undefined : result.error);
+      setUsernameValid(result.valid);
 
-    // Animate checkmark when valid
-    if (result.valid) {
-      checkScale.value = withSequence(
-        withSpring(1.2, { damping: 8 }),
-        withSpring(1, { damping: 12 })
-      );
-    } else {
-      checkScale.value = withTiming(0, { duration: 100 });
-    }
-  }, [checkScale]);
+      // Animate checkmark when valid
+      if (result.valid) {
+        checkScale.value = withSequence(
+          withSpring(1.2, { damping: 8 }),
+          withSpring(1, { damping: 12 })
+        );
+      } else {
+        checkScale.value = withTiming(0, { duration: 100 });
+      }
+    },
+    [checkScale]
+  );
 
   const handleUsernameChange = (value: string) => {
     // Convert to lowercase and remove invalid characters
@@ -124,37 +118,6 @@ export default function ProfileSetupScreen() {
     }
   };
 
-  const handleAddHobby = useCallback(() => {
-    const trimmed = newHobby.trim();
-    if (!trimmed) return;
-
-    if (hobbies.length >= PROFILE_CONSTRAINTS.hobbies.maxCount) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Limit Reached', `You can add up to ${PROFILE_CONSTRAINTS.hobbies.maxCount} hobbies`);
-      return;
-    }
-
-    if (trimmed.length > PROFILE_CONSTRAINTS.hobbies.maxLength) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert('Too Long', `Hobbies must be ${PROFILE_CONSTRAINTS.hobbies.maxLength} characters or less`);
-      return;
-    }
-
-    if (hobbies.some((h) => h.toLowerCase() === trimmed.toLowerCase())) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return;
-    }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHobbies((prev) => [...prev, trimmed]);
-    setNewHobby('');
-    hobbyInputRef.current?.focus();
-  }, [newHobby, hobbies]);
-
-  const handleRemoveHobby = useCallback((hobby: string) => {
-    setHobbies((prev) => prev.filter((h) => h !== hobby));
-  }, []);
-
   const handleComplete = async () => {
     Keyboard.dismiss();
 
@@ -172,8 +135,7 @@ export default function ProfileSetupScreen() {
       setLoading(true);
       buttonScale.value = withSpring(0.95);
 
-      const user = getCurrentUser();
-      if (!user) {
+      if (!user?.id) {
         throw new Error('Not authenticated');
       }
 
@@ -181,7 +143,7 @@ export default function ProfileSetupScreen() {
       await updateProfile(user.id, {
         username,
         age: age ? parseInt(age, 10) : undefined,
-        hobbies,
+        bio: bio.trim() || undefined,
       });
 
       // Mark profile as complete
@@ -243,7 +205,12 @@ export default function ProfileSetupScreen() {
             {/* Username Input */}
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
-                <Text variant="sm" color="secondary" weight="medium" style={styles.inputLabel}>
+                <Text
+                  variant="sm"
+                  color="secondary"
+                  weight="medium"
+                  style={styles.inputLabel}
+                >
                   Username *
                 </Text>
                 <Animated.View style={checkAnimatedStyle}>
@@ -271,7 +238,10 @@ export default function ProfileSetupScreen() {
               </View>
               {usernameError && (
                 <Animated.View entering={FadeIn.duration(200)}>
-                  <Text variant="xs" style={[styles.errorText, { color: activeColors.error }]}>
+                  <Text
+                    variant="xs"
+                    style={[styles.errorText, { color: activeColors.error }]}
+                  >
                     {usernameError}
                   </Text>
                 </Animated.View>
@@ -280,7 +250,12 @@ export default function ProfileSetupScreen() {
 
             {/* Age Input */}
             <View style={styles.inputGroup}>
-              <Text variant="sm" color="secondary" weight="medium" style={styles.inputLabel}>
+              <Text
+                variant="sm"
+                color="secondary"
+                weight="medium"
+                style={styles.inputLabel}
+              >
                 Age (optional)
               </Text>
               <Input
@@ -293,70 +268,40 @@ export default function ProfileSetupScreen() {
               />
               {ageError && (
                 <Animated.View entering={FadeIn.duration(200)}>
-                  <Text variant="xs" style={[styles.errorText, { color: activeColors.error }]}>
+                  <Text
+                    variant="xs"
+                    style={[styles.errorText, { color: activeColors.error }]}
+                  >
                     {ageError}
                   </Text>
                 </Animated.View>
               )}
             </View>
 
-            {/* Hobbies Section */}
+            {/* Bio Input */}
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
-                <Text variant="sm" color="secondary" weight="medium" style={styles.inputLabel}>
-                  Hobbies
+                <Text
+                  variant="sm"
+                  color="secondary"
+                  weight="medium"
+                  style={styles.inputLabel}
+                >
+                  Bio (optional)
                 </Text>
                 <Text variant="xs" color="tertiary">
-                  {hobbies.length}/{PROFILE_CONSTRAINTS.hobbies.maxCount}
+                  {bio.length}/{PROFILE_CONSTRAINTS.bio.maxLength}
                 </Text>
               </View>
-
-              {/* Hobby Chips */}
-              {hobbies.length > 0 && (
-                <Animated.View layout={Layout.springify()} style={styles.hobbiesContainer}>
-                  {hobbies.map((hobby, index) => (
-                    <HobbyChip
-                      key={hobby}
-                      label={hobby}
-                      onRemove={() => handleRemoveHobby(hobby)}
-                      index={index}
-                    />
-                  ))}
-                </Animated.View>
-              )}
-
-              {/* Add Hobby Input */}
-              {hobbies.length < PROFILE_CONSTRAINTS.hobbies.maxCount && (
-                <View style={styles.addHobbyRow}>
-                  <Input
-                    ref={hobbyInputRef}
-                    placeholder="Add a hobby..."
-                    value={newHobby}
-                    onChangeText={setNewHobby}
-                    onSubmitEditing={handleAddHobby}
-                    returnKeyType="done"
-                    containerStyle={styles.hobbyInput}
-                  />
-                  <Animated.View>
-                    <Button
-                      title=""
-                      onPress={handleAddHobby}
-                      disabled={!newHobby.trim()}
-                      style={{
-                        ...styles.addButton,
-                        backgroundColor: newHobby.trim() ? activeColors.accent : activeColors.surface,
-                      }}
-                    />
-                  </Animated.View>
-                  <View style={[styles.addButtonOverlay, { pointerEvents: 'none' }]}>
-                    <Plus
-                      size={20}
-                      color={newHobby.trim() ? activeColors.background : activeColors.textTertiary}
-                      strokeWidth={2.5}
-                    />
-                  </View>
-                </View>
-              )}
+              <Input
+                placeholder="Tell us about yourself..."
+                value={bio}
+                onChangeText={setBio}
+                multiline
+                numberOfLines={3}
+                maxLength={PROFILE_CONSTRAINTS.bio.maxLength}
+                containerStyle={styles.bioInput}
+              />
             </View>
           </Animated.View>
         </ScrollView>
@@ -432,37 +377,13 @@ const styles = StyleSheet.create({
   ageInput: {
     maxWidth: 120,
   },
+  bioInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
   errorText: {
     marginLeft: spacing[1],
     marginTop: spacing[1],
-  },
-  hobbiesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing[2],
-  },
-  addHobbyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-    marginTop: spacing[2],
-  },
-  hobbyInput: {
-    flex: 1,
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    paddingHorizontal: 0,
-    borderRadius: 12,
-  },
-  addButtonOverlay: {
-    position: 'absolute',
-    right: 0,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   bottomSection: {
     padding: spacing[6],

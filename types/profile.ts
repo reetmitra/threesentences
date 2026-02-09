@@ -1,40 +1,124 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Profile Types
+ * Three™ - Profile Types
  *
- * Data models for user profiles, interest categories, and community features.
+ * Data models for user profiles and curated elite interest categories.
  */
 
 /**
- * Interest categories for community building
+ * Interest category groups for elite community
+ */
+export type InterestCategoryGroup =
+  | 'fitness'
+  | 'wellness'
+  | 'nutrition'
+  | 'finance'
+  | 'lifestyle'
+  | 'intellectual';
+
+/**
+ * Curated elite interests for high-achieving individuals
  */
 export const INTEREST_CATEGORIES = [
-  { id: 'mindfulness', label: 'Mindfulness', icon: 'brain' },
-  { id: 'fitness', label: 'Fitness', icon: 'dumbbell' },
-  { id: 'creativity', label: 'Creativity', icon: 'palette' },
-  { id: 'productivity', label: 'Productivity', icon: 'target' },
-  { id: 'relationships', label: 'Relationships', icon: 'heart' },
-  { id: 'career', label: 'Career', icon: 'briefcase' },
-  { id: 'finance', label: 'Finance', icon: 'trending-up' },
-  { id: 'health', label: 'Health', icon: 'activity' },
-  { id: 'learning', label: 'Learning', icon: 'book-open' },
-  { id: 'spirituality', label: 'Spirituality', icon: 'sun' },
-  { id: 'adventure', label: 'Adventure', icon: 'compass' },
-  { id: 'family', label: 'Family', icon: 'users' },
+  // Fitness & Endurance
+  { id: 'hyrox', label: 'Hyrox', group: 'fitness', icon: 'timer' },
+  { id: 'ironman', label: 'Ironman', group: 'fitness', icon: 'medal' },
+  { id: 'marathon', label: 'Marathon Running', group: 'fitness', icon: 'footprints' },
+  { id: 'ultra-running', label: 'Ultra Running', group: 'fitness', icon: 'mountain' },
+  { id: 'crossfit', label: 'CrossFit', group: 'fitness', icon: 'dumbbell' },
+  { id: 'olympic-lifting', label: 'Olympic Lifting', group: 'fitness', icon: 'weight' },
+  { id: 'cycling', label: 'Cycling', group: 'fitness', icon: 'bike' },
+  { id: 'swimming', label: 'Swimming', group: 'fitness', icon: 'waves' },
+  { id: 'rowing', label: 'Rowing', group: 'fitness', icon: 'ship' },
+  { id: 'triathlon', label: 'Triathlon', group: 'fitness', icon: 'trophy' },
+
+  // Recovery & Wellness
+  { id: 'cold-plunge', label: 'Ice Bath / Cold Plunge', group: 'wellness', icon: 'snowflake' },
+  { id: 'sauna', label: 'Sauna', group: 'wellness', icon: 'flame' },
+  { id: 'breathwork', label: 'Breathwork', group: 'wellness', icon: 'wind' },
+  { id: 'meditation', label: 'Meditation', group: 'wellness', icon: 'brain' },
+  { id: 'biohacking', label: 'Biohacking', group: 'wellness', icon: 'activity' },
+  { id: 'sleep-optimization', label: 'Sleep Optimization', group: 'wellness', icon: 'moon' },
+  { id: 'yoga', label: 'Yoga', group: 'wellness', icon: 'heart' },
+
+  // Nutrition
+  { id: 'clean-eating', label: 'Clean Eating', group: 'nutrition', icon: 'salad' },
+  { id: 'carnivore', label: 'Carnivore Diet', group: 'nutrition', icon: 'beef' },
+  { id: 'keto', label: 'Keto', group: 'nutrition', icon: 'egg' },
+  { id: 'intermittent-fasting', label: 'Intermittent Fasting', group: 'nutrition', icon: 'clock' },
+  { id: 'plant-based', label: 'Plant-Based', group: 'nutrition', icon: 'leaf' },
+
+  // Finance & Business
+  { id: 'investment-banking', label: 'Investment Banking', group: 'finance', icon: 'building' },
+  { id: 'private-equity', label: 'Private Equity', group: 'finance', icon: 'briefcase' },
+  { id: 'venture-capital', label: 'Venture Capital', group: 'finance', icon: 'rocket' },
+  { id: 'hedge-funds', label: 'Hedge Funds', group: 'finance', icon: 'trending-up' },
+  { id: 'real-estate', label: 'Real Estate', group: 'finance', icon: 'home' },
+  { id: 'entrepreneurship', label: 'Entrepreneurship', group: 'finance', icon: 'lightbulb' },
+  { id: 'angel-investing', label: 'Angel Investing', group: 'finance', icon: 'star' },
+  { id: 'crypto-web3', label: 'Crypto / Web3', group: 'finance', icon: 'bitcoin' },
+
+  // Lifestyle & Adventure
+  { id: 'golf', label: 'Golf', group: 'lifestyle', icon: 'flag' },
+  { id: 'tennis', label: 'Tennis', group: 'lifestyle', icon: 'circle' },
+  { id: 'skiing', label: 'Skiing', group: 'lifestyle', icon: 'mountain-snow' },
+  { id: 'sailing', label: 'Sailing', group: 'lifestyle', icon: 'anchor' },
+  { id: 'polo', label: 'Polo', group: 'lifestyle', icon: 'crown' },
+  { id: 'aviation', label: 'Aviation', group: 'lifestyle', icon: 'plane' },
+  { id: 'motorsports', label: 'Motorsports', group: 'lifestyle', icon: 'car' },
+  { id: 'travel', label: 'Travel', group: 'lifestyle', icon: 'globe' },
+
+  // Intellectual Pursuits
+  { id: 'reading', label: 'Reading', group: 'intellectual', icon: 'book-open' },
+  { id: 'podcasts', label: 'Podcasts', group: 'intellectual', icon: 'headphones' },
+  { id: 'public-speaking', label: 'Public Speaking', group: 'intellectual', icon: 'mic' },
+  { id: 'philanthropy', label: 'Philanthropy', group: 'intellectual', icon: 'hand-heart' },
+  { id: 'art-collecting', label: 'Art Collecting', group: 'intellectual', icon: 'palette' },
+  { id: 'wine-spirits', label: 'Wine & Spirits', group: 'intellectual', icon: 'wine' },
 ] as const;
 
-export type CategoryId = typeof INTEREST_CATEGORIES[number]['id'];
+export type InterestId = (typeof INTEREST_CATEGORIES)[number]['id'];
 
-export interface InterestCategory {
-  id: CategoryId;
+export interface Interest {
+  id: InterestId;
   label: string;
+  group: InterestCategoryGroup;
   icon: string;
+}
+
+/**
+ * Interest category group metadata
+ */
+export const INTEREST_GROUPS: Record<
+  InterestCategoryGroup,
+  { label: string; icon: string }
+> = {
+  fitness: { label: 'Fitness & Endurance', icon: 'dumbbell' },
+  wellness: { label: 'Recovery & Wellness', icon: 'heart' },
+  nutrition: { label: 'Nutrition', icon: 'utensils' },
+  finance: { label: 'Finance & Business', icon: 'briefcase' },
+  lifestyle: { label: 'Lifestyle & Adventure', icon: 'compass' },
+  intellectual: { label: 'Intellectual Pursuits', icon: 'book-open' },
+};
+
+/**
+ * Get interests by group
+ */
+export function getInterestsByGroup(group: InterestCategoryGroup): Interest[] {
+  return INTEREST_CATEGORIES.filter((i) => i.group === group) as Interest[];
+}
+
+/**
+ * Get interest by ID
+ */
+export function getInterestById(id: InterestId): Interest | undefined {
+  return INTEREST_CATEGORIES.find((i) => i.id === id) as Interest | undefined;
 }
 
 /**
  * User profile data structure
  */
 export interface UserProfile {
-  /** Firebase UID */
+  /** User ID (Clerk ID or Supabase UUID) */
   userId: string;
 
   /** Display name */
@@ -43,20 +127,17 @@ export interface UserProfile {
   /** Unique username (3-20 chars, alphanumeric + underscore) */
   username: string;
 
-  /** User's age (optional, min 13) */
+  /** User's age (optional, min 18 for elite network) */
   age?: number;
 
   /** User's bio/description (max 150 chars) */
   bio?: string;
 
-  /** Profile image URI (local file path or base64) */
+  /** Profile image URI */
   profileImage?: string;
 
-  /** Selected interest categories */
-  interests: CategoryId[];
-
-  /** User's hobbies (max 5) */
-  hobbies: string[];
+  /** Selected elite interests (minimum 3) */
+  interests: InterestId[];
 
   /** Profile creation timestamp */
   createdAt: string;
@@ -83,7 +164,6 @@ export interface ProfileValidation {
     username?: string;
     age?: string;
     bio?: string;
-    hobbies?: string;
     interests?: string;
   };
 }
@@ -108,38 +188,46 @@ export const PROFILE_CONSTRAINTS = {
   bio: {
     maxLength: 150,
   },
-  hobbies: {
-    maxCount: 5,
-    maxLength: 30,
-  },
   interests: {
-    minCount: 1,
-    maxCount: INTEREST_CATEGORIES.length,
+    minCount: 3, // Minimum 3 interests for better matching
+    maxCount: 10, // Cap at 10 for focus
   },
   age: {
-    min: 13,
-    max: 120,
+    min: 18, // Adults only for elite network
+    max: 99,
   },
 } as const;
 
 /**
  * Validate a username
  */
-export function validateUsername(username: string): { valid: boolean; error?: string } {
+export function validateUsername(username: string): {
+  valid: boolean;
+  error?: string;
+} {
   if (!username) {
     return { valid: false, error: 'Username is required' };
   }
 
   if (username.length < USERNAME_CONSTRAINTS.minLength) {
-    return { valid: false, error: `Username must be at least ${USERNAME_CONSTRAINTS.minLength} characters` };
+    return {
+      valid: false,
+      error: `Username must be at least ${USERNAME_CONSTRAINTS.minLength} characters`,
+    };
   }
 
   if (username.length > USERNAME_CONSTRAINTS.maxLength) {
-    return { valid: false, error: `Username cannot exceed ${USERNAME_CONSTRAINTS.maxLength} characters` };
+    return {
+      valid: false,
+      error: `Username cannot exceed ${USERNAME_CONSTRAINTS.maxLength} characters`,
+    };
   }
 
   if (!USERNAME_CONSTRAINTS.pattern.test(username)) {
-    return { valid: false, error: 'Username can only contain letters, numbers, and underscores' };
+    return {
+      valid: false,
+      error: 'Username can only contain letters, numbers, and underscores',
+    };
   }
 
   return { valid: true };
@@ -148,7 +236,10 @@ export function validateUsername(username: string): { valid: boolean; error?: st
 /**
  * Validate user's age
  */
-export function validateAge(age: number | undefined): { valid: boolean; error?: string } {
+export function validateAge(age: number | undefined): {
+  valid: boolean;
+  error?: string;
+} {
   if (age === undefined) {
     return { valid: true }; // Age is optional
   }
@@ -158,7 +249,10 @@ export function validateAge(age: number | undefined): { valid: boolean; error?: 
   }
 
   if (age < PROFILE_CONSTRAINTS.age.min) {
-    return { valid: false, error: `You must be at least ${PROFILE_CONSTRAINTS.age.min} years old` };
+    return {
+      valid: false,
+      error: `You must be at least ${PROFILE_CONSTRAINTS.age.min} years old`,
+    };
   }
 
   if (age > PROFILE_CONSTRAINTS.age.max) {
@@ -169,34 +263,27 @@ export function validateAge(age: number | undefined): { valid: boolean; error?: 
 }
 
 /**
- * Validate hobbies array
- */
-export function validateHobbies(hobbies: string[]): { valid: boolean; error?: string } {
-  if (hobbies.length > PROFILE_CONSTRAINTS.hobbies.maxCount) {
-    return { valid: false, error: `You can add up to ${PROFILE_CONSTRAINTS.hobbies.maxCount} hobbies` };
-  }
-
-  for (const hobby of hobbies) {
-    if (hobby.length > PROFILE_CONSTRAINTS.hobbies.maxLength) {
-      return { valid: false, error: `Each hobby must be ${PROFILE_CONSTRAINTS.hobbies.maxLength} characters or less` };
-    }
-    if (hobby.trim().length === 0) {
-      return { valid: false, error: 'Hobbies cannot be empty' };
-    }
-  }
-
-  return { valid: true };
-}
-
-/**
  * Validate interests array
  */
-export function validateInterests(interests: CategoryId[]): { valid: boolean; error?: string } {
+export function validateInterests(interests: InterestId[]): {
+  valid: boolean;
+  error?: string;
+} {
   if (interests.length < PROFILE_CONSTRAINTS.interests.minCount) {
-    return { valid: false, error: 'Please select at least one interest' };
+    return {
+      valid: false,
+      error: `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`,
+    };
   }
 
-  const validIds = INTEREST_CATEGORIES.map(c => c.id);
+  if (interests.length > PROFILE_CONSTRAINTS.interests.maxCount) {
+    return {
+      valid: false,
+      error: `You can select up to ${PROFILE_CONSTRAINTS.interests.maxCount} interests`,
+    };
+  }
+
+  const validIds = INTEREST_CATEGORIES.map((c) => c.id);
   for (const interest of interests) {
     if (!validIds.includes(interest)) {
       return { valid: false, error: 'Invalid interest selected' };
@@ -213,7 +300,10 @@ export function validateProfile(profile: Partial<UserProfile>): ProfileValidatio
   const errors: ProfileValidation['errors'] = {};
 
   // Validate name
-  if (!profile.name || profile.name.trim().length < PROFILE_CONSTRAINTS.name.minLength) {
+  if (
+    !profile.name ||
+    profile.name.trim().length < PROFILE_CONSTRAINTS.name.minLength
+  ) {
     errors.name = 'Name is required';
   } else if (profile.name.length > PROFILE_CONSTRAINTS.name.maxLength) {
     errors.name = `Name cannot exceed ${PROFILE_CONSTRAINTS.name.maxLength} characters`;
@@ -242,20 +332,14 @@ export function validateProfile(profile: Partial<UserProfile>): ProfileValidatio
     errors.bio = `Bio cannot exceed ${PROFILE_CONSTRAINTS.bio.maxLength} characters`;
   }
 
-  // Validate hobbies
-  if (profile.hobbies) {
-    const hobbiesResult = validateHobbies(profile.hobbies);
-    if (!hobbiesResult.valid) {
-      errors.hobbies = hobbiesResult.error;
-    }
-  }
-
   // Validate interests
   if (profile.interests) {
     const interestsResult = validateInterests(profile.interests);
     if (!interestsResult.valid) {
       errors.interests = interestsResult.error;
     }
+  } else {
+    errors.interests = `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`;
   }
 
   return {
@@ -274,7 +358,6 @@ export function createDefaultProfile(userId: string, name?: string): UserProfile
     name: name || '',
     username: '',
     interests: [],
-    hobbies: [],
     createdAt: now,
     updatedAt: now,
     isComplete: false,
@@ -301,3 +384,6 @@ export function suggestUsername(name: string): string {
 
   return suggested;
 }
+
+// Legacy type alias for backwards compatibility during migration
+export type CategoryId = InterestId;

@@ -1,19 +1,15 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Interest Selection Screen
+ * Three™ - Interest Selection Screen
  *
- * Allows users to select their interest categories during signup.
- * Features staggered entrance animations and smooth interactions.
+ * Allows users to select their elite interests during signup.
+ * Features grouped categories with staggered entrance animations.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useUser } from '@clerk/clerk-expo';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,26 +18,35 @@ import Animated, {
   withTiming,
   interpolate,
   FadeIn,
-  SlideInUp,
+  FadeInDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
-import { CategoryChip } from '@/components/CategoryChip';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { INTEREST_CATEGORIES, CategoryId } from '@/types/profile';
+import {
+  INTEREST_CATEGORIES,
+  INTEREST_GROUPS,
+  InterestId,
+  InterestCategoryGroup,
+  PROFILE_CONSTRAINTS,
+} from '@/types/profile';
 import { saveInterests, createProfile } from '@/store/profile';
-import { getCurrentUser } from '@/store/auth';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const MIN_INTERESTS = PROFILE_CONSTRAINTS.interests.minCount;
 
 export default function InterestsScreen() {
   const activeColors = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
+  const { user } = useUser();
 
-  const [selectedInterests, setSelectedInterests] = useState<CategoryId[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<InterestId[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<InterestCategoryGroup>>(
+    new Set(['fitness', 'wellness']) // Start with first two expanded
+  );
 
   // Animations
   const headerOpacity = useSharedValue(0);
@@ -59,39 +64,56 @@ export default function InterestsScreen() {
 
     // Initialize profile if needed
     const initProfile = async () => {
-      const user = getCurrentUser();
-      if (user) {
-        await createProfile(user.id, params.name || user.name);
+      if (user?.id) {
+        const userName = params.name || user.firstName || undefined;
+        await createProfile(user.id, userName);
       }
     };
     initProfile();
-  }, [headerOpacity, headerTranslateY, buttonOpacity, params.name]);
+  }, [headerOpacity, headerTranslateY, buttonOpacity, params.name, user]);
 
   // Update progress bar based on selections
   useEffect(() => {
-    const progress = Math.min(selectedInterests.length / 3, 1); // Full at 3 selections
+    const progress = Math.min(selectedInterests.length / MIN_INTERESTS, 1);
     progressWidth.value = withSpring(progress, { damping: 15 });
   }, [selectedInterests, progressWidth]);
 
-  const handleToggleInterest = useCallback((id: string) => {
+  const handleToggleInterest = useCallback((id: InterestId) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedInterests((prev) => {
-      if (prev.includes(id as CategoryId)) {
+      if (prev.includes(id)) {
         return prev.filter((i) => i !== id);
       }
-      return [...prev, id as CategoryId];
+      if (prev.length >= PROFILE_CONSTRAINTS.interests.maxCount) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return prev;
+      }
+      return [...prev, id];
+    });
+  }, []);
+
+  const handleToggleGroup = useCallback((group: InterestCategoryGroup) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
     });
   }, []);
 
   const handleContinue = async () => {
-    if (selectedInterests.length === 0) {
+    if (selectedInterests.length < MIN_INTERESTS) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
 
     try {
       setLoading(true);
-      const user = getCurrentUser();
-      if (user) {
+      if (user?.id) {
         await saveInterests(user.id, selectedInterests);
       }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -120,6 +142,20 @@ export default function InterestsScreen() {
     width: `${interpolate(progressWidth.value, [0, 1], [0, 100])}%`,
   }));
 
+  // Get interests for a specific group
+  const getInterestsForGroup = (group: InterestCategoryGroup) => {
+    return INTEREST_CATEGORIES.filter((i) => i.group === group);
+  };
+
+  // Count selected in a group
+  const getSelectedCountForGroup = (group: InterestCategoryGroup) => {
+    return selectedInterests.filter((id) =>
+      INTEREST_CATEGORIES.find((i) => i.id === id)?.group === group
+    ).length;
+  };
+
+  const isEnoughSelected = selectedInterests.length >= MIN_INTERESTS;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: activeColors.background }]}
@@ -144,10 +180,11 @@ export default function InterestsScreen() {
         {/* Header */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
           <Text variant="2xl" weight="bold" style={styles.title}>
-            What interests you?
+            What defines you?
           </Text>
           <Text variant="base" color="secondary" style={styles.subtitle}>
-            Select topics that resonate with your journey. This helps us build community around shared interests.
+            Select interests that reflect your lifestyle. This helps connect you with
+            like-minded individuals.
           </Text>
         </Animated.View>
 
@@ -157,29 +194,103 @@ export default function InterestsScreen() {
           style={styles.counterContainer}
         >
           <Text variant="sm" color="secondary">
-            {selectedInterests.length} selected
+            {selectedInterests.length} of {MIN_INTERESTS}+ selected
           </Text>
-          {selectedInterests.length >= 3 && (
+          {isEnoughSelected && (
             <Text variant="sm" style={{ color: activeColors.accent }}>
-              {' '}Great choices!
+              {' '}
+              Ready to continue
             </Text>
           )}
         </Animated.View>
 
-        {/* Categories Grid */}
-        <View style={styles.categoriesContainer}>
-          {INTEREST_CATEGORIES.map((category, index) => (
-            <CategoryChip
-              key={category.id}
-              id={category.id}
-              label={category.label}
-              icon={category.icon}
-              selected={selectedInterests.includes(category.id)}
-              onPress={handleToggleInterest}
-              index={index}
-            />
-          ))}
-        </View>
+        {/* Interest Groups */}
+        {(Object.keys(INTEREST_GROUPS) as InterestCategoryGroup[]).map(
+          (groupKey, groupIndex) => {
+            const group = INTEREST_GROUPS[groupKey];
+            const interests = getInterestsForGroup(groupKey);
+            const isExpanded = expandedGroups.has(groupKey);
+            const selectedCount = getSelectedCountForGroup(groupKey);
+
+            return (
+              <Animated.View
+                key={groupKey}
+                entering={FadeInDown.delay(200 + groupIndex * 100).duration(400)}
+                style={styles.groupContainer}
+              >
+                {/* Group Header */}
+                <Pressable
+                  onPress={() => handleToggleGroup(groupKey)}
+                  style={[styles.groupHeader, { borderColor: activeColors.border }]}
+                >
+                  <View style={styles.groupHeaderLeft}>
+                    <Feather
+                      name={group.icon as any}
+                      size={18}
+                      color={activeColors.textSecondary}
+                    />
+                    <Text variant="base" weight="semibold" style={styles.groupTitle}>
+                      {group.label}
+                    </Text>
+                    {selectedCount > 0 && (
+                      <View
+                        style={[
+                          styles.selectedBadge,
+                          { backgroundColor: activeColors.accent },
+                        ]}
+                      >
+                        <Text variant="xs" weight="semibold" style={{ color: '#000' }}>
+                          {selectedCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Feather
+                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={activeColors.textSecondary}
+                  />
+                </Pressable>
+
+                {/* Group Interests */}
+                {isExpanded && (
+                  <View style={styles.interestsGrid}>
+                    {interests.map((interest) => {
+                      const isSelected = selectedInterests.includes(interest.id);
+                      return (
+                        <Pressable
+                          key={interest.id}
+                          onPress={() => handleToggleInterest(interest.id)}
+                          style={[
+                            styles.interestChip,
+                            {
+                              backgroundColor: isSelected
+                                ? activeColors.accent
+                                : activeColors.surface,
+                              borderColor: isSelected
+                                ? activeColors.accent
+                                : activeColors.border,
+                            },
+                          ]}
+                        >
+                          <Text
+                            variant="sm"
+                            weight={isSelected ? 'semibold' : 'regular'}
+                            style={{
+                              color: isSelected ? '#000' : activeColors.textPrimary,
+                            }}
+                          >
+                            {interest.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+              </Animated.View>
+            );
+          }
+        )}
       </ScrollView>
 
       {/* Bottom Action */}
@@ -191,14 +302,18 @@ export default function InterestsScreen() {
         ]}
       >
         <Button
-          title={selectedInterests.length === 0 ? 'Select at least one' : 'Continue'}
+          title={
+            selectedInterests.length < MIN_INTERESTS
+              ? `Select at least ${MIN_INTERESTS}`
+              : 'Continue'
+          }
           onPress={handleContinue}
-          disabled={selectedInterests.length === 0}
+          disabled={selectedInterests.length < MIN_INTERESTS}
           loading={loading}
           style={styles.continueButton}
         />
         <Text variant="xs" color="tertiary" centered style={styles.hint}>
-          You can always change these later in Settings
+          You can always update these later
         </Text>
       </Animated.View>
     </SafeAreaView>
@@ -238,9 +353,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing[4],
   },
-  categoriesContainer: {
+  groupContainer: {
+    marginBottom: spacing[3],
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[3],
+    borderBottomWidth: 1,
+  },
+  groupHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  groupTitle: {
+    marginLeft: spacing[3],
+  },
+  selectedBadge: {
+    marginLeft: spacing[2],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  interestsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    paddingTop: spacing[3],
+    gap: spacing[2],
+  },
+  interestChip: {
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    borderRadius: 20,
+    borderWidth: 1,
   },
   bottomSection: {
     padding: spacing[6],

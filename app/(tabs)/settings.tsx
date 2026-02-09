@@ -1,6 +1,6 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Settings Screen
- * 
+ * Three™ - Settings Screen
+ *
  * Export data, manage AI reflection, view about info.
  */
 
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import {
   Download,
   Trash2,
@@ -40,7 +41,6 @@ import {
   updatePreferences,
 } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
-import { getCurrentUser, signOut, User as AuthUser } from '@/store/auth';
 import { getProfile } from '@/store/profile';
 
 interface SettingsRowProps {
@@ -110,12 +110,13 @@ function SettingsRow({
 
 export default function SettingsScreen() {
   const activeColors = colors.dark;
+  const { signOut, userId } = useAuth();
+  const { user } = useUser();
 
   const [entryCount, setEntryCount] = useState(0);
   const [reflectionCount, setReflectionCount] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [userProfile, setUserProfile] = useState<{ name?: string } | null>(null);
 
   const loadData = useCallback(async () => {
@@ -127,13 +128,11 @@ export default function SettingsScreen() {
     setEntryCount(count);
     setReflectionCount(refCount);
     setAiEnabled(prefs.aiReflectionEnabled);
-    const user = getCurrentUser();
-    setCurrentUser(user);
-    if (user) {
-      const profile = await getProfile(user.id);
+    if (userId) {
+      const profile = await getProfile(userId);
       setUserProfile(profile);
     }
-  }, []);
+  }, [userId]);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -292,8 +291,8 @@ export default function SettingsScreen() {
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<User size={22} color={activeColors.textPrimary} />}
-              title={userProfile?.name || currentUser?.name || currentUser?.email || 'Not signed in'}
-              subtitle={userProfile?.name ? currentUser?.email : undefined}
+              title={userProfile?.name || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'Not signed in'}
+              subtitle={userProfile?.name ? user?.emailAddresses?.[0]?.emailAddress : undefined}
               showChevron={false}
             />
             <SettingsRow
