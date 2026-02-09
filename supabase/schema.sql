@@ -190,7 +190,8 @@ CREATE POLICY "Users can view group members"
   USING (
     EXISTS (
       SELECT 1 FROM public.group_members self 
-      WHERE self.group_id = group_id AND self.user_id = auth.jwt() ->> 'sub'
+      WHERE self.group_id = group_members.group_id 
+        AND self.user_id = auth.jwt() ->> 'sub'
     )
   );
 
@@ -201,7 +202,7 @@ CREATE POLICY "Admins can add connected members"
     -- Must be admin of the group
     EXISTS (
       SELECT 1 FROM public.group_members gm 
-      WHERE gm.group_id = group_id 
+      WHERE gm.group_id = group_members.group_id 
         AND gm.user_id = auth.jwt() ->> 'sub' 
         AND gm.role = 'admin'
     )
@@ -210,8 +211,8 @@ CREATE POLICY "Admins can add connected members"
       SELECT 1 FROM public.friends f 
       WHERE f.status = 'accepted'
         AND (
-          (f.user_id = auth.jwt() ->> 'sub' AND f.friend_id = user_id) OR
-          (f.friend_id = auth.jwt() ->> 'sub' AND f.user_id = user_id)
+          (f.user_id = auth.jwt() ->> 'sub' AND f.friend_id = group_members.user_id) OR
+          (f.friend_id = auth.jwt() ->> 'sub' AND f.user_id = group_members.user_id)
         )
     )
   );
@@ -220,12 +221,12 @@ CREATE POLICY "Admins can remove members"
   ON public.group_members FOR DELETE 
   USING (
     -- User can leave themselves
-    user_id = auth.jwt() ->> 'sub'
+    group_members.user_id = auth.jwt() ->> 'sub'
     OR
     -- Admins can remove members
     EXISTS (
       SELECT 1 FROM public.group_members gm 
-      WHERE gm.group_id = group_id 
+      WHERE gm.group_id = group_members.group_id 
         AND gm.user_id = auth.jwt() ->> 'sub' 
         AND gm.role = 'admin'
     )
@@ -236,71 +237,71 @@ CREATE POLICY "Users can view their messages"
   ON public.messages FOR SELECT 
   USING (
     -- Direct messages
-    (auth.jwt() ->> 'sub' = sender_id OR auth.jwt() ->> 'sub' = receiver_id)
+    (auth.jwt() ->> 'sub' = messages.sender_id OR auth.jwt() ->> 'sub' = messages.receiver_id)
     OR
     -- Group messages
     EXISTS (
       SELECT 1 FROM public.group_members gm 
-      WHERE gm.group_id = group_id AND gm.user_id = auth.jwt() ->> 'sub'
+      WHERE gm.group_id = messages.group_id AND gm.user_id = auth.jwt() ->> 'sub'
     )
   );
 
 CREATE POLICY "Users can send messages" 
   ON public.messages FOR INSERT 
   WITH CHECK (
-    auth.jwt() ->> 'sub' = sender_id
+    auth.jwt() ->> 'sub' = messages.sender_id
     AND (
       -- Direct message to a friend
-      (receiver_id IS NOT NULL AND EXISTS (
+      (messages.receiver_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM public.friends f 
         WHERE f.status = 'accepted'
           AND (
-            (f.user_id = sender_id AND f.friend_id = receiver_id) OR
-            (f.friend_id = sender_id AND f.user_id = receiver_id)
+            (f.user_id = messages.sender_id AND f.friend_id = messages.receiver_id) OR
+            (f.friend_id = messages.sender_id AND f.user_id = messages.receiver_id)
           )
       ))
       OR
       -- Group message to a group they're a member of
-      (group_id IS NOT NULL AND EXISTS (
+      (messages.group_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM public.group_members gm 
-        WHERE gm.group_id = group_id AND gm.user_id = sender_id
+        WHERE gm.group_id = messages.group_id AND gm.user_id = messages.sender_id
       ))
     )
   );
 
 CREATE POLICY "Users can update their received messages (mark as read)" 
   ON public.messages FOR UPDATE 
-  USING (auth.jwt() ->> 'sub' = receiver_id);
+  USING (auth.jwt() ->> 'sub' = messages.receiver_id);
 
 -- Entries: Users can only access their own entries
 CREATE POLICY "Users can view their own entries" 
   ON public.entries FOR SELECT 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = entries.user_id);
 
 CREATE POLICY "Users can create their own entries" 
   ON public.entries FOR INSERT 
-  WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+  WITH CHECK (auth.jwt() ->> 'sub' = entries.user_id);
 
 CREATE POLICY "Users can update their own entries" 
   ON public.entries FOR UPDATE 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = entries.user_id);
 
 CREATE POLICY "Users can delete their own entries" 
   ON public.entries FOR DELETE 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = entries.user_id);
 
 -- Reflections: Users can only access their own reflections
 CREATE POLICY "Users can view their own reflections" 
   ON public.reflections FOR SELECT 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = reflections.user_id);
 
 CREATE POLICY "Users can create their own reflections" 
   ON public.reflections FOR INSERT 
-  WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+  WITH CHECK (auth.jwt() ->> 'sub' = reflections.user_id);
 
 CREATE POLICY "Users can delete their own reflections" 
   ON public.reflections FOR DELETE 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = reflections.user_id);
 
 -- ============================================
 -- Triggers
