@@ -161,20 +161,20 @@ CREATE POLICY "Users can view their groups"
   USING (
     EXISTS (
       SELECT 1 FROM public.group_members gm 
-      WHERE gm.group_id = id AND gm.user_id = auth.jwt() ->> 'sub'
+      WHERE gm.group_id = groups.id AND gm.user_id = auth.jwt() ->> 'sub'
     )
   );
 
 CREATE POLICY "Users can create groups" 
   ON public.groups FOR INSERT 
-  WITH CHECK (auth.jwt() ->> 'sub' = created_by);
+  WITH CHECK (auth.jwt() ->> 'sub' = groups.created_by);
 
 CREATE POLICY "Group admins can update groups" 
   ON public.groups FOR UPDATE 
   USING (
     EXISTS (
       SELECT 1 FROM public.group_members gm 
-      WHERE gm.group_id = id 
+      WHERE gm.group_id = groups.id 
         AND gm.user_id = auth.jwt() ->> 'sub' 
         AND gm.role = 'admin'
     )
@@ -182,7 +182,7 @@ CREATE POLICY "Group admins can update groups"
 
 CREATE POLICY "Group admins can delete groups" 
   ON public.groups FOR DELETE 
-  USING (created_by = auth.jwt() ->> 'sub');
+  USING (groups.created_by = auth.jwt() ->> 'sub');
 
 -- Group Members: Users can view members of their groups
 CREATE POLICY "Users can view group members" 
