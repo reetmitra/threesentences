@@ -132,28 +132,28 @@ CREATE POLICY "Profiles are viewable by everyone"
 
 CREATE POLICY "Users can insert their own profile" 
   ON public.profiles FOR INSERT 
-  WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+  WITH CHECK (auth.jwt() ->> 'sub' = profiles.user_id);
 
 CREATE POLICY "Users can update their own profile" 
   ON public.profiles FOR UPDATE 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = profiles.user_id);
 
 -- Friends: Users can see their own friend connections
 CREATE POLICY "Users can view their friendships" 
   ON public.friends FOR SELECT 
-  USING (auth.jwt() ->> 'sub' = user_id OR auth.jwt() ->> 'sub' = friend_id);
+  USING (auth.jwt() ->> 'sub' = friends.user_id OR auth.jwt() ->> 'sub' = friends.friend_id);
 
 CREATE POLICY "Users can create friend requests" 
   ON public.friends FOR INSERT 
-  WITH CHECK (auth.jwt() ->> 'sub' = user_id);
+  WITH CHECK (auth.jwt() ->> 'sub' = friends.user_id);
 
 CREATE POLICY "Users can update their friendships" 
   ON public.friends FOR UPDATE 
-  USING (auth.jwt() ->> 'sub' = user_id OR auth.jwt() ->> 'sub' = friend_id);
+  USING (auth.jwt() ->> 'sub' = friends.user_id OR auth.jwt() ->> 'sub' = friends.friend_id);
 
 CREATE POLICY "Users can delete their friendships" 
   ON public.friends FOR DELETE 
-  USING (auth.jwt() ->> 'sub' = user_id);
+  USING (auth.jwt() ->> 'sub' = friends.user_id);
 
 -- Groups: Users can view groups they're a member of
 CREATE POLICY "Users can view their groups" 
