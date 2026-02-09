@@ -161,6 +161,26 @@ export interface Database {
                     created_at?: string
                 }
             }
+            waitlist: {
+                Row: {
+                    id: string
+                    name: string
+                    email: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    name: string
+                    email: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    name?: string
+                    email?: string
+                    created_at?: string
+                }
+            }
         }
         Views: {
             [_ in never]: never

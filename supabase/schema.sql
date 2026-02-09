@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS public.group_members CASCADE;
 DROP TABLE IF EXISTS public.groups CASCADE;
 DROP TABLE IF EXISTS public.friends CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.waitlist CASCADE;
 
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 DROP FUNCTION IF EXISTS add_group_creator_as_admin() CASCADE;
@@ -96,6 +97,13 @@ CREATE TABLE public.reflections (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE public.waitlist (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL CHECK (char_length(name) >= 1 AND char_length(name) <= 100),
+  email TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================
 -- STEP 3: Create indexes
 -- ============================================
@@ -112,6 +120,8 @@ CREATE INDEX idx_messages_group ON public.messages(group_id);
 CREATE INDEX idx_entries_user_id ON public.entries(user_id);
 CREATE INDEX idx_entries_date ON public.entries(date DESC);
 CREATE INDEX idx_reflections_user_id ON public.reflections(user_id);
+CREATE INDEX idx_waitlist_email ON public.waitlist(email);
+CREATE INDEX idx_waitlist_created_at ON public.waitlist(created_at DESC);
 
 -- ============================================
 -- STEP 4: Enable RLS
@@ -123,6 +133,7 @@ ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reflections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- STEP 5: Create policies
@@ -165,6 +176,9 @@ CREATE POLICY "entries_delete" ON public.entries FOR DELETE USING (auth.jwt() ->
 CREATE POLICY "reflections_select" ON public.reflections FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
 CREATE POLICY "reflections_insert" ON public.reflections FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
 CREATE POLICY "reflections_delete" ON public.reflections FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+
+-- Waitlist (public insert, no read access for privacy)
+CREATE POLICY "waitlist_insert" ON public.waitlist FOR INSERT WITH CHECK (true);
 
 -- ============================================
 -- STEP 6: Create triggers
