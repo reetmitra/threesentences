@@ -41,8 +41,7 @@ import {
     getConversationById,
     getMessages,
     sendMessage,
-    markConversationAsRead,
-    setTypingIndicator,
+    markMessagesAsRead,
 } from '@/store/chat';
 import { getCurrentUser } from '@/store/auth';
 import { getProfile } from '@/store/profile';
@@ -82,8 +81,8 @@ export default function ChatScreen() {
             setCurrentUser(userInfo);
 
             const [conv, msgs] = await Promise.all([
-                getConversationById(id),
-                getMessages(id),
+                getConversationById(user.id, id),
+                getMessages(user.id, id),
             ]);
 
             setConversation(conv);
@@ -91,7 +90,7 @@ export default function ChatScreen() {
 
             // Mark as read
             if (conv) {
-                await markConversationAsRead(id, user.id);
+                await markMessagesAsRead(user.id, id);
             }
         } catch (error) {
             console.error('Failed to load chat:', error);
@@ -122,15 +121,12 @@ export default function ChatScreen() {
     }, [currentUser, id, sending]);
 
     const handleTypingStart = useCallback(() => {
-        if (currentUser && id) {
-            setTypingIndicator(id, currentUser.id, true);
-        }
+        // Typing indicators would require additional realtime setup
+        // For now, this is a no-op
     }, [currentUser, id]);
 
     const handleTypingEnd = useCallback(() => {
-        if (currentUser && id) {
-            setTypingIndicator(id, currentUser.id, false);
-        }
+        // Typing indicators would require additional realtime setup
     }, [currentUser, id]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({

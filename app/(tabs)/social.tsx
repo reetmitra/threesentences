@@ -116,7 +116,7 @@ export default function SocialScreen() {
       setCurrentUser(userInfo);
 
       const [friendsList, requests, suggested] = await Promise.all([
-        getFriends(),
+        getFriends(user.id),
         getPendingRequests(user.id),
         getSuggestedFriends(user.id),
       ]);
@@ -163,7 +163,7 @@ export default function SocialScreen() {
   const handleAddFriend = async (user: UserInfo) => {
     if (!currentUser) return;
     try {
-      await sendFriendRequest(currentUser, user);
+      await sendFriendRequest(currentUser.id, user.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Update search results to reflect pending status
       setSearchResults((prev) =>

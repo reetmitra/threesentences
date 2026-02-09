@@ -61,7 +61,7 @@ export default function ConversationsScreen() {
             };
             setCurrentUser(userInfo);
 
-            const convos = await getConversations();
+            const convos = await getConversations(user.id);
             setConversations(convos);
         } catch (error) {
             console.error('Failed to load conversations:', error);
