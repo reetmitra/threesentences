@@ -1,25 +1,15 @@
-import { initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/**
+ * Three™ - Firebase Config (Deprecated)
+ *
+ * NOTE: Firebase Auth has been replaced with Clerk.
+ * This file is kept for reference but should not be used.
+ * Remove this file once all Firebase dependencies are cleaned up.
+ */
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDQ-Gk9B38crtL8FC-o2r6NlE4Wev0EDFU",
-    authDomain: "threesentences-7b0cb.firebaseapp.com",
-    projectId: "threesentences-7b0cb",
-    storageBucket: "threesentences-7b0cb.firebasestorage.app",
-    messagingSenderId: "133282432559",
-    appId: "1:133282432559:web:41bb6679a83e9465de28da",
-    measurementId: "G-FF4JL70EQ7"
-};
+// Firebase is no longer used for authentication
+// Clerk is now the authentication provider
+// See config/clerk.ts for the new auth configuration
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// Initialize Auth with AsyncStorage persistence for React Native
-const auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-});
-
-const isConfigured = true;
-
-export { app, auth, isConfigured };
+export const isConfigured = false;
+export const auth = null;
+export const app = null;

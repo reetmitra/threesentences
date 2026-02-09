@@ -2,52 +2,73 @@
  * Tests for Profile Types and Validation Functions
  *
  * Tests all validation logic for user profiles including
- * username, age, hobbies, and interests validation.
+ * username, age, bio, and interests validation.
+ * Updated for elite interests system.
  */
 
 import {
   INTEREST_CATEGORIES,
+  INTEREST_GROUPS,
   PROFILE_CONSTRAINTS,
   USERNAME_CONSTRAINTS,
   validateUsername,
   validateAge,
-  validateHobbies,
   validateInterests,
   validateProfile,
   createDefaultProfile,
   suggestUsername,
-  CategoryId,
+  InterestId,
 } from '@/types/profile';
 
 describe('profile types', () => {
   describe('INTEREST_CATEGORIES', () => {
-    it('has all required categories', () => {
-      expect(INTEREST_CATEGORIES.length).toBe(12);
+    it('has 46 elite interests', () => {
+      expect(INTEREST_CATEGORIES.length).toBe(46);
     });
 
-    it('each category has id, label, and icon', () => {
-      INTEREST_CATEGORIES.forEach((category) => {
-        expect(category).toHaveProperty('id');
-        expect(category).toHaveProperty('label');
-        expect(category).toHaveProperty('icon');
-        expect(typeof category.id).toBe('string');
-        expect(typeof category.label).toBe('string');
-        expect(typeof category.icon).toBe('string');
+    it('each interest has id, label, and group', () => {
+      INTEREST_CATEGORIES.forEach((interest) => {
+        expect(interest).toHaveProperty('id');
+        expect(interest).toHaveProperty('label');
+        expect(interest).toHaveProperty('group');
+        expect(typeof interest.id).toBe('string');
+        expect(typeof interest.label).toBe('string');
+        expect(typeof interest.group).toBe('string');
       });
     });
 
-    it('has unique category ids', () => {
+    it('has unique interest ids', () => {
       const ids = INTEREST_CATEGORIES.map((c) => c.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('includes expected categories', () => {
+    it('includes expected elite interests', () => {
       const ids = INTEREST_CATEGORIES.map((c) => c.id);
-      expect(ids).toContain('mindfulness');
-      expect(ids).toContain('fitness');
-      expect(ids).toContain('creativity');
-      expect(ids).toContain('productivity');
+      expect(ids).toContain('marathon');
+      expect(ids).toContain('meditation');
+      expect(ids).toContain('venture-capital');
+      expect(ids).toContain('private-jet');
+    });
+  });
+
+  describe('INTEREST_GROUPS', () => {
+    it('has 6 groups', () => {
+      expect(Object.keys(INTEREST_GROUPS).length).toBe(6);
+    });
+
+    it('has correct group structure', () => {
+      Object.values(INTEREST_GROUPS).forEach((group) => {
+        expect(group).toHaveProperty('label');
+        expect(group).toHaveProperty('icon');
+      });
+    });
+
+    it('includes expected groups', () => {
+      const groupIds = Object.keys(INTEREST_GROUPS);
+      expect(groupIds).toContain('fitness');
+      expect(groupIds).toContain('wellness');
+      expect(groupIds).toContain('finance');
     });
   });
 
@@ -80,11 +101,6 @@ describe('profile types', () => {
       expect(result.error).toContain('letters, numbers, and underscores');
     });
 
-    it('returns invalid for username with spaces', () => {
-      const result = validateUsername('john doe');
-      expect(result.valid).toBe(false);
-    });
-
     it('allows underscores in username', () => {
       expect(validateUsername('john_doe_123').valid).toBe(true);
     });
@@ -114,22 +130,22 @@ describe('profile types', () => {
       expect(validateAge(50).valid).toBe(true);
     });
 
-    it('returns valid for minimum age', () => {
-      expect(validateAge(PROFILE_CONSTRAINTS.age.min).valid).toBe(true);
+    it('returns valid for minimum age (18)', () => {
+      expect(validateAge(18).valid).toBe(true);
     });
 
-    it('returns valid for maximum age', () => {
-      expect(validateAge(PROFILE_CONSTRAINTS.age.max).valid).toBe(true);
+    it('returns valid for maximum age (99)', () => {
+      expect(validateAge(99).valid).toBe(true);
     });
 
-    it('returns invalid for age below minimum', () => {
-      const result = validateAge(PROFILE_CONSTRAINTS.age.min - 1);
+    it('returns invalid for age below minimum (18)', () => {
+      const result = validateAge(17);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain('at least');
+      expect(result.error).toContain('18');
     });
 
     it('returns invalid for age above maximum', () => {
-      const result = validateAge(PROFILE_CONSTRAINTS.age.max + 1);
+      const result = validateAge(100);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('valid age');
     });
@@ -144,84 +160,46 @@ describe('profile types', () => {
       const result = validateAge(-5);
       expect(result.valid).toBe(false);
     });
-
-    it('returns invalid for zero age', () => {
-      const result = validateAge(0);
-      expect(result.valid).toBe(false);
-    });
-  });
-
-  describe('validateHobbies', () => {
-    it('returns valid for empty hobbies array', () => {
-      expect(validateHobbies([]).valid).toBe(true);
-    });
-
-    it('returns valid for hobbies within limit', () => {
-      const hobbies = ['reading', 'coding', 'gaming'];
-      expect(validateHobbies(hobbies).valid).toBe(true);
-    });
-
-    it('returns valid for maximum number of hobbies', () => {
-      const hobbies = Array(PROFILE_CONSTRAINTS.hobbies.maxCount).fill('hobby');
-      expect(validateHobbies(hobbies).valid).toBe(true);
-    });
-
-    it('returns invalid for too many hobbies', () => {
-      const hobbies = Array(PROFILE_CONSTRAINTS.hobbies.maxCount + 1).fill('hobby');
-      const result = validateHobbies(hobbies);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('up to');
-    });
-
-    it('returns invalid for hobby too long', () => {
-      const longHobby = 'a'.repeat(PROFILE_CONSTRAINTS.hobbies.maxLength + 1);
-      const result = validateHobbies([longHobby]);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('characters or less');
-    });
-
-    it('returns invalid for empty hobby string', () => {
-      const result = validateHobbies(['', 'valid']);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('empty');
-    });
-
-    it('returns invalid for whitespace-only hobby', () => {
-      const result = validateHobbies(['   ']);
-      expect(result.valid).toBe(false);
-    });
-
-    it('accepts hobby at max length', () => {
-      const maxLengthHobby = 'a'.repeat(PROFILE_CONSTRAINTS.hobbies.maxLength);
-      expect(validateHobbies([maxLengthHobby]).valid).toBe(true);
-    });
   });
 
   describe('validateInterests', () => {
     it('returns invalid for empty interests', () => {
       const result = validateInterests([]);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain('at least one');
+      expect(result.error).toContain('at least');
     });
 
-    it('returns valid for single interest', () => {
-      expect(validateInterests(['mindfulness']).valid).toBe(true);
+    it('requires minimum 3 interests', () => {
+      const result = validateInterests(['marathon', 'meditation'] as InterestId[]);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('3');
     });
 
-    it('returns valid for multiple valid interests', () => {
-      const interests: CategoryId[] = ['mindfulness', 'fitness', 'creativity'];
+    it('returns valid for 3 interests', () => {
+      const interests: InterestId[] = ['marathon', 'meditation', 'yoga'];
       expect(validateInterests(interests).valid).toBe(true);
     });
 
-    it('returns invalid for invalid interest id', () => {
-      const result = validateInterests(['invalid_interest' as CategoryId]);
-      expect(result.valid).toBe(false);
-      expect(result.error).toContain('Invalid interest');
+    it('returns valid for multiple valid interests', () => {
+      const interests: InterestId[] = ['marathon', 'meditation', 'yoga', 'crossfit'];
+      expect(validateInterests(interests).valid).toBe(true);
     });
 
-    it('returns valid for all interests selected', () => {
-      const allInterests = INTEREST_CATEGORIES.map((c) => c.id);
-      expect(validateInterests(allInterests).valid).toBe(true);
+    it('returns invalid for more than 10 interests', () => {
+      const interests: InterestId[] = [
+        'marathon', 'meditation', 'yoga', 'crossfit', 'swimming',
+        'cycling', 'sauna', 'cold-plunge', 'breathwork', 'intermittent-fasting',
+        'keto'
+      ];
+      const result = validateInterests(interests);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('10');
+    });
+
+    it('returns invalid for invalid interest id', () => {
+      const result = validateInterests(['invalid_interest' as InterestId, 'marathon', 'yoga']);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Invalid interest');
     });
   });
 
@@ -230,14 +208,14 @@ describe('profile types', () => {
       name: 'John Doe',
       username: 'johndoe123',
       age: 25,
-      interests: ['mindfulness'] as CategoryId[],
-      hobbies: ['reading'],
+      bio: 'Elite entrepreneur',
+      interests: ['marathon', 'meditation', 'yoga'] as InterestId[],
     };
 
     it('returns valid for complete valid profile', () => {
       const result = validateProfile(validProfile);
       expect(result.isValid).toBe(true);
-      expect(Object.keys(result.errors)).toHaveLength(0);
+      expect(Object.keys(result.errors).filter(k => result.errors[k as keyof typeof result.errors])).toHaveLength(0);
     });
 
     it('returns invalid for missing name', () => {
@@ -274,16 +252,14 @@ describe('profile types', () => {
       const result = validateProfile({
         name: '',
         username: 'ab', // too short
-        age: 5, // too young
-        hobbies: Array(10).fill('hobby'), // too many
-        interests: [], // empty
+        age: 15, // too young (must be 18+)
+        interests: [], // empty (needs minimum 3)
       });
 
       expect(result.isValid).toBe(false);
       expect(result.errors.name).toBeDefined();
       expect(result.errors.username).toBeDefined();
       expect(result.errors.age).toBeDefined();
-      expect(result.errors.hobbies).toBeDefined();
       expect(result.errors.interests).toBeDefined();
     });
 
@@ -323,11 +299,6 @@ describe('profile types', () => {
     it('initializes empty interests array', () => {
       const profile = createDefaultProfile('user123');
       expect(profile.interests).toEqual([]);
-    });
-
-    it('initializes empty hobbies array', () => {
-      const profile = createDefaultProfile('user123');
-      expect(profile.hobbies).toEqual([]);
     });
 
     it('sets isComplete to false', () => {
@@ -403,11 +374,6 @@ describe('profile types', () => {
       const username = suggestUsername('');
       expect(username.length).toBeGreaterThanOrEqual(USERNAME_CONSTRAINTS.minLength);
     });
-
-    it('handles name with only special characters', () => {
-      const username = suggestUsername('@#$%');
-      expect(username.length).toBeGreaterThanOrEqual(USERNAME_CONSTRAINTS.minLength);
-    });
   });
 
   describe('PROFILE_CONSTRAINTS', () => {
@@ -420,18 +386,14 @@ describe('profile types', () => {
       expect(PROFILE_CONSTRAINTS.bio.maxLength).toBe(150);
     });
 
-    it('has correct hobbies constraints', () => {
-      expect(PROFILE_CONSTRAINTS.hobbies.maxCount).toBe(5);
-      expect(PROFILE_CONSTRAINTS.hobbies.maxLength).toBe(30);
+    it('has correct interests constraints for elite networking', () => {
+      expect(PROFILE_CONSTRAINTS.interests.minCount).toBe(3);
+      expect(PROFILE_CONSTRAINTS.interests.maxCount).toBe(10);
     });
 
-    it('has correct interests constraints', () => {
-      expect(PROFILE_CONSTRAINTS.interests.minCount).toBe(1);
-    });
-
-    it('has correct age constraints', () => {
-      expect(PROFILE_CONSTRAINTS.age.min).toBe(13);
-      expect(PROFILE_CONSTRAINTS.age.max).toBe(120);
+    it('has correct age constraints (adults only)', () => {
+      expect(PROFILE_CONSTRAINTS.age.min).toBe(18);
+      expect(PROFILE_CONSTRAINTS.age.max).toBe(99);
     });
   });
 

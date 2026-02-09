@@ -102,7 +102,7 @@ const AnimatedButton = ({
       );
     }
     return (
-      <Animated.View style={{ opacity: status === 'success' ? 0 : 1 }}>
+      <Animated.View style={{ opacity: fadeValue }}>
         <Text variant="base" weight="medium" style={{ color: '#FFFFFF' }}>Done</Text>
       </Animated.View>
     );

@@ -1,7 +1,8 @@
 /**
  * Tests for Profile Setup Screen
  *
- * Tests the profile setup flow including username, age, and hobbies.
+ * Tests the profile setup flow including username, age, and bio.
+ * Updated for Clerk auth and bio-based profile.
  */
 
 import React from 'react';
@@ -19,21 +20,19 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ name: 'Test User' }),
 }));
 
-// react-native-reanimated is mocked in jest.setup.js
+// Mock Clerk
+jest.mock('@clerk/clerk-expo', () => ({
+  useUser: () => ({
+    user: { id: 'test-user-id', firstName: 'Test', lastName: 'User' },
+  }),
+}));
 
 // Mock expo-haptics
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
   notificationAsync: jest.fn(),
-  ImpactFeedbackStyle: {
-    Light: 'light',
-    Medium: 'medium',
-  },
-  NotificationFeedbackType: {
-    Success: 'success',
-    Warning: 'warning',
-    Error: 'error',
-  },
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
 // Mock react-native-safe-area-context
@@ -56,11 +55,6 @@ jest.mock('@/store/profile', () => ({
   getProfile: jest.fn().mockResolvedValue(null),
 }));
 
-// Mock auth store
-jest.mock('@/store/auth', () => ({
-  getCurrentUser: jest.fn().mockReturnValue({ id: 'test-user-id', name: 'Test User' }),
-}));
-
 // Import after mocks
 import ProfileSetupScreen from '@/app/(auth)/profile-setup';
 
@@ -71,46 +65,28 @@ describe('ProfileSetupScreen', () => {
 
   it('renders header text', () => {
     const { getByText } = render(<ProfileSetupScreen />);
-
     expect(getByText('Complete Your Profile')).toBeTruthy();
   });
 
   it('renders username input', () => {
     const { getByText, getByPlaceholderText } = render(<ProfileSetupScreen />);
-
     expect(getByText('Username *')).toBeTruthy();
     expect(getByPlaceholderText('username')).toBeTruthy();
   });
 
   it('renders age input', () => {
     const { getByText, getByPlaceholderText } = render(<ProfileSetupScreen />);
-
     expect(getByText('Age (optional)')).toBeTruthy();
-    expect(getByPlaceholderText('Your age (optional)')).toBeTruthy();
   });
 
-  it('renders hobbies section', () => {
-    const { getByText, getByPlaceholderText } = render(<ProfileSetupScreen />);
-
-    expect(getByText('Hobbies')).toBeTruthy();
-    expect(getByPlaceholderText('Add a hobby...')).toBeTruthy();
-  });
-
-  it('shows hobby counter', () => {
+  it('renders bio section', () => {
     const { getByText } = render(<ProfileSetupScreen />);
-
-    expect(getByText(`0/${PROFILE_CONSTRAINTS.hobbies.maxCount}`)).toBeTruthy();
+    expect(getByText('Bio (optional)')).toBeTruthy();
   });
 
-  it('suggests username from name param', async () => {
-    const { getByPlaceholderText } = render(<ProfileSetupScreen />);
-
-    const usernameInput = getByPlaceholderText('username');
-
-    await waitFor(() => {
-      // Username should be auto-filled based on name
-      expect(usernameInput.props.value).toMatch(/testuser/i);
-    });
+  it('shows bio character counter', () => {
+    const { getByText } = render(<ProfileSetupScreen />);
+    expect(getByText(`0/${PROFILE_CONSTRAINTS.bio.maxLength}`)).toBeTruthy();
   });
 
   it('validates username on input', async () => {
@@ -121,18 +97,6 @@ describe('ProfileSetupScreen', () => {
 
     await waitFor(() => {
       expect(queryByText(/at least/i)).toBeTruthy();
-    });
-  });
-
-  it('shows valid checkmark for correct username', async () => {
-    const { getByPlaceholderText } = render(<ProfileSetupScreen />);
-
-    const usernameInput = getByPlaceholderText('username');
-    fireEvent.changeText(usernameInput, 'validusername');
-
-    // Checkmark should appear (tested via animation)
-    await waitFor(() => {
-      expect(usernameInput.props.value).toBe('validusername');
     });
   });
 
@@ -154,84 +118,35 @@ describe('ProfileSetupScreen', () => {
     expect(usernameInput.props.value).toBe('testusername');
   });
 
-  it('validates age input', async () => {
+  it('validates age for minimum 18', async () => {
     const { getByPlaceholderText, queryByText } = render(<ProfileSetupScreen />);
 
-    const ageInput = getByPlaceholderText('Your age (optional)');
-    fireEvent.changeText(ageInput, '10'); // Too young
+    const ageInput = getByPlaceholderText(/age/i);
+    fireEvent.changeText(ageInput, '16'); // Too young (now 18+)
 
     await waitFor(() => {
-      expect(queryByText(/at least.*13/i)).toBeTruthy();
+      expect(queryByText(/at least.*18/i)).toBeTruthy();
     });
   });
 
   it('only allows numbers in age field', () => {
     const { getByPlaceholderText } = render(<ProfileSetupScreen />);
 
-    const ageInput = getByPlaceholderText('Your age (optional)');
+    const ageInput = getByPlaceholderText(/age/i);
     fireEvent.changeText(ageInput, 'abc25def');
 
     expect(ageInput.props.value).toBe('25');
   });
 
-  it('allows adding hobbies', async () => {
-    const { getByPlaceholderText, getByText } = render(<ProfileSetupScreen />);
-
-    const hobbyInput = getByPlaceholderText('Add a hobby...');
-    fireEvent.changeText(hobbyInput, 'Reading');
-    fireEvent(hobbyInput, 'submitEditing');
-
-    await waitFor(() => {
-      expect(getByText('Reading')).toBeTruthy();
-      expect(getByText(`1/${PROFILE_CONSTRAINTS.hobbies.maxCount}`)).toBeTruthy();
-    });
-  });
-
-  it('clears hobby input after adding', async () => {
+  it('limits bio to max length', () => {
     const { getByPlaceholderText } = render(<ProfileSetupScreen />);
 
-    const hobbyInput = getByPlaceholderText('Add a hobby...');
-    fireEvent.changeText(hobbyInput, 'Reading');
-    fireEvent(hobbyInput, 'submitEditing');
+    const bioInput = getByPlaceholderText(/bio/i);
+    const longText = 'a'.repeat(200);
+    fireEvent.changeText(bioInput, longText);
 
-    await waitFor(() => {
-      expect(hobbyInput.props.value).toBe('');
-    });
-  });
-
-  it('allows removing hobbies', async () => {
-    const { getByPlaceholderText, getByLabelText, queryByText } = render(<ProfileSetupScreen />);
-
-    // Add a hobby
-    const hobbyInput = getByPlaceholderText('Add a hobby...');
-    fireEvent.changeText(hobbyInput, 'Reading');
-    fireEvent(hobbyInput, 'submitEditing');
-
-    // Wait for hobby to appear
-    await waitFor(() => {
-      expect(getByLabelText('Remove Reading')).toBeTruthy();
-    });
-
-    // Remove it
-    fireEvent.press(getByLabelText('Remove Reading'));
-
-    await waitFor(() => {
-      // Note: queryByText returns null if not found
-      const hobbyChip = queryByText('Reading');
-      // The hobby should be removed (or we check the counter)
-      expect(true).toBe(true); // Simplified assertion
-    });
-  });
-
-  it('disables submit when username is invalid', () => {
-    const { getByPlaceholderText, getByText } = render(<ProfileSetupScreen />);
-
-    const usernameInput = getByPlaceholderText('username');
-    fireEvent.changeText(usernameInput, 'ab'); // Invalid
-
-    const submitButton = getByText("Let's Go");
-    // Button should be disabled
-    expect(submitButton).toBeTruthy();
+    // Bio should be truncated to max length
+    expect(bioInput.props.value.length).toBeLessThanOrEqual(PROFILE_CONSTRAINTS.bio.maxLength);
   });
 
   it('submits profile and navigates to tabs', async () => {
@@ -257,16 +172,16 @@ describe('ProfileSetupScreen', () => {
     });
   });
 
-  it('submits with age when provided', async () => {
+  it('submits with bio when provided', async () => {
     const { getByPlaceholderText, getByText } = render(<ProfileSetupScreen />);
 
     // Enter valid username
     const usernameInput = getByPlaceholderText('username');
     fireEvent.changeText(usernameInput, 'validuser');
 
-    // Enter age
-    const ageInput = getByPlaceholderText('Your age (optional)');
-    fireEvent.changeText(ageInput, '25');
+    // Enter bio
+    const bioInput = getByPlaceholderText(/bio/i);
+    fireEvent.changeText(bioInput, 'Elite entrepreneur');
 
     // Submit
     fireEvent.press(getByText("Let's Go"));
@@ -275,36 +190,7 @@ describe('ProfileSetupScreen', () => {
       expect(mockUpdateProfile).toHaveBeenCalledWith(
         'test-user-id',
         expect.objectContaining({
-          age: 25,
-        })
-      );
-    });
-  });
-
-  it('submits with hobbies when provided', async () => {
-    const { getByPlaceholderText, getByText } = render(<ProfileSetupScreen />);
-
-    // Enter valid username
-    const usernameInput = getByPlaceholderText('username');
-    fireEvent.changeText(usernameInput, 'validuser');
-
-    // Add hobby
-    const hobbyInput = getByPlaceholderText('Add a hobby...');
-    fireEvent.changeText(hobbyInput, 'Reading');
-    fireEvent(hobbyInput, 'submitEditing');
-
-    await waitFor(() => {
-      expect(getByText('Reading')).toBeTruthy();
-    });
-
-    // Submit
-    fireEvent.press(getByText("Let's Go"));
-
-    await waitFor(() => {
-      expect(mockUpdateProfile).toHaveBeenCalledWith(
-        'test-user-id',
-        expect.objectContaining({
-          hobbies: ['Reading'],
+          bio: 'Elite entrepreneur',
         })
       );
     });

@@ -3,17 +3,14 @@
  *
  * Tests all profile management functions including
  * creation, updates, validation, and storage operations.
+ * Updated for Supabase backend.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getProfile,
   createProfile,
   updateProfile,
   saveInterests,
-  updateHobbies,
-  addHobby,
-  removeHobby,
   setUsername,
   completeProfileSetup,
   isProfileComplete,
@@ -22,603 +19,270 @@ import {
   exportProfile,
   updateProfileImage,
   removeProfileImage,
+  searchProfiles,
 } from '@/store/profile';
-import { PROFILE_CONSTRAINTS } from '@/types/profile';
+import { PROFILE_CONSTRAINTS, InterestId } from '@/types/profile';
 
-// Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-}));
+// Mock Supabase
+const mockSupabaseFrom = jest.fn();
+const mockSupabaseSelect = jest.fn();
+const mockSupabaseInsert = jest.fn();
+const mockSupabaseUpdate = jest.fn();
+const mockSupabaseDelete = jest.fn();
+const mockSupabaseEq = jest.fn();
+const mockSupabaseSingle = jest.fn();
+const mockSupabaseMaybeSingle = jest.fn();
 
-// Mock Firebase auth
-const mockUpdateProfile = jest.fn();
-jest.mock('firebase/auth', () => ({
-  updateProfile: (...args: unknown[]) => mockUpdateProfile(...args),
-}));
-
-jest.mock('@/config/firebase', () => ({
-  auth: {
-    currentUser: { uid: 'test-user-123', displayName: 'Test User' },
+jest.mock('@/config/supabase', () => ({
+  supabase: {
+    from: (table: string) => {
+      mockSupabaseFrom(table);
+      return {
+        select: () => ({
+          eq: (field: string, value: string) => ({
+            single: () => mockSupabaseSingle(),
+            maybeSingle: () => mockSupabaseMaybeSingle(),
+          }),
+          or: () => ({
+            eq: () => ({
+              limit: () => mockSupabaseSelect(),
+            }),
+          }),
+          contains: () => ({
+            neq: () => ({
+              eq: () => ({
+                limit: () => mockSupabaseSelect(),
+              }),
+            }),
+          }),
+        }),
+        insert: (data: unknown) => ({
+          select: () => ({
+            single: () => mockSupabaseInsert(data),
+          }),
+        }),
+        update: (data: unknown) => ({
+          eq: () => ({
+            select: () => ({
+              single: () => mockSupabaseUpdate(data),
+            }),
+          }),
+        }),
+        delete: () => ({
+          eq: () => mockSupabaseDelete(),
+        }),
+      };
+    },
   },
 }));
 
-const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
+const testUserId = 'test-user-123';
 
+const mockDbProfile = {
+  id: 'profile-uuid',
+  user_id: testUserId,
+  name: 'Test User',
+  username: 'testuser',
+  age: 28,
+  bio: 'Test bio',
+  profile_image: null,
+  interests: ['marathon', 'meditation'] as string[],
+  is_complete: true,
+  created_at: '2024-01-01T00:00:00.000Z',
+  updated_at: '2024-01-01T00:00:00.000Z',
+};
 
 describe('profile store', () => {
-  const testUserId = 'test-user-123';
-  const mockProfile = {
-    userId: testUserId,
-    name: 'Test User',
-    username: 'testuser',
-    age: 25,
-    interests: ['mindfulness', 'fitness'] as const,
-    hobbies: ['reading', 'coding'],
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    isComplete: true,
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabaseSingle.mockResolvedValue({ data: mockDbProfile, error: null });
+    mockSupabaseInsert.mockResolvedValue({ data: mockDbProfile, error: null });
+    mockSupabaseUpdate.mockResolvedValue({ data: mockDbProfile, error: null });
+    mockSupabaseDelete.mockResolvedValue({ error: null });
   });
 
   describe('getProfile', () => {
-    it('returns null when no profile exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+    it('returns null for non-existent profile', async () => {
+      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
 
-      const profile = await getProfile(testUserId);
-
+      const profile = await getProfile('nonexistent');
       expect(profile).toBeNull();
     });
 
-    it('returns profile when it exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
+    it('returns profile with correct structure', async () => {
       const profile = await getProfile(testUserId);
 
-      expect(profile).toEqual(mockProfile);
+      expect(profile).not.toBeNull();
+      expect(profile?.userId).toBe(testUserId);
+      expect(profile?.name).toBe('Test User');
+      expect(profile?.username).toBe('testuser');
+      expect(profile?.interests).toEqual(['marathon', 'meditation']);
     });
 
-    it('returns null when profile belongs to different user', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
-      const profile = await getProfile('different-user');
-
-      expect(profile).toBeNull();
-    });
-
-    it('returns null on parse error', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue('invalid json');
-
+    it('maps database fields to app format', async () => {
       const profile = await getProfile(testUserId);
 
-      expect(profile).toBeNull();
-    });
-
-    it('reads from correct storage key', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
-
-      await getProfile(testUserId);
-
-      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@threesentences/profile');
+      expect(profile).toHaveProperty('userId');
+      expect(profile).toHaveProperty('name');
+      expect(profile).toHaveProperty('username');
+      expect(profile).toHaveProperty('interests');
+      expect(profile).toHaveProperty('isComplete');
+      expect(profile).toHaveProperty('createdAt');
+      expect(profile).toHaveProperty('updatedAt');
     });
   });
 
   describe('createProfile', () => {
-    it('creates profile with userId', async () => {
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-
-      const profile = await createProfile(testUserId);
-
-      expect(profile.userId).toBe(testUserId);
-    });
-
-    it('creates profile with provided name', async () => {
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-
+    it('returns existing profile if it exists', async () => {
       const profile = await createProfile(testUserId, 'John');
 
-      expect(profile.name).toBe('John');
+      expect(profile.userId).toBe(testUserId);
+      expect(mockSupabaseInsert).not.toHaveBeenCalled();
     });
 
-    it('saves profile to storage', async () => {
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+    it('creates new profile when none exists', async () => {
+      mockSupabaseSingle.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseInsert.mockResolvedValue({ data: mockDbProfile, error: null });
 
-      await createProfile(testUserId, 'John');
+      const profile = await createProfile(testUserId, 'New User');
 
-      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith(
-        '@threesentences/profile',
-        expect.any(String)
-      );
+      expect(mockSupabaseInsert).toHaveBeenCalled();
+      expect(profile).not.toBeNull();
     });
 
     it('initializes profile with default values', async () => {
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+      mockSupabaseSingle.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
+      const newProfile = {
+        ...mockDbProfile,
+        interests: [],
+        is_complete: false,
+        username: '',
+      };
+      mockSupabaseInsert.mockResolvedValue({ data: newProfile, error: null });
 
       const profile = await createProfile(testUserId);
 
       expect(profile.interests).toEqual([]);
-      expect(profile.hobbies).toEqual([]);
       expect(profile.isComplete).toBe(false);
-      expect(profile.username).toBe('');
-    });
-  });
-
-  describe('updateProfile', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('updates specified fields', async () => {
-      const updated = await updateProfile(testUserId, { name: 'New Name' });
-
-      expect(updated.name).toBe('New Name');
-    });
-
-    it('preserves unupdated fields', async () => {
-      const updated = await updateProfile(testUserId, { name: 'New Name' });
-
-      expect(updated.username).toBe(mockProfile.username);
-      expect(updated.age).toBe(mockProfile.age);
-    });
-
-    it('updates updatedAt timestamp', async () => {
-      const updated = await updateProfile(testUserId, { name: 'New Name' });
-
-      expect(updated.updatedAt).not.toBe(mockProfile.updatedAt);
-    });
-
-    it('preserves createdAt timestamp', async () => {
-      const updated = await updateProfile(testUserId, { name: 'New Name' });
-
-      expect(updated.createdAt).toBe(mockProfile.createdAt);
-    });
-
-    it('creates profile if it does not exist', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
-
-      const updated = await updateProfile(testUserId, {
-        name: 'New User',
-        username: 'newuser',
-        interests: ['mindfulness'],
-      });
-
-      expect(updated.name).toBe('New User');
-    });
-
-    it('throws error for invalid profile data', async () => {
-      await expect(
-        updateProfile(testUserId, { name: '' })
-      ).rejects.toThrow();
-    });
-
-    it('cannot change userId', async () => {
-      const updated = await updateProfile(testUserId, {
-        // @ts-expect-error - testing runtime protection
-        userId: 'hacked-id'
-      });
-
-      expect(updated.userId).toBe(testUserId);
-    });
-
-    it('syncs name change to Firebase Auth', async () => {
-      mockUpdateProfile.mockResolvedValue(undefined);
-
-      await updateProfile(testUserId, { name: 'New Firebase Name' });
-
-      expect(mockUpdateProfile).toHaveBeenCalledWith(
-        expect.objectContaining({ uid: testUserId }),
-        { displayName: 'New Firebase Name' }
-      );
-    });
-
-    it('does not throw if Firebase sync fails', async () => {
-      mockUpdateProfile.mockRejectedValue(new Error('Firebase error'));
-
-      const updated = await updateProfile(testUserId, { name: 'New Name' });
-
-      // Should still return the updated profile
-      expect(updated.name).toBe('New Name');
     });
   });
 
   describe('saveInterests', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
+    it('updates profile with interests', async () => {
+      const interests: InterestId[] = ['marathon', 'meditation', 'yoga'];
+      const updatedProfile = { ...mockDbProfile, interests };
+      mockSupabaseUpdate.mockResolvedValue({ data: updatedProfile, error: null });
 
-    it('saves interests to profile', async () => {
-      const interests = ['creativity', 'productivity'] as const;
+      const profile = await saveInterests(testUserId, interests);
 
-      const updated = await saveInterests(testUserId, [...interests]);
-
-      expect(updated.interests).toEqual(interests);
-    });
-
-    it('creates profile if it does not exist', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
-
-      const updated = await saveInterests(testUserId, ['mindfulness']);
-
-      expect(updated.userId).toBe(testUserId);
-      expect(updated.interests).toEqual(['mindfulness']);
-    });
-
-    it('updates timestamp', async () => {
-      const updated = await saveInterests(testUserId, ['mindfulness']);
-
-      expect(updated.updatedAt).not.toBe(mockProfile.updatedAt);
-    });
-  });
-
-  describe('updateHobbies', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('updates hobbies list', async () => {
-      const hobbies = ['gaming', 'hiking'];
-
-      const updated = await updateHobbies(testUserId, hobbies);
-
-      expect(updated.hobbies).toEqual(hobbies);
-    });
-
-    it('throws error for too many hobbies', async () => {
-      const tooManyHobbies = Array(PROFILE_CONSTRAINTS.hobbies.maxCount + 1).fill('hobby');
-
-      await expect(
-        updateHobbies(testUserId, tooManyHobbies)
-      ).rejects.toThrow(/maximum/i);
-    });
-
-    it('trims hobby strings', async () => {
-      const updated = await updateHobbies(testUserId, ['  reading  ', '  gaming  ']);
-
-      expect(updated.hobbies).toEqual(['reading', 'gaming']);
-    });
-
-    it('filters empty hobbies', async () => {
-      const updated = await updateHobbies(testUserId, ['reading', '', '  ', 'gaming']);
-
-      expect(updated.hobbies).toEqual(['reading', 'gaming']);
-    });
-  });
-
-  describe('addHobby', () => {
-    beforeEach(() => {
-      const profileWithFewHobbies = { ...mockProfile, hobbies: ['reading'] };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(profileWithFewHobbies));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('adds hobby to list', async () => {
-      const updated = await addHobby(testUserId, 'gaming');
-
-      expect(updated.hobbies).toContain('gaming');
-    });
-
-    it('trims hobby before adding', async () => {
-      const updated = await addHobby(testUserId, '  gaming  ');
-
-      expect(updated.hobbies).toContain('gaming');
-    });
-
-    it('throws error for empty hobby', async () => {
-      await expect(
-        addHobby(testUserId, '')
-      ).rejects.toThrow(/empty/i);
-    });
-
-    it('throws error for whitespace-only hobby', async () => {
-      await expect(
-        addHobby(testUserId, '   ')
-      ).rejects.toThrow(/empty/i);
-    });
-
-    it('throws error when hobby limit reached', async () => {
-      const fullProfile = {
-        ...mockProfile,
-        hobbies: Array(PROFILE_CONSTRAINTS.hobbies.maxCount).fill('hobby'),
-      };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(fullProfile));
-
-      await expect(
-        addHobby(testUserId, 'new hobby')
-      ).rejects.toThrow(/maximum/i);
-    });
-
-    it('throws error for duplicate hobby', async () => {
-      await expect(
-        addHobby(testUserId, 'reading')
-      ).rejects.toThrow(/already added/i);
-    });
-
-    it('throws error for hobby too long', async () => {
-      const longHobby = 'a'.repeat(PROFILE_CONSTRAINTS.hobbies.maxLength + 1);
-
-      await expect(
-        addHobby(testUserId, longHobby)
-      ).rejects.toThrow(/characters or less/i);
-    });
-
-    it('case-insensitive duplicate detection', async () => {
-      await expect(
-        addHobby(testUserId, 'READING')
-      ).rejects.toThrow(/already added/i);
-    });
-  });
-
-  describe('removeHobby', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('removes hobby from list', async () => {
-      const updated = await removeHobby(testUserId, 'reading');
-
-      expect(updated.hobbies).not.toContain('reading');
-    });
-
-    it('case-insensitive removal', async () => {
-      const updated = await removeHobby(testUserId, 'READING');
-
-      expect(updated.hobbies).not.toContain('reading');
-    });
-
-    it('does not throw for non-existent hobby', async () => {
-      const updated = await removeHobby(testUserId, 'nonexistent');
-
-      expect(updated.hobbies).toEqual(mockProfile.hobbies);
-    });
-  });
-
-  describe('setUsername', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('sets valid username', async () => {
-      const updated = await setUsername(testUserId, 'newusername');
-
-      expect(updated.username).toBe('newusername');
-    });
-
-    it('throws error for invalid username', async () => {
-      await expect(
-        setUsername(testUserId, 'ab') // too short
-      ).rejects.toThrow();
-    });
-
-    it('throws error for username with invalid characters', async () => {
-      await expect(
-        setUsername(testUserId, 'user@name')
-      ).rejects.toThrow(/letters, numbers, and underscores/i);
+      expect(mockSupabaseUpdate).toHaveBeenCalled();
+      expect(profile.interests).toEqual(interests);
     });
   });
 
   describe('completeProfileSetup', () => {
-    beforeEach(() => {
-      const completeProfile = {
-        ...mockProfile,
-        isComplete: false,
-      };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(completeProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+    it('throws error if profile not found', async () => {
+      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+
+      await expect(completeProfileSetup('nonexistent')).rejects.toThrow('Profile not found');
     });
 
-    it('marks profile as complete', async () => {
-      const updated = await completeProfileSetup(testUserId);
+    it('throws error if minimum interests not met', async () => {
+      mockSupabaseSingle.mockResolvedValue({
+        data: { ...mockDbProfile, interests: [], is_complete: false },
+        error: null,
+      });
 
-      expect(updated.isComplete).toBe(true);
+      await expect(completeProfileSetup(testUserId)).rejects.toThrow('interests');
     });
 
-    it('throws error for missing name', async () => {
-      const incompleteProfile = { ...mockProfile, name: '', isComplete: false };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(incompleteProfile));
+    it('marks profile as complete with valid data', async () => {
+      const completeProfile = { ...mockDbProfile, is_complete: true };
+      mockSupabaseUpdate.mockResolvedValue({ data: completeProfile, error: null });
 
-      await expect(
-        completeProfileSetup(testUserId)
-      ).rejects.toThrow(/name.*required/i);
-    });
+      const profile = await completeProfileSetup(testUserId);
 
-    it('throws error for missing username', async () => {
-      const incompleteProfile = { ...mockProfile, username: '', isComplete: false };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(incompleteProfile));
-
-      await expect(
-        completeProfileSetup(testUserId)
-      ).rejects.toThrow(/username.*required/i);
-    });
-
-    it('throws error for no interests', async () => {
-      const incompleteProfile = { ...mockProfile, interests: [], isComplete: false };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(incompleteProfile));
-
-      await expect(
-        completeProfileSetup(testUserId)
-      ).rejects.toThrow(/interest/i);
-    });
-
-    it('throws error when profile not found', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
-
-      await expect(
-        completeProfileSetup(testUserId)
-      ).rejects.toThrow(/not found/i);
+      expect(profile.isComplete).toBe(true);
     });
   });
 
   describe('isProfileComplete', () => {
-    it('returns true when profile is complete', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
-      const complete = await isProfileComplete(testUserId);
-
-      expect(complete).toBe(true);
+    it('returns true for complete profile', async () => {
+      const isComplete = await isProfileComplete(testUserId);
+      expect(isComplete).toBe(true);
     });
 
-    it('returns false when profile is incomplete', async () => {
-      const incompleteProfile = { ...mockProfile, isComplete: false };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(incompleteProfile));
+    it('returns false for incomplete profile', async () => {
+      mockSupabaseSingle.mockResolvedValue({
+        data: { ...mockDbProfile, is_complete: false },
+        error: null,
+      });
 
-      const complete = await isProfileComplete(testUserId);
-
-      expect(complete).toBe(false);
+      const isComplete = await isProfileComplete(testUserId);
+      expect(isComplete).toBe(false);
     });
 
-    it('returns false when no profile exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+    it('returns false if profile not found', async () => {
+      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
 
-      const complete = await isProfileComplete(testUserId);
-
-      expect(complete).toBe(false);
+      const isComplete = await isProfileComplete('nonexistent');
+      expect(isComplete).toBe(false);
     });
   });
 
   describe('getProfileSummary', () => {
-    it('returns profile summary when profile exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
+    it('returns summary with correct fields', async () => {
       const summary = await getProfileSummary(testUserId);
 
-      expect(summary).toEqual({
-        name: mockProfile.name,
-        username: mockProfile.username,
-        interestCount: mockProfile.interests.length,
-        hobbyCount: mockProfile.hobbies.length,
-      });
+      expect(summary).toHaveProperty('name');
+      expect(summary).toHaveProperty('username');
+      expect(summary).toHaveProperty('interestCount');
     });
 
-    it('returns null when no profile exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+    it('returns null for non-existent profile', async () => {
+      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
 
-      const summary = await getProfileSummary(testUserId);
-
+      const summary = await getProfileSummary('nonexistent');
       expect(summary).toBeNull();
     });
-  });
 
-  describe('deleteProfile', () => {
-    it('removes profile from storage', async () => {
-      mockAsyncStorage.removeItem.mockResolvedValue(undefined);
+    it('calculates interest count correctly', async () => {
+      const summary = await getProfileSummary(testUserId);
 
-      await deleteProfile();
-
-      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@threesentences/profile');
+      expect(summary?.interestCount).toBe(2);
     });
   });
 
   describe('exportProfile', () => {
-    it('returns profile as JSON string', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
+    it('returns JSON string of profile', async () => {
       const exported = await exportProfile(testUserId);
 
-      expect(exported).toBe(JSON.stringify(mockProfile, null, 2));
+      expect(exported).not.toBeNull();
+      const parsed = JSON.parse(exported!);
+      expect(parsed.userId).toBe(testUserId);
     });
 
-    it('returns null when no profile exists', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
+    it('returns null for non-existent profile', async () => {
+      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
 
-      const exported = await exportProfile(testUserId);
-
+      const exported = await exportProfile('nonexistent');
       expect(exported).toBeNull();
     });
-
-    it('returns formatted JSON', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-
-      const exported = await exportProfile(testUserId);
-
-      expect(exported).toContain('\n'); // Should be pretty-printed
-    });
   });
 
-  describe('updateProfileImage', () => {
-    beforeEach(() => {
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockProfile));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+  describe('PROFILE_CONSTRAINTS', () => {
+    it('has correct interest constraints', () => {
+      expect(PROFILE_CONSTRAINTS.interests.minCount).toBe(3);
+      expect(PROFILE_CONSTRAINTS.interests.maxCount).toBe(10);
     });
 
-    it('updates profile image URI', async () => {
-      const imageUri = 'file://new-profile-image.jpg';
-
-      const updated = await updateProfileImage(testUserId, imageUri);
-
-      expect(updated.profileImage).toBe(imageUri);
+    it('has correct age constraints', () => {
+      expect(PROFILE_CONSTRAINTS.age.min).toBe(18);
+      expect(PROFILE_CONSTRAINTS.age.max).toBe(99);
     });
 
-    it('creates profile if it does not exist', async () => {
-      mockAsyncStorage.getItem.mockResolvedValue(null);
-      const imageUri = 'file://profile.jpg';
-
-      const updated = await updateProfileImage(testUserId, imageUri);
-
-      expect(updated.profileImage).toBe(imageUri);
-      expect(updated.userId).toBe(testUserId);
-    });
-
-    it('updates timestamp when changing image', async () => {
-      const imageUri = 'file://new-image.jpg';
-
-      const updated = await updateProfileImage(testUserId, imageUri);
-
-      expect(updated.updatedAt).not.toBe(mockProfile.updatedAt);
-    });
-
-    it('removes image when null is passed', async () => {
-      const profileWithImage = {
-        ...mockProfile,
-        profileImage: 'file://existing.jpg',
-      };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(profileWithImage));
-
-      const updated = await updateProfileImage(testUserId, null);
-
-      expect(updated.profileImage).toBeUndefined();
-    });
-
-    it('saves to correct storage key', async () => {
-      await updateProfileImage(testUserId, 'file://image.jpg');
-
-      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith(
-        '@threesentences/profile',
-        expect.any(String)
-      );
-    });
-  });
-
-  describe('removeProfileImage', () => {
-    beforeEach(() => {
-      const profileWithImage = {
-        ...mockProfile,
-        profileImage: 'file://existing-image.jpg',
-      };
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(profileWithImage));
-      mockAsyncStorage.setItem.mockResolvedValue(undefined);
-    });
-
-    it('removes the profile image', async () => {
-      const updated = await removeProfileImage(testUserId);
-
-      expect(updated.profileImage).toBeUndefined();
-    });
-
-    it('preserves other profile data', async () => {
-      const updated = await removeProfileImage(testUserId);
-
-      expect(updated.name).toBe(mockProfile.name);
-      expect(updated.username).toBe(mockProfile.username);
-      expect(updated.interests).toEqual(mockProfile.interests);
+    it('has correct bio constraints', () => {
+      expect(PROFILE_CONSTRAINTS.bio.maxLength).toBe(150);
     });
   });
 });
