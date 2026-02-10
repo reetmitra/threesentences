@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Three by 363™ - Coming Q4 2026",
+  title: "Three by 363™",
   description: "Three sentences. Every day. That's it. A journaling practice built on constraint.",
   icons: {
     icon: "/favicon.ico",

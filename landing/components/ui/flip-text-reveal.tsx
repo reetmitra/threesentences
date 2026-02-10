@@ -6,9 +6,16 @@ import { useState } from 'react';
 interface FlipTextProps {
   word?: string;
   className?: string;
+  showReplay?: boolean;
+  titleClassName?: string;
 }
 
-export default function FlipTextReveal({ word = "DIGITAL REALITY", className = "" }: FlipTextProps) {
+export default function FlipTextReveal({
+  word = "DIGITAL REALITY",
+  className = "",
+  showReplay = true,
+  titleClassName = "",
+}: FlipTextProps) {
   const [key, setKey] = useState(0);
 
   const replay = () => {
@@ -16,10 +23,10 @@ export default function FlipTextReveal({ word = "DIGITAL REALITY", className = "
   };
 
   return (
-    <div className={`flip-container ${className}`}>
+    <div className={cn("flip-container", className)}>
 
       <div key={key} className="text-wrapper">
-        <h1 className="title" aria-label={word}>
+        <h1 className={cn("title", titleClassName)} aria-label={word}>
           {word.split("").map((char, i) => (
             <span
               key={`${key}-${i}`}
@@ -32,45 +39,22 @@ export default function FlipTextReveal({ word = "DIGITAL REALITY", className = "
         </h1>
       </div>
 
-      <button className="replay-button" onClick={replay}>
-        <span className="btn-text">Replay Action</span>
-      </button>
+      {showReplay && (
+        <button className="replay-button" onClick={replay}>
+          <span className="btn-text">Replay Action</span>
+        </button>
+      )}
 
       <style jsx>{`
         /* --- INVERTED THEME VARIABLES --- */
         .flip-container {
-          /* Light Mode (Default): Component is BLACK, Text is WHITE */
-          --bg-color: #09090b;
+          --bg-color: transparent;
           --text-color: #ffffff;
 
-          /* Button styling */
           --btn-bg: #27272a;
           --btn-text: #ffffff;
           --btn-border: #3f3f46;
           --btn-hover: #52525b;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .flip-container {
-            /* Dark Mode: Component is WHITE, Text is BLACK */
-            --bg-color: #ffffff;
-            --text-color: #09090b;
-
-            --btn-bg: #f4f4f5;
-            --btn-text: #18181b;
-            --btn-border: #e4e4e7;
-            --btn-hover: #d4d4d8;
-          }
-        }
-
-        /* Manual .dark class override */
-        :global(.dark) .flip-container {
-          --bg-color: #ffffff;
-          --text-color: #09090b;
-          --btn-bg: #f4f4f5;
-          --btn-text: #18181b;
-          --btn-border: #e4e4e7;
-          --btn-hover: #d4d4d8;
         }
 
         /* --- Layout --- */
@@ -79,44 +63,37 @@ export default function FlipTextReveal({ word = "DIGITAL REALITY", className = "
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 4rem 2rem;
-          background-color: var(--bg-color);
-          color: var(--text-color);
-          border-radius: 16px;
-          overflow: hidden;
-          min-height: 350px;
           width: 100%;
-          transition: background-color 0.4s ease, color 0.4s ease;
+          overflow: hidden;
 
           /* 3D Stage */
           perspective: 800px;
-          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
         }
 
         /* --- Typography --- */
         .title {
-          font-size: 4.5rem; /* Massive text */
-          font-weight: 900;
+          font-size: 7rem;
+          font-weight: 700;
+          font-style: italic;
           margin: 0;
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
           line-height: 1;
-          text-transform: uppercase; /* Force uppercase for impact */
-          letter-spacing: -0.04em;   /* Tight tracking */
+          letter-spacing: -0.04em;
           transform-style: preserve-3d;
+          padding-right: 0.08em; /* compensate italic skew for visual centering */
         }
 
         /* --- 3D Character Animation --- */
         .char {
           display: inline-block;
           color: var(--text-color);
-          transform-origin: bottom center; /* Hinge from bottom */
+          transform-origin: bottom center;
 
           opacity: 0;
           transform: rotateX(-90deg) translateY(20px);
 
-          /* Elastic bounce effect */
           animation: flip-up 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
           animation-delay: calc(0.06s * var(--index));
           will-change: transform, opacity;
@@ -160,8 +137,14 @@ export default function FlipTextReveal({ word = "DIGITAL REALITY", className = "
         }
 
         /* Responsive Text Sizing */
-        @media (max-width: 768px) {
-          .title { font-size: 2.5rem; }
+        @media (max-width: 640px) {
+          .title { font-size: 4.5rem; }
+        }
+        @media (min-width: 641px) and (max-width: 768px) {
+          .title { font-size: 6rem; }
+        }
+        @media (min-width: 769px) {
+          .title { font-size: 8rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
