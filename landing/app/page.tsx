@@ -6,6 +6,7 @@ import { WaitlistModal } from "@/components/WaitlistModal";
 import { Button } from "@/components/ui/button";
 import { TextScramble } from "@/components/ui/text-scramble";
 import FlipTextReveal from "@/components/ui/flip-text-reveal";
+import { DemoSlides } from "@/components/DemoSlides";
 
 export default function LandingPage() {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
@@ -17,7 +18,9 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="bg-black text-white">
+      {/* Hero Section */}
+      <section className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Navigation */}
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
@@ -144,6 +147,10 @@ export default function LandingPage() {
           </div>
         </motion.div>
       </main>
+      </section>
+
+      {/* Product Demo Slides */}
+      <DemoSlides />
 
       {/* Footer */}
       <motion.footer
