@@ -1,0 +1,31 @@
+{
+  "name": "three-brand-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ProductDemo out/product-demo.mp4",
+    "render:square": "remotion render src/index.ts ProductDemoSquare out/product-demo-square.mp4",
+    "render:brand": "remotion render src/index.ts BrandIntro out/brand-intro.mp4",
+    "render:brand-square": "remotion render src/index.ts BrandIntroSquare out/brand-intro-square.mp4",
+    "render:openclawd": "remotion render src/index.ts OpenClawdPromo out/openclawd-promo.mp4",
+    "render:three": "remotion render src/index.ts ThreeSentencesPromo out/three-sentences-promo.mp4",
+    "render:v2": "remotion render src/index.ts ProductDemoV2 out/product-demo-v2-4k.mp4",
+    "render:v2:1080": "remotion render src/index.ts ProductDemoV2-1080 out/product-demo-v2.mp4",
+    "voiceover": "npx tsx scripts/generate-voiceover.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.423",
+    "@remotion/google-fonts": "^4.0.423",
+    "@remotion/media": "4.0.423",
+    "@remotion/transitions": "4.0.423",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.423"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.2"
+  }
+}
