@@ -73,7 +73,7 @@ function ReflectMockup() {
           Over the past 30 days, your entries show a pattern of steady growth.
           You&apos;ve been focused on shipping and learning to let go of perfectionism.
         </p>
-        <p className="text-[10px] text-white/15 italic mt-3">Based on 28 entries</p>
+        <p className="text-[10px] text-white/15 mt-3">Based on 28 entries</p>
       </div>
     </div>
   );
@@ -183,7 +183,7 @@ function PhilosophyMockup() {
           <span className="text-[10px] text-white/15 font-mono shrink-0">{p.num}</span>
           <div>
             <p className="text-xs text-white/40">{p.name}</p>
-            <p className="text-[10px] text-white/15 italic">{p.sub}</p>
+            <p className="text-[10px] text-white/15">{p.sub}</p>
           </div>
         </div>
       ))}
@@ -279,7 +279,7 @@ export function DemoSlides() {
           transition={{ duration: 0.8 }}
           className="text-center mb-14 sm:mb-16"
         >
-          <p className="text-xs text-white/30 tracking-[0.3em] uppercase font-mono mb-3">
+          <p className="text-xs text-white/30 tracking-[0.3em] uppercase mb-3">
             How it works
           </p>
           <h2 className="text-xl sm:text-2xl font-light text-white/80 tracking-tight">

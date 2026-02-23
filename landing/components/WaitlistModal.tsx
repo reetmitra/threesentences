@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BackgroundBeams } from "@/components/ui/background-beams";
+import { DottedSurface } from "@/components/ui/dotted-surface";
 import { supabase } from "@/lib/supabase";
 import { CheckCircle, Loader2, X } from "lucide-react";
 
@@ -84,8 +84,8 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
             exit={{ opacity: 0 }}
           />
 
-          {/* Background Beams */}
-          <BackgroundBeams className="opacity-40" />
+          {/* Dotted Surface Background */}
+          <DottedSurface className="opacity-50" />
 
           {/* Close Button */}
           <motion.button
@@ -158,7 +158,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.15 }}
-                      className="text-4xl md:text-5xl lg:text-6xl font-bold italic tracking-tight text-white mb-4"
+                      className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4"
                     >
                       Join the waitlist
                     </motion.h1>
