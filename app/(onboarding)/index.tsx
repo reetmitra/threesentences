@@ -1,10 +1,11 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Onboarding Flow
- * 
+ *
  * Introduces the 363 philosophy before first use.
+ * Slides 2 and 3 are interactive to build understanding.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,12 +13,26 @@ import {
   FlatList,
   ViewToken,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  withSequence,
+  withSpring,
+  FadeIn,
+  Easing,
+} from 'react-native-reanimated';
+import { Edit3 } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
+import { SentenceCounter } from '@/components/SentenceCounter';
+import { countSentences } from '@/utils/sentenceDetection';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { completeOnboarding } from '@/store/onboarding';
@@ -30,6 +45,7 @@ interface OnboardingSlide {
   subtitle?: string;
   description: string;
   highlight?: string;
+  interactive?: 'practice' | 'no-edit';
 }
 
 const SLIDES: OnboardingSlide[] = [
@@ -45,8 +61,9 @@ const SLIDES: OnboardingSlide[] = [
     id: '2',
     title: 'Three Sentences',
     description:
-      'Every day, write exactly three sentences. No more, no less. The constraint eliminates perfectionism and removes the guilt of "not doing enough."',
+      'Every day, write exactly three sentences. No more, no less. The constraint eliminates perfectionism.',
     highlight: 'Every entry that meets the constraint is complete.',
+    interactive: 'practice',
   },
   {
     id: '3',
@@ -54,6 +71,7 @@ const SLIDES: OnboardingSlide[] = [
     description:
       'Once submitted, your entry cannot be edited. Your words stand as written, capturing how you felt in that moment.',
     highlight: 'Done is better than perfect.',
+    interactive: 'no-edit',
   },
   {
     id: '4',
@@ -63,6 +81,129 @@ const SLIDES: OnboardingSlide[] = [
     highlight: 'Return when you return, without shame.',
   },
 ];
+
+/** Mini practice input for Slide 2 */
+function PracticeInput() {
+  const activeColors = colors.dark;
+  const [text, setText] = useState('');
+  const sentenceCount = countSentences(text);
+
+  return (
+    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.practiceContainer}>
+      <Text variant="sm" color="secondary" style={styles.practiceLabel}>
+        Try it — write 3 sentences:
+      </Text>
+      <TextInput
+        style={[
+          styles.practiceInput,
+          {
+            backgroundColor: activeColors.surface,
+            color: activeColors.textPrimary,
+            borderColor: sentenceCount === 3 ? activeColors.accent : activeColors.border,
+          },
+        ]}
+        placeholder="Start typing..."
+        placeholderTextColor={activeColors.textTertiary}
+        multiline
+        value={text}
+        onChangeText={setText}
+        textAlignVertical="top"
+      />
+      <SentenceCounter count={sentenceCount} />
+    </Animated.View>
+  );
+}
+
+/** No-edit demo animation for Slide 3 */
+function NoEditDemo() {
+  const activeColors = colors.dark;
+
+  // Typewriter text
+  const DEMO_TEXT = 'Today I felt grateful.';
+  const [displayText, setDisplayText] = useState('');
+  const [typingDone, setTypingDone] = useState(false);
+
+  // Strikethrough animation
+  const strikeWidth = useSharedValue(0);
+  const editOpacity = useSharedValue(0);
+  const editScale = useSharedValue(0.5);
+
+  // Typewriter effect
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < DEMO_TEXT.length) {
+        setDisplayText(DEMO_TEXT.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+        setTypingDone(true);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  // After typing: show edit icon, then strike through it
+  useEffect(() => {
+    if (!typingDone) return;
+
+    // Show the edit icon
+    editOpacity.value = withDelay(400, withTiming(1, { duration: 300 }));
+    editScale.value = withDelay(400, withSpring(1, { damping: 12, stiffness: 200 }));
+
+    // Animate strikethrough across the icon
+    strikeWidth.value = withDelay(
+      1000,
+      withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
+    );
+  }, [typingDone]);
+
+  const editStyle = useAnimatedStyle(() => ({
+    opacity: editOpacity.value,
+    transform: [{ scale: editScale.value }],
+  }));
+
+  const strikeStyle = useAnimatedStyle(() => ({
+    width: `${strikeWidth.value * 100}%`,
+  }));
+
+  return (
+    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.noEditContainer}>
+      {/* Simulated entry */}
+      <View style={[styles.noEditEntry, { backgroundColor: activeColors.surface }]}>
+        <Text variant="base" style={{ color: activeColors.textPrimary, minHeight: 24 }}>
+          {displayText}
+          {!typingDone && (
+            <Text variant="base" style={{ color: activeColors.accent }}>|</Text>
+          )}
+        </Text>
+      </View>
+
+      {/* Edit icon with strikethrough */}
+      {typingDone && (
+        <Animated.View style={[styles.noEditIconContainer, editStyle]}>
+          <Edit3 size={22} color={activeColors.textTertiary} />
+          {/* Red strikethrough line */}
+          <Animated.View
+            style={[
+              styles.strikethrough,
+              { backgroundColor: activeColors.error },
+              strikeStyle,
+            ]}
+          />
+        </Animated.View>
+      )}
+
+      {typingDone && (
+        <Animated.View entering={FadeIn.delay(1400).duration(400)}>
+          <Text variant="xs" color="secondary" centered style={styles.noEditLabel}>
+            Entries are permanent once submitted
+          </Text>
+        </Animated.View>
+      )}
+    </Animated.View>
+  );
+}
 
 export default function OnboardingScreen() {
   const activeColors = colors.dark;
@@ -83,14 +224,12 @@ export default function OnboardingScreen() {
             animated: true,
           });
         } else {
-          // Loop back to start? Or stop? 
-          // Usually auto-rotation loops.
           flatListRef.current?.scrollToIndex({
             index: 0,
             animated: true,
           });
         }
-      }, 4000); // 4 seconds per slide
+      }, 4000);
     }
 
     return () => clearInterval(interval);
@@ -107,11 +246,6 @@ export default function OnboardingScreen() {
   };
 
   const handleScrollEnd = () => {
-    // Optionally resume auto-play after a delay? 
-    // Or just keep it paused if user interacted.
-    // Let's keep it paused to not annoy user.
-    // Or resume after 5 seconds of inactivity.
-    // For simplicity, let's keep it paused if user swipes manually.
     setIsAutoPlaying(false);
   };
 
@@ -156,6 +290,10 @@ export default function OnboardingScreen() {
             </Text>
           </View>
         )}
+
+        {/* Interactive elements */}
+        {item.interactive === 'practice' && <PracticeInput />}
+        {item.interactive === 'no-edit' && <NoEditDemo />}
       </View>
     </View>
   );
@@ -222,7 +360,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // skipContainer removed
   slide: {
     flex: 1,
     justifyContent: 'center',
@@ -231,6 +368,7 @@ const styles = StyleSheet.create({
   slideContent: {
     maxWidth: 400,
     alignSelf: 'center',
+    width: '100%',
   },
   subtitle: {
     marginBottom: spacing[2],
@@ -259,7 +397,7 @@ const styles = StyleSheet.create({
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: spacing[6], // Increased spacing for clear separation
+    marginBottom: spacing[6],
   },
   dot: {
     width: 8,
@@ -272,5 +410,48 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     width: '100%',
+  },
+
+  // Practice input (Slide 2)
+  practiceContainer: {
+    marginTop: spacing[4],
+  },
+  practiceLabel: {
+    marginBottom: spacing[2],
+  },
+  practiceInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing[3],
+    fontSize: 15,
+    minHeight: 80,
+    fontFamily: 'Inter_400Regular',
+  },
+
+  // No-edit demo (Slide 3)
+  noEditContainer: {
+    marginTop: spacing[4],
+    alignItems: 'center',
+  },
+  noEditEntry: {
+    padding: spacing[3],
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: spacing[3],
+  },
+  noEditIconContainer: {
+    position: 'relative',
+    marginBottom: spacing[2],
+  },
+  strikethrough: {
+    position: 'absolute',
+    top: '50%',
+    left: -4,
+    right: -4,
+    height: 2,
+    borderRadius: 1,
+  },
+  noEditLabel: {
+    marginTop: spacing[1],
   },
 });

@@ -8,7 +8,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
-import { PenTool, Calendar, Settings, Compass, Users } from 'lucide-react-native';
+import { PenTool, Calendar, Settings, BarChart3, Users } from 'lucide-react-native';
 
 export default function TabLayout() {
   const activeColors = colors.dark;
@@ -64,11 +64,11 @@ export default function TabLayout() {
         <Tabs.Screen
           name="guide"
           options={{
-            title: 'Guide',
+            title: 'Insights',
             tabBarIcon: ({ color }) => (
-              <Compass color={color} size={24} strokeWidth={1.5} />
+              <BarChart3 color={color} size={24} strokeWidth={1.5} />
             ),
-            tabBarAccessibilityLabel: 'Guide tab - philosophy and motivation',
+            tabBarAccessibilityLabel: 'Insights tab - streaks, prompts, and progress',
           }}
         />
         <Tabs.Screen

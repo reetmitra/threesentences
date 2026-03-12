@@ -8,11 +8,12 @@
 import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { hasCompletedOnboarding } from '@/store/onboarding';
+import { hasCompletedOnboarding, hasLaunchedBefore, markFirstLaunch } from '@/store/onboarding';
 import { isProfileComplete } from '@/store/profile';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
-const MINIMUM_LOADING_TIME = 7000; // 7 seconds
+const FIRST_LAUNCH_LOADING_TIME = 7000; // 7s branded experience
+const RETURNING_LOADING_TIME = 1500;    // 1.5s fast return
 
 export default function Index() {
   const { isSignedIn, isLoaded: authLoaded, userId } = useAuth();
@@ -28,6 +29,11 @@ export default function Index() {
       if (!authLoaded) return;
 
       const startTime = Date.now();
+
+      // Fast launch for returning users
+      const isReturning = await hasLaunchedBefore();
+      const loadingTime = isReturning ? RETURNING_LOADING_TIME : FIRST_LAUNCH_LOADING_TIME;
+      if (!isReturning) await markFirstLaunch();
 
       try {
         if (isSignedIn && userId) {
@@ -49,7 +55,7 @@ export default function Index() {
 
       // Ensure minimum loading time for branding
       const elapsed = Date.now() - startTime;
-      const remaining = MINIMUM_LOADING_TIME - elapsed;
+      const remaining = loadingTime - elapsed;
 
       if (remaining > 0) {
         setTimeout(() => setIsLoading(false), remaining);

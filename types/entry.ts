@@ -47,6 +47,21 @@ export interface UserPreferences {
 
   /** Preferred theme (null = follow system) */
   theme: 'light' | 'dark' | null;
+
+  /** Haptic feedback enabled (default: true) */
+  hapticsEnabled: boolean;
+
+  /** Show daily writing prompt (default: false) */
+  dailyPromptEnabled: boolean;
+
+  /** Push notifications enabled (default: false) */
+  notificationsEnabled: boolean;
+
+  /** Daily reminder hour (0-23, default: 20) */
+  reminderHour: number;
+
+  /** Daily reminder minute (0-59, default: 0) */
+  reminderMinute: number;
 }
 
 /**

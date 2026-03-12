@@ -36,6 +36,8 @@ import {
 } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { FriendCard, FriendRequestCard } from '@/components/social';
+import { SkeletonFriendsList } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { typography } from '@/theme/typography';
@@ -62,6 +64,7 @@ type TabType = 'friends' | 'requests';
 
 export default function SocialScreen() {
   const activeColors = colors.dark;
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -126,6 +129,7 @@ export default function SocialScreen() {
       setSuggestedFriends(suggested);
     } catch (error) {
       console.error('Failed to load social data:', error);
+      showToast('error', 'Could not load social data.');
     } finally {
       setLoading(false);
     }
@@ -144,6 +148,7 @@ export default function SocialScreen() {
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
+      showToast('error', 'Search failed. Try again.');
     }
   };
 
@@ -157,6 +162,7 @@ export default function SocialScreen() {
       });
     } catch (error) {
       console.error('Failed to start conversation:', error);
+      showToast('error', 'Could not start conversation.');
     }
   };
 
@@ -250,7 +256,9 @@ export default function SocialScreen() {
 
   const renderFriends = () => (
     <View style={styles.section}>
-      {friends.length === 0 ? (
+      {loading ? (
+        <SkeletonFriendsList />
+      ) : friends.length === 0 ? (
         <View style={styles.emptyState}>
           <Users size={48} color={activeColors.textTertiary} strokeWidth={1.5} />
           <Text variant="lg" weight="medium" style={styles.emptyTitle}>

@@ -25,6 +25,8 @@ import * as Haptics from 'expo-haptics';
 import { ChevronLeft, MessageCircle, PenLine } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { ConversationCard } from '@/components/social';
+import { SkeletonConversations } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { Conversation, UserInfo } from '@/types/social';
@@ -34,6 +36,7 @@ import { getProfile } from '@/store/profile';
 
 export default function ConversationsScreen() {
     const activeColors = colors.dark;
+    const { showToast } = useToast();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
@@ -65,6 +68,7 @@ export default function ConversationsScreen() {
             setConversations(convos);
         } catch (error) {
             console.error('Failed to load conversations:', error);
+            showToast('error', 'Could not load messages.');
         } finally {
             setLoading(false);
         }
@@ -126,7 +130,9 @@ export default function ConversationsScreen() {
                     />
                 }
             >
-                {conversations.length === 0 ? (
+                {loading ? (
+                    <SkeletonConversations />
+                ) : conversations.length === 0 ? (
                     <Animated.View
                         entering={FadeInDown.delay(200).duration(300)}
                         style={styles.emptyState}

@@ -1,6 +1,6 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Today Screen
- * 
+ *
  * The main entry screen. Write three sentences, submit, done.
  */
 
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   Animated,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,7 +24,10 @@ import { Text } from '@/components/ui/Text';
 import { EntryInput } from '@/components/EntryInput';
 import { SentenceCounter } from '@/components/SentenceCounter';
 import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { MilestoneModal, isMilestone } from '@/components/MilestoneModal';
 import { EntryCard } from '@/components/EntryCard';
+import { SkeletonToday } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { countSentences } from '@/utils/sentenceDetection';
@@ -32,6 +36,7 @@ import {
   saveEntry,
   saveDraft,
   getDraft,
+  getEntryStats,
 } from '@/store/entries';
 import { Entry, getTodayDateString } from '@/types/entry';
 
@@ -63,13 +68,13 @@ const AnimatedButton = ({
         Animated.timing(spinValue, {
           toValue: 1,
           duration: 400,
-          useNativeDriver: false, // Changed to false to match width animation and avoid error
+          useNativeDriver: false,
         }),
         Animated.timing(fadeValue, {
           toValue: 0,
           duration: 400,
           delay: 800,
-          useNativeDriver: false, // Changed to false for consistency
+          useNativeDriver: false,
         }),
       ]).start();
     } else if (status === 'idle') {
@@ -147,6 +152,7 @@ const AnimatedButton = ({
 export default function TodayScreen() {
   const { userId } = useAuth();
   const activeColors = colors.dark;
+  const { showToast } = useToast();
 
   // State
   const [content, setContent] = useState('');
@@ -154,6 +160,9 @@ export default function TodayScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showMilestone, setShowMilestone] = useState(false);
+  const [milestoneStreak, setMilestoneStreak] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Refs for auto-save
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -181,6 +190,7 @@ export default function TodayScreen() {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
+      showToast('error', "Couldn't load today's entry. Pull to refresh.");
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +205,13 @@ export default function TodayScreen() {
       loadData();
     }, [loadData])
   );
+
+  // Pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
 
   // Auto-save draft
   useEffect(() => {
@@ -233,15 +250,27 @@ export default function TodayScreen() {
       const entry = await saveEntry(userId, content);
 
       setSubmissionStatus('success');
+      showToast('success', 'Entry saved. See you tomorrow.');
+
+      // Check for streak milestone
+      const stats = await getEntryStats(userId);
+      const streak = stats.currentStreak;
 
       // Wait for animation to finish before switching screens
       setTimeout(() => {
         setTodayEntry(entry);
         setContent('');
-        setSubmissionStatus('idle'); // Reset for next time (though screen changes)
-      }, 1500); // 1.5s delay
+        setSubmissionStatus('idle');
+
+        // Show milestone modal if applicable
+        if (isMilestone(streak)) {
+          setMilestoneStreak(streak);
+          setShowMilestone(true);
+        }
+      }, 1500);
     } catch (error) {
       console.error('Failed to save entry:', error);
+      showToast('error', 'Failed to save your entry. Please try again.');
       setSubmissionStatus('idle');
     }
   }, [content, canSubmit, submissionStatus, userId]);
@@ -263,9 +292,7 @@ export default function TodayScreen() {
         style={[styles.container, { backgroundColor: activeColors.background }]}
         edges={['top']}
       >
-        <View style={styles.loadingContainer}>
-          <Text variant="base" color="secondary">Loading...</Text>
-        </View>
+        <SkeletonToday />
       </SafeAreaView>
     );
   }
@@ -281,6 +308,13 @@ export default function TodayScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={activeColors.accent}
+            />
+          }
         >
           <View style={styles.header}>
             <Text variant="sm" color="secondary" style={styles.dateLabel}>
@@ -373,6 +407,12 @@ export default function TodayScreen() {
         onConfirm={handleSubmit}
         loading={submissionStatus === 'submitting'}
       />
+
+      <MilestoneModal
+        visible={showMilestone}
+        streak={milestoneStreak}
+        onClose={() => setShowMilestone(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -412,7 +452,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   footer: {
-    paddingTop: spacing[6], // Increased to separate button from input
+    paddingTop: spacing[6],
   },
   animatedButton: {
     height: 56,

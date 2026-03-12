@@ -9,16 +9,18 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Sparkles } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Sparkles, Brain } from 'lucide-react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { ReflectionCard } from '@/components/ReflectionCard';
 import { CrisisResourcesCard } from '@/components/CrisisResourcesCard';
+import { SkeletonReflect } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { getEntriesForReflection } from '@/store/entries';
@@ -47,6 +49,7 @@ const TIME_RANGES: TimeRangeOption[] = [
 export default function ReflectScreen() {
   const { userId } = useAuth();
   const activeColors = colors.dark;
+  const { showToast } = useToast();
 
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +71,7 @@ export default function ReflectScreen() {
       }
     } catch (err) {
       console.error('Failed to load reflection data:', err);
+      showToast('error', 'Could not load reflections.');
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +111,7 @@ export default function ReflectScreen() {
     } catch (err) {
       console.error('Failed to generate reflection:', err);
       setError('Something went wrong. Please try again.');
+      showToast('error', 'Reflection generation failed.');
     } finally {
       setIsGenerating(false);
     }
@@ -118,9 +123,7 @@ export default function ReflectScreen() {
         style={[styles.container, { backgroundColor: activeColors.background }]}
         edges={['top']}
       >
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={activeColors.accent} />
-        </View>
+        <SkeletonReflect />
       </SafeAreaView>
     );
   }
@@ -140,6 +143,12 @@ export default function ReflectScreen() {
             AI-powered reflection is disabled.{'\n'}
             Enable it in Settings to receive gentle insights about your journal entries.
           </Text>
+          <Button
+            title="Enable in Settings"
+            variant="outline"
+            onPress={() => router.push('/(tabs)/settings')}
+            style={{ marginTop: spacing[5] }}
+          />
         </View>
       </SafeAreaView>
     );
@@ -225,8 +234,11 @@ export default function ReflectScreen() {
         {/* Empty state */}
         {!latestReflection && !showCrisisResources && (
           <View style={styles.emptyState}>
-            <Text variant="base" color="secondary" centered>
-              No reflections yet.{'\n'}
+            <Brain size={40} color={activeColors.textTertiary} strokeWidth={1.5} />
+            <Text variant="base" color="secondary" centered style={{ marginTop: spacing[3] }}>
+              Ready to discover patterns in your writing?
+            </Text>
+            <Text variant="sm" color="tertiary" centered style={{ marginTop: spacing[1] }}>
               Generate your first reflection above.
             </Text>
           </View>

@@ -1,7 +1,7 @@
 /**
  * Three™ - Settings Screen
  *
- * Export data, manage AI reflection, view about info.
+ * Profile header, preferences, data management, account actions.
  */
 
 import React, { useState, useCallback } from 'react';
@@ -21,20 +21,24 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import {
   Download,
   Trash2,
-  Info,
   ChevronRight,
   Sparkles,
   Lock,
   LogOut,
-  User,
   Edit3,
+  Flame,
+  Lightbulb,
+  Vibrate,
+  Bell,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
 import { AIOptInModal } from '@/components/AIOptInModal';
+import { SkeletonStatsCard } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { exportEntries, getEntryCount, ExportFormat } from '@/store/entries';
+import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/store/entries';
 import {
   clearAllData,
   getPreferences,
@@ -42,6 +46,12 @@ import {
 } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile } from '@/store/profile';
+import { refreshHapticsPreference } from '@/utils/haptics';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  cancelDailyReminder,
+} from '@/services/notifications';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -110,30 +120,56 @@ function SettingsRow({
 
 export default function SettingsScreen() {
   const activeColors = colors.dark;
+  const { showToast } = useToast();
   const { signOut, userId } = useAuth();
   const { user } = useUser();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [entryCount, setEntryCount] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
   const [reflectionCount, setReflectionCount] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [promptEnabled, setPromptEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [reminderHour, setReminderHour] = useState(20);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ name?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string } | null>(null);
 
   const loadData = useCallback(async () => {
     if (!userId) return;
-    const [count, refCount, prefs] = await Promise.all([
-      getEntryCount(userId),
-      getReflectionCount(),
-      getPreferences(),
-    ]);
-    setEntryCount(count);
-    setReflectionCount(refCount);
-    setAiEnabled(prefs.aiReflectionEnabled);
-    if (userId) {
-      const profile = await getProfile(userId);
-      setUserProfile(profile);
+    setIsLoading(true);
+    try {
+      const [count, refCount, prefs, stats] = await Promise.all([
+        getEntryCount(userId),
+        getReflectionCount(),
+        getPreferences(),
+        getEntryStats(userId),
+      ]);
+      setEntryCount(count);
+      setReflectionCount(refCount);
+      setAiEnabled(prefs.aiReflectionEnabled);
+      setHapticsEnabled(prefs.hapticsEnabled);
+      setPromptEnabled(prefs.dailyPromptEnabled);
+      setNotificationsEnabled(prefs.notificationsEnabled);
+      setReminderHour(prefs.reminderHour);
+      setCurrentStreak(stats.currentStreak);
+      if (userId) {
+        const profile = await getProfile(userId);
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Failed to load settings data:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, [userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleSignOut = () => {
     Alert.alert(
@@ -154,12 +190,6 @@ export default function SettingsScreen() {
     );
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
-
   const handleAIToggle = async (value: boolean) => {
     if (value) {
       setShowAIOptInModal(true);
@@ -177,6 +207,40 @@ export default function SettingsScreen() {
     setShowAIOptInModal(false);
   };
 
+  const handleHapticsToggle = async (value: boolean) => {
+    await updatePreferences({ hapticsEnabled: value });
+    setHapticsEnabled(value);
+    refreshHapticsPreference();
+    if (value) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handlePromptToggle = async (value: boolean) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await updatePreferences({ dailyPromptEnabled: value });
+    setPromptEnabled(value);
+  };
+
+  const handleNotificationsToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        showToast('error', 'Please enable notifications in your device settings.');
+        return;
+      }
+      await scheduleDailyReminder(reminderHour, 0);
+      await updatePreferences({ notificationsEnabled: true });
+      setNotificationsEnabled(true);
+      showToast('success', `Daily reminder set for ${reminderHour}:00.`);
+    } else {
+      await cancelDailyReminder();
+      await updatePreferences({ notificationsEnabled: false });
+      setNotificationsEnabled(false);
+    }
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const handleExport = async (format: ExportFormat) => {
     if (!userId) return;
     try {
@@ -189,7 +253,7 @@ export default function SettingsScreen() {
       });
     } catch (error) {
       console.error('Export failed:', error);
-      Alert.alert('Export Failed', 'Unable to export your entries.');
+      showToast('error', 'Export failed. Please try again.');
     }
   };
 
@@ -223,7 +287,7 @@ export default function SettingsScreen() {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await deleteAllReflections();
             setReflectionCount(0);
-            Alert.alert('Deleted', 'All reflections have been removed.');
+            showToast('success', 'All reflections deleted.');
           },
         },
       ]
@@ -242,7 +306,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await clearAllData();
-            Alert.alert('Data Deleted', 'All your data has been removed.');
+            showToast('success', 'All data has been removed.');
             loadData();
           },
         },
@@ -250,13 +314,9 @@ export default function SettingsScreen() {
     );
   };
 
-  const showAbout = () => {
-    Alert.alert(
-      'About ThreeSixtyThree™',
-      'Three Sentences is the official journaling application of the ThreeSixtyThree™ self-improvement system.\n\nVersion 1.0.0\n\n"Show up. Do the work. Let go of perfection."',
-      [{ text: 'OK' }]
-    );
-  };
+  const displayName = userProfile?.name || user?.firstName || 'User';
+  const displayEmail = user?.emailAddresses?.[0]?.emailAddress;
+  const initials = displayName.charAt(0).toUpperCase();
 
   return (
     <SafeAreaView
@@ -275,47 +335,40 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Stats */}
-        <View style={[styles.statsCard, { backgroundColor: activeColors.surface }]}>
-          <Text variant="3xl" weight="bold" style={{ color: activeColors.accent }}>
-            {entryCount}
-          </Text>
-          <Text variant="sm" color="secondary">
-            {entryCount === 1 ? 'entry' : 'entries'} written
-          </Text>
-        </View>
+        {/* Profile Header Card */}
+        {isLoading ? (
+          <SkeletonStatsCard style={{ marginBottom: spacing[5] }} />
+        ) : (
+          <Pressable
+            style={[styles.profileCard, { backgroundColor: activeColors.surface }]}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
+            <View style={[styles.avatar, { backgroundColor: activeColors.surfaceHover }]}>
+              <Text variant="xl" weight="bold">{initials}</Text>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text variant="lg" weight="semibold">{displayName}</Text>
+              {displayEmail && (
+                <Text variant="sm" color="secondary">{displayEmail}</Text>
+              )}
+              <View style={styles.profileStats}>
+                <Flame size={14} color={activeColors.accent} />
+                <Text variant="sm" color="secondary" style={{ marginLeft: 4 }}>
+                  {currentStreak} day streak
+                </Text>
+                <Text variant="sm" color="tertiary" style={{ marginLeft: spacing[3] }}>
+                  {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={activeColors.textTertiary} />
+          </Pressable>
+        )}
 
-        {/* Account Section */}
+        {/* Preferences Section */}
         <View style={styles.section}>
           <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            ACCOUNT
-          </Text>
-          <View style={styles.sectionContent}>
-            <SettingsRow
-              icon={<User size={22} color={activeColors.textPrimary} />}
-              title={userProfile?.name || user?.firstName || user?.emailAddresses?.[0]?.emailAddress || 'Not signed in'}
-              subtitle={userProfile?.name ? user?.emailAddresses?.[0]?.emailAddress : undefined}
-              showChevron={false}
-            />
-            <SettingsRow
-              icon={<Edit3 size={22} color={activeColors.textPrimary} />}
-              title="Edit Profile"
-              onPress={() => router.push('/(tabs)/profile')}
-            />
-            <SettingsRow
-              icon={<LogOut size={22} color={activeColors.error} />}
-              title="Sign Out"
-              onPress={handleSignOut}
-              destructive
-              showChevron={false}
-            />
-          </View>
-        </View>
-
-        {/* AI Reflection Section */}
-        <View style={styles.section}>
-          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            AI REFLECTION
+            PREFERENCES
           </Text>
           <View style={styles.sectionContent}>
             <SettingsRow
@@ -335,20 +388,61 @@ export default function SettingsScreen() {
                 />
               }
             />
-            {aiEnabled && reflectionCount > 0 && (
-              <SettingsRow
-                icon={<Trash2 size={22} color={activeColors.error} />}
-                title="Delete All Reflections"
-                subtitle={`${reflectionCount} reflection${reflectionCount !== 1 ? 's' : ''}`}
-                onPress={handleDeleteReflections}
-                destructive
-                showChevron={false}
-              />
-            )}
+            <SettingsRow
+              icon={<Vibrate size={22} color={activeColors.textPrimary} />}
+              title="Haptic Feedback"
+              subtitle={hapticsEnabled ? 'Enabled' : 'Disabled'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={hapticsEnabled}
+                  onValueChange={handleHapticsToggle}
+                  trackColor={{
+                    false: activeColors.surfaceHover,
+                    true: activeColors.accent,
+                  }}
+                  thumbColor={activeColors.textPrimary}
+                />
+              }
+            />
+            <SettingsRow
+              icon={<Lightbulb size={22} color={activeColors.textPrimary} />}
+              title="Daily Writing Prompt"
+              subtitle={promptEnabled ? 'Shown on Insights tab' : 'Disabled'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={promptEnabled}
+                  onValueChange={handlePromptToggle}
+                  trackColor={{
+                    false: activeColors.surfaceHover,
+                    true: activeColors.accent,
+                  }}
+                  thumbColor={activeColors.textPrimary}
+                />
+              }
+            />
+            <SettingsRow
+              icon={<Bell size={22} color={activeColors.textPrimary} />}
+              title="Daily Reminder"
+              subtitle={notificationsEnabled ? `Reminder at ${reminderHour}:00` : 'Disabled'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={handleNotificationsToggle}
+                  trackColor={{
+                    false: activeColors.surfaceHover,
+                    true: activeColors.accent,
+                  }}
+                  thumbColor={activeColors.textPrimary}
+                />
+              }
+            />
           </View>
         </View>
 
-        {/* Data Section */}
+        {/* Your Data Section */}
         <View style={styles.section}>
           <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
             YOUR DATA
@@ -366,20 +460,36 @@ export default function SettingsScreen() {
               subtitle="Entries encrypted at rest"
               showChevron={false}
             />
+            {aiEnabled && reflectionCount > 0 && (
+              <SettingsRow
+                icon={<Trash2 size={22} color={activeColors.error} />}
+                title="Delete All Reflections"
+                subtitle={`${reflectionCount} reflection${reflectionCount !== 1 ? 's' : ''}`}
+                onPress={handleDeleteReflections}
+                destructive
+                showChevron={false}
+              />
+            )}
           </View>
         </View>
 
-        {/* About Section */}
+        {/* Account Section */}
         <View style={styles.section}>
           <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            ABOUT
+            ACCOUNT
           </Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Info size={22} color={activeColors.textPrimary} />}
-              title="About ThreeSixtyThree™"
-              subtitle="Version 1.0.0"
-              onPress={showAbout}
+              icon={<Edit3 size={22} color={activeColors.textPrimary} />}
+              title="Edit Profile"
+              onPress={() => router.push('/(tabs)/profile')}
+            />
+            <SettingsRow
+              icon={<LogOut size={22} color={activeColors.error} />}
+              title="Sign Out"
+              onPress={handleSignOut}
+              destructive
+              showChevron={false}
             />
           </View>
         </View>
@@ -401,16 +511,21 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-
         {/* Footer */}
-        <View style={styles.footer}>
+        <Pressable style={styles.footer} onPress={() => {
+          Alert.alert(
+            'About ThreeSixtyThree™',
+            'Three Sentences is the official journaling application of the ThreeSixtyThree™ self-improvement system.\n\nVersion 1.0.0\n\n"Show up. Do the work. Let go of perfection."',
+            [{ text: 'OK' }]
+          );
+        }}>
           <Text variant="xs" color="tertiary" centered>
-            ThreeSixtyThree™
+            ThreeSixtyThree™ v1.0.0
           </Text>
           <Text variant="xs" color="tertiary" centered style={styles.footerTagline}>
             Show up. Do the work. Let go of perfection.
           </Text>
-        </View>
+        </Pressable>
       </ScrollView>
 
       <AIOptInModal
@@ -436,12 +551,33 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing[4],
   },
-  statsCard: {
+
+  // Profile header card
+  profileCard: {
     borderRadius: 16,
-    padding: spacing[5],
+    padding: spacing[4],
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing[6],
+    marginBottom: spacing[5],
   },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing[3],
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+
+  // Sections
   section: {
     marginBottom: spacing[5],
   },
@@ -471,9 +607,12 @@ const styles = StyleSheet.create({
   rowSubtitle: {
     marginTop: 2,
   },
+
+  // Footer
   footer: {
-    marginTop: spacing[8],
+    marginTop: spacing[6],
     paddingTop: spacing[4],
+    paddingBottom: spacing[4],
   },
   footerTagline: {
     marginTop: spacing[1],

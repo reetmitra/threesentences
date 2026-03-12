@@ -10,6 +10,7 @@ import { OnboardingState, UserPreferences } from '@/types/entry';
 const STORAGE_KEYS = {
   ONBOARDING: '@threesentences/onboarding',
   PREFERENCES: '@threesentences/preferences',
+  HAS_LAUNCHED: '@threesentences/has_launched',
 } as const;
 
 /**
@@ -50,6 +51,11 @@ export async function resetOnboarding(): Promise<void> {
 const DEFAULT_PREFERENCES: UserPreferences = {
   aiReflectionEnabled: false,
   theme: null, // Follow system
+  hapticsEnabled: true,
+  dailyPromptEnabled: false,
+  notificationsEnabled: false,
+  reminderHour: 20,
+  reminderMinute: 0,
 };
 
 /**
@@ -76,6 +82,27 @@ export async function updatePreferences(
   const updated = { ...current, ...updates };
   await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(updated));
   return updated;
+}
+
+// ============ Launch Tracking ============
+
+/**
+ * Check if this is a returning user (has launched before)
+ */
+export async function hasLaunchedBefore(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(STORAGE_KEYS.HAS_LAUNCHED);
+    return val === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mark that the app has been launched at least once
+ */
+export async function markFirstLaunch(): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.HAS_LAUNCHED, 'true');
 }
 
 /**

@@ -1,20 +1,15 @@
 /**
  * ThreeSixtyThree™ Three Sentences - Confirmation Modal
- * 
+ *
  * Displays before final submission with 363 philosophy messaging.
  * "Presence over perfection."
  */
 
 import React from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  Pressable,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import * as Haptics from 'expo-haptics';
@@ -40,88 +35,53 @@ export function ConfirmationModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-      statusBarTranslucent
-    >
-      <Pressable
-        style={[styles.overlay, { backgroundColor: 'rgba(6, 20, 27, 0.9)' }]}
-        onPress={onCancel}
-        accessibilityLabel="Close modal"
-      >
-        <Pressable
-          style={[styles.content, { backgroundColor: activeColors.surface }]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <Text variant="xl" weight="bold" style={styles.title}>
-            Submit Entry
+    <BottomSheet visible={visible} onClose={onCancel} maxHeight={0.5}>
+      <View style={styles.content}>
+        <Text variant="xl" weight="bold" style={styles.title}>
+          Submit Entry
+        </Text>
+
+        <Text variant="base" color="secondary" style={styles.message}>
+          Once submitted, this entry cannot be edited or deleted. Your words
+          will stand as written, capturing how you felt in this moment.
+        </Text>
+
+        <View style={[styles.philosophy, { backgroundColor: activeColors.surfaceHover }]}>
+          <Text variant="base" color="secondary" style={styles.philosophyText}>
+            This is the ThreeSixtyThree™ way:
           </Text>
-
-          <Text variant="base" color="secondary" style={styles.message}>
-            Once submitted, this entry cannot be edited or deleted. Your words
-            will stand as written, capturing how you felt in this moment.
+          <Text
+            variant="lg"
+            weight="semibold"
+            style={[styles.philosophyHighlight, { color: activeColors.textPrimary }]}
+          >
+            Presence over perfection.
           </Text>
+        </View>
 
-          <View style={[styles.philosophy, { backgroundColor: activeColors.surfaceHover }]}>
-            <Text variant="base" color="secondary" style={styles.philosophyText}>
-              This is the ThreeSixtyThree™ way:
-            </Text>
-            <Text
-              variant="lg"
-              weight="semibold"
-              style={[styles.philosophyHighlight, { color: activeColors.textPrimary }]}
-            >
-              Presence over perfection.
-            </Text>
-          </View>
-
-          <View style={styles.buttons}>
-            <Button
-              title="Cancel"
-              variant="ghost"
-              onPress={onCancel}
-              style={styles.cancelButton}
-            />
-            <Button
-              title="Submit"
-              variant="primary"
-              onPress={handleConfirm}
-              loading={loading}
-              style={styles.submitButton}
-            />
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        <View style={styles.buttons}>
+          <Button
+            title="Cancel"
+            variant="ghost"
+            onPress={onCancel}
+            style={styles.cancelButton}
+          />
+          <Button
+            title="Submit"
+            variant="primary"
+            onPress={handleConfirm}
+            loading={loading}
+            style={styles.submitButton}
+          />
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing[4],
-  },
   content: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: 16,
-    padding: spacing[6],
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
+    paddingBottom: spacing[2],
   },
   title: {
     marginBottom: spacing[3],

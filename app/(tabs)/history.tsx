@@ -1,6 +1,6 @@
 /**
  * ThreeSixtyThree™ Three Sentences - History Screen
- * 
+ *
  * Calendar view of past entries.
  */
 
@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +20,8 @@ import { Text } from '@/components/ui/Text';
 import { Calendar } from '@/components/Calendar';
 import { EntryCard } from '@/components/EntryCard';
 import { DailyRules } from '@/components/DailyRules';
+import { SkeletonCalendar } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { getEntryDatesForMonth, getEntryForDate } from '@/store/entries';
@@ -27,6 +30,7 @@ import { Entry } from '@/types/entry';
 export default function HistoryScreen() {
   const { userId } = useAuth();
   const activeColors = colors.dark;
+  const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const year = currentDate.getFullYear();
@@ -36,6 +40,7 @@ export default function HistoryScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadEntryDates = useCallback(async () => {
     if (!userId) return;
@@ -45,6 +50,7 @@ export default function HistoryScreen() {
       setEntryDates(dates);
     } catch (error) {
       console.error('Failed to load entry dates:', error);
+      showToast('error', 'Could not load your history.');
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +68,12 @@ export default function HistoryScreen() {
     }, [loadEntryDates])
   );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadEntryDates();
+    setRefreshing(false);
+  }, [loadEntryDates]);
+
   const handleSelectDate = useCallback(async (date: string) => {
     if (!userId) return;
     setSelectedDate(date);
@@ -70,6 +82,7 @@ export default function HistoryScreen() {
       setSelectedEntry(entry);
     } catch (error) {
       console.error('Failed to load entry:', error);
+      showToast('error', 'Could not load this entry.');
       setSelectedEntry(null);
     }
   }, [userId]);
@@ -111,6 +124,13 @@ export default function HistoryScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={activeColors.accent}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -122,82 +142,88 @@ export default function HistoryScreen() {
           </Text>
         </View>
 
-        {/* Month navigation */}
-        <View style={styles.monthNav}>
-          <Pressable
-            onPress={goToPreviousMonth}
-            style={[styles.navButton, { backgroundColor: activeColors.surface }]}
-            accessibilityLabel="Previous month"
-          >
-            <ChevronLeft size={24} color={activeColors.textPrimary} />
-          </Pressable>
-
-          <Text variant="lg" weight="semibold" style={styles.monthTitle}>
-            {formatMonthHeader()}
-          </Text>
-
-          <Pressable
-            onPress={goToNextMonth}
-            style={[
-              styles.navButton,
-              { backgroundColor: activeColors.surface },
-              !canGoNext() && styles.navButtonDisabled,
-            ]}
-            disabled={!canGoNext()}
-            accessibilityLabel="Next month"
-          >
-            <ChevronRight
-              size={24}
-              color={canGoNext() ? activeColors.textPrimary : activeColors.textTertiary}
-            />
-          </Pressable>
-        </View>
-
-        {/* Calendar */}
-        <View style={[styles.calendarContainer, { backgroundColor: activeColors.surface }]}>
-          <Calendar
-            year={year}
-            month={month}
-            entryDates={entryDates}
-            selectedDate={selectedDate}
-            onSelectDate={handleSelectDate}
-          />
-        </View>
-
-        {/* Selected entry */}
-        {selectedEntry ? (
-          <View style={styles.entrySection}>
-            <EntryCard entry={selectedEntry} showDate />
-          </View>
-        ) : selectedDate ? (
-          <View style={styles.noEntryMessage}>
-            <Text variant="base" color="secondary" centered>
-              No entry for this date.
-            </Text>
-            <Text variant="sm" color="tertiary" centered style={styles.noEntryHint}>
-              Empty days are honest data.{'\n'}
-              This is the ThreeSixtyThree™ way.
-            </Text>
-          </View>
+        {isLoading ? (
+          <SkeletonCalendar />
         ) : (
-          <View style={styles.selectPrompt}>
-            <Text variant="base" color="secondary" centered>
-              Tap a date with a dot to view that entry.
-            </Text>
-          </View>
-        )}
+          <>
+            {/* Month navigation */}
+            <View style={styles.monthNav}>
+              <Pressable
+                onPress={goToPreviousMonth}
+                style={[styles.navButton, { backgroundColor: activeColors.surface }]}
+                accessibilityLabel="Previous month"
+              >
+                <ChevronLeft size={24} color={activeColors.textPrimary} />
+              </Pressable>
 
-        {/* Entry count */}
-        {entryDates.size > 0 && (
-          <View style={[styles.statsSection, { borderTopColor: activeColors.border }]}>
-            <Text variant="sm" color="tertiary" centered>
-              {entryDates.size} {entryDates.size === 1 ? 'entry' : 'entries'} this month
-            </Text>
-          </View>
-        )}
+              <Text variant="lg" weight="semibold" style={styles.monthTitle}>
+                {formatMonthHeader()}
+              </Text>
 
-        {/* Daily Rules Footer */}
-        <DailyRules />
+              <Pressable
+                onPress={goToNextMonth}
+                style={[
+                  styles.navButton,
+                  { backgroundColor: activeColors.surface },
+                  !canGoNext() && styles.navButtonDisabled,
+                ]}
+                disabled={!canGoNext()}
+                accessibilityLabel="Next month"
+              >
+                <ChevronRight
+                  size={24}
+                  color={canGoNext() ? activeColors.textPrimary : activeColors.textTertiary}
+                />
+              </Pressable>
+            </View>
+
+            {/* Calendar */}
+            <View style={[styles.calendarContainer, { backgroundColor: activeColors.surface }]}>
+              <Calendar
+                year={year}
+                month={month}
+                entryDates={entryDates}
+                selectedDate={selectedDate}
+                onSelectDate={handleSelectDate}
+              />
+            </View>
+
+            {/* Selected entry */}
+            {selectedEntry ? (
+              <View style={styles.entrySection}>
+                <EntryCard entry={selectedEntry} showDate />
+              </View>
+            ) : selectedDate ? (
+              <View style={styles.noEntryMessage}>
+                <Text variant="base" color="secondary" centered>
+                  Rest day
+                </Text>
+                <Text variant="sm" color="tertiary" centered style={styles.noEntryHint}>
+                  Empty days are part of the journey.{'\n'}
+                  The 363 philosophy embraces grace.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.selectPrompt}>
+                <Text variant="base" color="secondary" centered>
+                  Tap a date with a dot to view that entry.
+                </Text>
+              </View>
+            )}
+
+            {/* Entry count */}
+            {entryDates.size > 0 && (
+              <View style={[styles.statsSection, { borderTopColor: activeColors.border }]}>
+                <Text variant="sm" color="tertiary" centered>
+                  {entryDates.size} {entryDates.size === 1 ? 'entry' : 'entries'} this month
+                </Text>
+              </View>
+            )}
+
+            {/* Daily Rules Footer */}
+            <DailyRules />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

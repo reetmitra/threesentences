@@ -1,223 +1,385 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Guide Screen
- * 
- * Motivational carousel with "Project 363" philosophy.
- * Auto-rotating slides every 6 seconds.
+ * Three™ - Insights Screen (formerly Guide)
+ *
+ * Dynamic dashboard: streaks, daily prompt, weekly summary,
+ * quick access to reflect, and philosophy cards.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-    View,
-    StyleSheet,
-    Dimensions,
-    FlatList,
-    Pressable,
+  View,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useAuth } from '@clerk/clerk-expo';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+  Sparkles,
+  PenTool,
+  Lightbulb,
+  ArrowRight,
+} from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
+import { Button } from '@/components/ui/Button';
+import { StreakCounter } from '@/components/StreakCounter';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { getEntryStats, hasEntryForToday, getEntriesForReflection } from '@/store/entries';
+import { getPreferences } from '@/store/onboarding';
+import { getDailyPrompt } from '@/constants/prompts';
 
-const { width, height } = Dimensions.get('window');
+export default function InsightsScreen() {
+  const activeColors = colors.dark;
+  const { userId } = useAuth();
+  const { showToast } = useToast();
 
-const SLIDES = [
-    {
-        id: '1',
-        image: 'https://images.unsplash.com/photo-1497032628192-86f99bcd5039?auto=format&fit=crop&w=800&q=80', // Dark minimal desk
-        title: '1. Three Sentences',
-        subtitle: 'The Constraint.',
-        body: 'That is all. No more, no less.\nConstraint breeds creativity.\nFocus on the essence.',
-    },
-    {
-        id: '2',
-        image: 'https://images.unsplash.com/photo-1517836357463-c25dfe949227?auto=format&fit=crop&w=800&q=80', // Dark gym
-        title: '2. Build Iron Habits',
-        subtitle: 'The Grind.',
-        body: 'Momentum is everything.\nDo not break the chain.\n363 days to a new you.',
-    },
-    {
-        id: '3',
-        image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=80', // Night city
-        title: '3. No Edits',
-        subtitle: 'The Truth.',
-        body: 'Embrace imperfection.\nOnce written, it stands forever.\nHonesty over polish.',
-    },
-    {
-        id: '4',
-        image: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?auto=format&fit=crop&w=800&q=80', // Code/Focus
-        title: '4. Go Ghost',
-        subtitle: 'The Focus.',
-        body: 'In a world of noise, find your signal.\nBlock the distractions.\nWrite. Every. Day.',
-    },
-    {
-        id: '5',
-        image: 'https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=800&q=80', // Abstract
-        title: '5. Execute',
-        subtitle: 'The Action.',
-        body: 'No excuses anymore.\nYou either want it or you don\'t.\nStart today.',
-    },
-];
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({ totalEntries: 0, currentStreak: 0, longestStreak: 0 });
+  const [hasWrittenToday, setHasWrittenToday] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [promptEnabled, setPromptEnabled] = useState(false);
+  const [weekEntries, setWeekEntries] = useState(0);
 
-export default function GuideScreen() {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const flatListRef = useRef<FlatList>(null);
-    const activeColors = colors.dark;
+  const today = new Date().toISOString().split('T')[0];
+  const dailyPrompt = getDailyPrompt(today);
 
-    // Auto-rotation
-    useEffect(() => {
-        const timer = setInterval(() => {
-            if (currentIndex < SLIDES.length - 1) {
-                flatListRef.current?.scrollToIndex({
-                    index: currentIndex + 1,
-                    animated: true,
-                });
-                setCurrentIndex(currentIndex + 1);
-            } else {
-                flatListRef.current?.scrollToIndex({
-                    index: 0,
-                    animated: true,
-                });
-                setCurrentIndex(0);
-            }
-        }, 6000); // 6 seconds
+  const loadData = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const [entryStats, writtenToday, prefs, weekData] = await Promise.all([
+        getEntryStats(userId),
+        hasEntryForToday(userId),
+        getPreferences(),
+        getEntriesForReflection(userId, 7),
+      ]);
+      setStats(entryStats);
+      setHasWrittenToday(writtenToday);
+      setAiEnabled(prefs.aiReflectionEnabled);
+      setPromptEnabled(prefs.dailyPromptEnabled);
+      setWeekEntries(weekData.length);
+    } catch (err) {
+      console.error('Failed to load insights:', err);
+      showToast('error', 'Could not load insights.');
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  }, [userId]);
 
-        return () => clearInterval(timer);
-    }, [currentIndex]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
-    const renderItem = ({ item }: { item: typeof SLIDES[0] }) => (
-        <View style={styles.slide}>
-            <View style={[styles.card, { backgroundColor: activeColors.background }]}>
-                <View style={styles.contentContainer}>
-                    <Text variant="3xl" weight="bold" style={styles.title}>
-                        {item.title}
-                    </Text>
-                    <Text variant="lg" color="accent" weight="medium" style={styles.subtitle}>
-                        {item.subtitle}
-                    </Text>
-                    <View style={styles.divider} />
-                    <Text variant="base" color="secondary" style={styles.body}>
-                        {item.body}
-                    </Text>
-                </View>
-            </View>
-        </View>
-    );
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+  }, [loadData]);
 
+  // Day labels for the week bar chart
+  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const todayDayIndex = (new Date().getDay() + 6) % 7; // Mon=0
+
+  if (isLoading) {
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: activeColors.background }]} edges={['top']}>
-            <StatusBar style="light" />
-
-            <View style={styles.header}>
-                <Text variant="xl" weight="bold" style={styles.headerTitle}>The Guide</Text>
-            </View>
-
-            <FlatList
-                ref={flatListRef}
-                data={SLIDES}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onMomentumScrollEnd={(event) => {
-                    const index = Math.floor(event.nativeEvent.contentOffset.x / width);
-                    setCurrentIndex(index);
-                }}
-                style={styles.list}
-            />
-
-            {/* Pagination Container */}
-            <View style={styles.pagination}>
-                {SLIDES.map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.dot,
-                            {
-                                backgroundColor:
-                                    index === currentIndex
-                                        ? activeColors.accent
-                                        : activeColors.border,
-                                width: index === currentIndex ? 24 : 6,
-                            },
-                        ]}
-                    />
-                ))}
-            </View>
-
-            {/* Footer removed: Now global */}
-        </SafeAreaView>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: activeColors.background }]}
+        edges={['top']}
+      >
+        <View style={styles.header}>
+          <Text variant="2xl" weight="bold">Insights</Text>
+        </View>
+        <View style={styles.scrollContent}>
+          <SkeletonCard style={{ height: 140, marginBottom: spacing[4] }} />
+          <SkeletonCard style={{ height: 100, marginBottom: spacing[4] }} />
+          <SkeletonCard style={{ height: 80 }} />
+        </View>
+      </SafeAreaView>
     );
+  }
+
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: activeColors.background }]}
+      edges={['top']}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={activeColors.accent}
+          />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text variant="2xl" weight="bold">
+            Insights
+          </Text>
+          <Text variant="sm" color="secondary" style={styles.subtitle}>
+            Your writing at a glance
+          </Text>
+        </View>
+
+        {/* Streak + Progress */}
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <StreakCounter
+            currentStreak={stats.currentStreak}
+            longestStreak={stats.longestStreak}
+            totalEntries={stats.totalEntries}
+          />
+        </Animated.View>
+
+        {/* Daily Writing Prompt */}
+        {promptEnabled && !hasWrittenToday && (
+          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+            <Pressable
+              style={[styles.card, { backgroundColor: activeColors.surface }]}
+              onPress={() => router.push('/(tabs)/')}
+            >
+              <View style={styles.cardHeader}>
+                <Lightbulb size={20} color={activeColors.accent} />
+                <Text variant="sm" weight="medium" style={styles.cardHeaderText}>
+                  TODAY'S PROMPT
+                </Text>
+              </View>
+              <Text variant="base" color="secondary" style={styles.promptText}>
+                "{dailyPrompt.text}"
+              </Text>
+              <View style={styles.cardAction}>
+                <Text variant="sm" weight="medium" style={{ color: activeColors.accent }}>
+                  Start Writing
+                </Text>
+                <ArrowRight size={16} color={activeColors.accent} />
+              </View>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Write Today CTA (if no prompt but hasn't written) */}
+        {!hasWrittenToday && !promptEnabled && (
+          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+            <Pressable
+              style={[styles.card, { backgroundColor: activeColors.surface }]}
+              onPress={() => router.push('/(tabs)/')}
+            >
+              <View style={styles.cardHeader}>
+                <PenTool size={20} color={activeColors.accent} />
+                <Text variant="sm" weight="medium" style={styles.cardHeaderText}>
+                  TODAY
+                </Text>
+              </View>
+              <Text variant="base" color="secondary" style={{ marginBottom: spacing[3] }}>
+                You haven't written today yet. Three sentences is all it takes.
+              </Text>
+              <View style={styles.cardAction}>
+                <Text variant="sm" weight="medium" style={{ color: activeColors.accent }}>
+                  Write Now
+                </Text>
+                <ArrowRight size={16} color={activeColors.accent} />
+              </View>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Quick Reflect Access */}
+        {aiEnabled && (
+          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+            <Pressable
+              style={[styles.card, { backgroundColor: activeColors.surface }]}
+              onPress={() => router.push('/(tabs)/reflect')}
+            >
+              <View style={styles.cardHeader}>
+                <Sparkles size={20} color={activeColors.accent} />
+                <Text variant="sm" weight="medium" style={styles.cardHeaderText}>
+                  AI REFLECTION
+                </Text>
+              </View>
+              <Text variant="base" color="secondary" style={{ marginBottom: spacing[3] }}>
+                Discover patterns and themes in your recent entries.
+              </Text>
+              <View style={styles.cardAction}>
+                <Text variant="sm" weight="medium" style={{ color: activeColors.accent }}>
+                  Generate Reflection
+                </Text>
+                <ArrowRight size={16} color={activeColors.accent} />
+              </View>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Weekly Summary Bar Chart */}
+        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <View style={[styles.card, { backgroundColor: activeColors.surface }]}>
+            <Text variant="sm" weight="medium" color="secondary" style={styles.weeklyTitle}>
+              THIS WEEK
+            </Text>
+            <Text variant="3xl" weight="bold" style={{ marginBottom: spacing[1] }}>
+              {weekEntries}/7
+            </Text>
+            <Text variant="sm" color="secondary" style={{ marginBottom: spacing[4] }}>
+              {weekEntries === 7
+                ? 'Perfect week!'
+                : weekEntries === 0
+                  ? 'Start your week strong'
+                  : `${7 - weekEntries} more to complete the week`}
+            </Text>
+
+            {/* Bar chart */}
+            <View style={styles.barChart}>
+              {dayLabels.map((label, i) => {
+                const isFilled = i < weekEntries;
+                const isToday = i === todayDayIndex;
+                return (
+                  <View key={i} style={styles.barItem}>
+                    <View
+                      style={[
+                        styles.bar,
+                        {
+                          backgroundColor: isFilled
+                            ? activeColors.accent
+                            : activeColors.surfaceHover,
+                          height: isFilled ? 32 : 12,
+                        },
+                        isToday && !isFilled && {
+                          borderWidth: 1,
+                          borderColor: activeColors.accent,
+                          backgroundColor: 'transparent',
+                        },
+                      ]}
+                    />
+                    <Text
+                      variant="xs"
+                      style={{
+                        color: isToday ? activeColors.accent : activeColors.textTertiary,
+                        marginTop: 4,
+                      }}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Philosophy Cards */}
+        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+          <View style={[styles.philosophyCard, { backgroundColor: activeColors.surface }]}>
+            <Text variant="base" weight="semibold" style={styles.philosophyTitle}>
+              The 363 Way
+            </Text>
+            <Text variant="sm" color="secondary" style={styles.philosophyBody}>
+              Commit to 363 days out of 365. Missed days are simply empty — not failures, not
+              broken streaks. Return when you return, without shame.
+            </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(500).duration(400)}>
+          <View style={[styles.philosophyCard, { backgroundColor: activeColors.surface }]}>
+            <Text variant="base" weight="semibold" style={styles.philosophyTitle}>
+              Presence Over Perfection
+            </Text>
+            <Text variant="sm" color="secondary" style={styles.philosophyBody}>
+              Three sentences. No edits. No deletions. Your words stand as written, capturing
+              how you felt in the moment. Done is better than perfect.
+            </Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    header: {
-        paddingHorizontal: spacing[4],
-        paddingVertical: spacing[2],
-        alignItems: 'center',
-        marginBottom: spacing[2],
-    },
-    headerTitle: {
-        letterSpacing: 2,
-        textTransform: 'uppercase',
-    },
-    list: {
-        flex: 1,
-    },
-    slide: {
-        width: width,
-        height: height * 0.7, // Takes up most of the screen
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: spacing[4],
-    },
-    card: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        padding: spacing[6],
-    },
-    contentContainer: {
-        marginBottom: spacing[8],
-    },
-    title: {
-        marginBottom: spacing[2],
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        marginBottom: spacing[4],
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#333',
-        width: 60,
-        marginBottom: spacing[4],
-    },
-    body: {
-        lineHeight: 24,
-    },
-    pagination: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: spacing[16],
-        marginTop: spacing[2],
-        gap: 6,
-    },
-    dot: {
-        height: 6,
-        borderRadius: 3,
-    },
-    footer: {
-        textAlign: 'center',
-        marginBottom: spacing[4],
-        opacity: 0.5,
-        letterSpacing: 1,
-    },
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing[4],
+    paddingBottom: spacing[8],
+  },
+  header: {
+    marginBottom: spacing[4],
+  },
+  subtitle: {
+    marginTop: spacing[1],
+  },
+
+  // Cards
+  card: {
+    borderRadius: 12,
+    padding: spacing[4],
+    marginBottom: spacing[4],
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing[2],
+  },
+  cardHeaderText: {
+    marginLeft: spacing[2],
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  cardAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+  },
+  promptText: {
+    fontStyle: 'italic',
+    lineHeight: 24,
+    marginBottom: spacing[3],
+  },
+
+  // Weekly
+  weeklyTitle: {
+    letterSpacing: 1,
+    marginBottom: spacing[2],
+  },
+  barChart: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  barItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  bar: {
+    width: 20,
+    borderRadius: 4,
+  },
+
+  // Philosophy
+  philosophyCard: {
+    borderRadius: 12,
+    padding: spacing[4],
+    marginBottom: spacing[3],
+  },
+  philosophyTitle: {
+    marginBottom: spacing[2],
+  },
+  philosophyBody: {
+    lineHeight: 22,
+  },
 });
