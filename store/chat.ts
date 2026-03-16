@@ -5,7 +5,7 @@
  * Uses Supabase for persistence with Realtime subscriptions.
  */
 
-import { supabase } from '@/config/supabase';
+import { supabase, getAuthenticatedSupabase } from '@/config/supabase';
 import {
   Conversation,
   Message,
@@ -238,7 +238,7 @@ export async function sendMessage(
     throw new Error('Message cannot be empty');
   }
 
-  const { data: newMessage, error } = await supabase
+  const { data: newMessage, error } = await getAuthenticatedSupabase()
     .from('messages')
     .insert({
       sender_id: senderId,
@@ -264,7 +264,7 @@ export async function markMessagesAsRead(
   userId: string,
   partnerId: string
 ): Promise<void> {
-  await supabase
+  await getAuthenticatedSupabase()
     .from('messages')
     .update({ is_read: true })
     .eq('sender_id', partnerId)
@@ -276,7 +276,7 @@ export async function markMessagesAsRead(
  * Get unread message count
  */
 export async function getUnreadCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
+  const { count, error } = await getAuthenticatedSupabase()
     .from('messages')
     .select('*', { count: 'exact', head: true })
     .eq('receiver_id', userId)
@@ -332,7 +332,7 @@ export async function sendGroupMessage(
     throw new Error('Message cannot be empty');
   }
 
-  const { data: newMessage, error } = await supabase
+  const { data: newMessage, error } = await getAuthenticatedSupabase()
     .from('messages')
     .insert({
       sender_id: senderId,
@@ -474,7 +474,7 @@ export async function deleteMessage(
   messageId: string,
   userId: string
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('messages')
     .delete()
     .eq('id', messageId)
@@ -490,7 +490,7 @@ export async function deleteMessage(
  * Clear all chat data for testing
  */
 export async function clearChatData(userId: string): Promise<void> {
-  await supabase
+  await getAuthenticatedSupabase()
     .from('messages')
     .delete()
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);

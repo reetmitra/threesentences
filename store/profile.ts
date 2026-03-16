@@ -5,7 +5,7 @@
  * Handles profile creation, updates, and validation.
  */
 
-import { supabase } from '@/config/supabase';
+import { getAuthenticatedSupabase } from '@/config/supabase';
 import {
   UserProfile,
   ProfileUpdate,
@@ -56,7 +56,7 @@ function mapToUserProfile(dbProfile: DbProfile): UserProfile {
  */
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
@@ -67,7 +67,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
         // No rows returned - profile doesn't exist
         return null;
       }
-      console.error('Failed to get profile:', error);
+      console.error('Failed to get profile:', error.message, error.code, error.details);
       return null;
     }
 
@@ -106,15 +106,15 @@ export async function createProfile(
     updated_at: profile.updatedAt,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await getAuthenticatedSupabase()
     .from('profiles')
     .insert(insertData)
     .select()
     .single();
 
   if (error) {
-    console.error('Failed to create profile:', error);
-    throw new Error('Failed to create profile');
+    console.error('Failed to create profile:', error.message, error.code, error.details);
+    throw new Error(`Failed to create profile: ${error.message}`);
   }
 
   return mapToUserProfile(data as DbProfile);
@@ -164,7 +164,7 @@ export async function updateProfile(
     updated_at: updatedProfile.updatedAt,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await getAuthenticatedSupabase()
     .from('profiles')
     .update(updateData)
     .eq('user_id', userId)
@@ -172,8 +172,8 @@ export async function updateProfile(
     .single();
 
   if (error) {
-    console.error('Failed to update profile:', error);
-    throw new Error('Failed to update profile');
+    console.error('Failed to update profile:', error.message, error.code, error.details);
+    throw new Error(`Failed to update profile: ${error.message}`);
   }
 
   return mapToUserProfile(data as DbProfile);
@@ -198,14 +198,14 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
     return false;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getAuthenticatedSupabase()
     .from('profiles')
     .select('id')
     .eq('username', username)
     .maybeSingle();
 
   if (error) {
-    console.error('Failed to check username:', error);
+    console.error('Failed to check username:', error.message);
     return false;
   }
 
@@ -287,14 +287,14 @@ export async function getProfileSummary(userId: string): Promise<{
  * Delete profile data
  */
 export async function deleteProfile(userId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('profiles')
     .delete()
     .eq('user_id', userId);
 
   if (error) {
-    console.error('Failed to delete profile:', error);
-    throw new Error('Failed to delete profile');
+    console.error('Failed to delete profile:', error.message);
+    throw new Error(`Failed to delete profile: ${error.message}`);
   }
 }
 
@@ -329,7 +329,7 @@ export async function removeProfileImage(userId: string): Promise<UserProfile> {
  * Search profiles by username or name
  */
 export async function searchProfiles(query: string, limit = 20): Promise<UserProfile[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAuthenticatedSupabase()
     .from('profiles')
     .select('*')
     .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
@@ -337,7 +337,7 @@ export async function searchProfiles(query: string, limit = 20): Promise<UserPro
     .limit(limit);
 
   if (error) {
-    console.error('Failed to search profiles:', error);
+    console.error('Failed to search profiles:', error.message);
     return [];
   }
 
@@ -352,7 +352,7 @@ export async function getProfilesByInterest(
   excludeUserId: string,
   limit = 20
 ): Promise<UserProfile[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getAuthenticatedSupabase()
     .from('profiles')
     .select('*')
     .contains('interests', [interest])
@@ -361,7 +361,7 @@ export async function getProfilesByInterest(
     .limit(limit);
 
   if (error) {
-    console.error('Failed to get profiles by interest:', error);
+    console.error('Failed to get profiles by interest:', error.message);
     return [];
   }
 

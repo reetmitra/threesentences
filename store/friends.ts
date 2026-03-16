@@ -5,7 +5,7 @@
  * Uses Supabase for backend persistence with Clerk authentication.
  */
 
-import { supabase } from '@/config/supabase';
+import { getAuthenticatedSupabase } from '@/config/supabase';
 import {
   Friend,
   FriendRequest,
@@ -57,7 +57,7 @@ function profileToUserInfo(profile: DbProfile): UserInfo {
 export async function getFriends(userId: string): Promise<Friend[]> {
   try {
     // Get friendships where user is either user_id or friend_id and status is accepted
-    const { data: friendships, error } = await supabase
+    const { data: friendships, error } = await getAuthenticatedSupabase()
       .from('friends')
       .select('*')
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
@@ -76,7 +76,7 @@ export async function getFriends(userId: string): Promise<Friend[]> {
     );
 
     // Fetch profiles for all friends
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles, error: profilesError } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('user_id, name, username, profile_image, interests')
       .in('user_id', friendUserIds);
@@ -132,7 +132,7 @@ export async function getFriendById(
  */
 export async function getFriendRequests(userId: string): Promise<FriendRequest[]> {
   try {
-    const { data: requests, error } = await supabase
+    const { data: requests, error } = await getAuthenticatedSupabase()
       .from('friends')
       .select('*')
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
@@ -153,7 +153,7 @@ export async function getFriendRequests(userId: string): Promise<FriendRequest[]
     });
 
     // Fetch profiles
-    const { data: profiles } = await supabase
+    const { data: profiles } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('user_id, name, username, profile_image, interests')
       .in('user_id', Array.from(allUserIds));
@@ -218,7 +218,7 @@ export async function sendFriendRequest(
   toUserId: string
 ): Promise<FriendRequest> {
   // Check if friendship already exists
-  const { data: existing } = await supabase
+  const { data: existing } = await getAuthenticatedSupabase()
     .from('friends')
     .select('*')
     .or(
@@ -237,7 +237,7 @@ export async function sendFriendRequest(
   }
 
   // Create friend request
-  const { data: newRequest, error } = await supabase
+  const { data: newRequest, error } = await getAuthenticatedSupabase()
     .from('friends')
     .insert({
       user_id: fromUserId,
@@ -253,7 +253,7 @@ export async function sendFriendRequest(
   }
 
   // Fetch profiles for the response
-  const { data: profiles } = await supabase
+  const { data: profiles } = await getAuthenticatedSupabase()
     .from('profiles')
     .select('user_id, name, username, profile_image, interests')
     .in('user_id', [fromUserId, toUserId]);
@@ -292,7 +292,7 @@ export async function acceptFriendRequest(
   userId: string
 ): Promise<Friend> {
   // Verify the request exists and is for this user
-  const { data: request, error: fetchError } = await supabase
+  const { data: request, error: fetchError } = await getAuthenticatedSupabase()
     .from('friends')
     .select('*')
     .eq('id', requestId)
@@ -311,7 +311,7 @@ export async function acceptFriendRequest(
   }
 
   // Update status to accepted
-  const { error: updateError } = await supabase
+  const { error: updateError } = await getAuthenticatedSupabase()
     .from('friends')
     .update({ status: 'accepted' })
     .eq('id', requestId);
@@ -321,7 +321,7 @@ export async function acceptFriendRequest(
   }
 
   // Get friend's profile
-  const { data: friendProfile } = await supabase
+  const { data: friendProfile } = await getAuthenticatedSupabase()
     .from('profiles')
     .select('user_id, name, username, profile_image, interests')
     .eq('user_id', (request as DbFriend).user_id)
@@ -346,7 +346,7 @@ export async function rejectFriendRequest(
   requestId: string,
   userId: string
 ): Promise<void> {
-  const { data: request, error: fetchError } = await supabase
+  const { data: request, error: fetchError } = await getAuthenticatedSupabase()
     .from('friends')
     .select('*')
     .eq('id', requestId)
@@ -361,7 +361,7 @@ export async function rejectFriendRequest(
   }
 
   // Delete the request (or update to rejected)
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('friends')
     .delete()
     .eq('id', requestId);
@@ -378,7 +378,7 @@ export async function cancelFriendRequest(
   requestId: string,
   userId: string
 ): Promise<void> {
-  const { data: request, error: fetchError } = await supabase
+  const { data: request, error: fetchError } = await getAuthenticatedSupabase()
     .from('friends')
     .select('*')
     .eq('id', requestId)
@@ -392,7 +392,7 @@ export async function cancelFriendRequest(
     throw new Error('Cannot cancel this request');
   }
 
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('friends')
     .delete()
     .eq('id', requestId);
@@ -409,7 +409,7 @@ export async function removeFriend(
   friendshipId: string,
   userId: string
 ): Promise<void> {
-  const { data: friendship, error: fetchError } = await supabase
+  const { data: friendship, error: fetchError } = await getAuthenticatedSupabase()
     .from('friends')
     .select('*')
     .eq('id', friendshipId)
@@ -424,7 +424,7 @@ export async function removeFriend(
     throw new Error('Cannot remove this friend');
   }
 
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('friends')
     .delete()
     .eq('id', friendshipId);
@@ -451,7 +451,7 @@ export async function searchUsers(
 
   try {
     // Search profiles by name or username
-    const { data: profiles, error } = await supabase
+    const { data: profiles, error } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('user_id, name, username, profile_image, interests')
       .neq('user_id', currentUserId)
@@ -466,7 +466,7 @@ export async function searchUsers(
     if (!profiles || profiles.length === 0) return [];
 
     // Get current user's friendships to determine status
-    const { data: friendships } = await supabase
+    const { data: friendships } = await getAuthenticatedSupabase()
       .from('friends')
       .select('*')
       .or(`user_id.eq.${currentUserId},friend_id.eq.${currentUserId}`);
@@ -511,7 +511,7 @@ export async function getFriendshipStatus(
   otherUserId: string
 ): Promise<FriendshipStatus> {
   try {
-    const { data: friendship } = await supabase
+    const { data: friendship } = await getAuthenticatedSupabase()
       .from('friends')
       .select('*')
       .or(
@@ -543,7 +543,7 @@ export async function getSocialStats(userId: string): Promise<SocialStats> {
   ]);
 
   // Get unread messages count
-  const { count: unreadCount } = await supabase
+  const { count: unreadCount } = await getAuthenticatedSupabase()
     .from('messages')
     .select('*', { count: 'exact', head: true })
     .eq('receiver_id', userId)
@@ -565,7 +565,7 @@ export async function getSuggestedFriends(
 ): Promise<UserSearchResult[]> {
   try {
     // Get current user's profile to know their interests
-    const { data: currentProfile } = await supabase
+    const { data: currentProfile } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('interests')
       .eq('user_id', userId)
@@ -574,7 +574,7 @@ export async function getSuggestedFriends(
     const userInterests = (currentProfile?.interests as string[]) || [];
 
     // Get existing friends and pending requests to exclude
-    const { data: friendships } = await supabase
+    const { data: friendships } = await getAuthenticatedSupabase()
       .from('friends')
       .select('user_id, friend_id')
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
@@ -586,7 +586,7 @@ export async function getSuggestedFriends(
     });
 
     // Find users with overlapping interests
-    const { data: profiles, error } = await supabase
+    const { data: profiles, error } = await getAuthenticatedSupabase()
       .from('profiles')
       .select('user_id, name, username, profile_image, interests')
       .not('user_id', 'in', `(${Array.from(excludeIds).join(',')})`)
@@ -622,7 +622,7 @@ export async function getSuggestedFriends(
  * Clear all friends data (for testing)
  */
 export async function clearFriendsData(userId: string): Promise<void> {
-  await supabase
+  await getAuthenticatedSupabase()
     .from('friends')
     .delete()
     .or(`user_id.eq.${userId},friend_id.eq.${userId}`);

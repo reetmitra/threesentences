@@ -2,6 +2,7 @@
  * Three™ - Supabase Client Configuration
  *
  * Initializes the Supabase client for database and real-time operations.
+ * Integrates with Clerk JWT for authenticated RLS queries.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -17,14 +18,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Store the current JWT token for Clerk integration
 let currentToken: string | null = null;
+let cachedAuthClient: SupabaseClient | null = null;
 
 /**
- * Create Supabase client
- * Using untyped client for flexibility with RLS
+ * Base Supabase client (unauthenticated, used for Realtime subscriptions)
  */
 export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-        // We're using Clerk for auth, so disable Supabase Auth
         autoRefreshToken: false,
         persistSession: false,
         detectSessionInUrl: false,
@@ -32,41 +32,43 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
 });
 
 /**
- * Set the Clerk JWT token for Supabase RLS
- * Call this after user signs in with Clerk
+ * Set the Clerk JWT token for Supabase RLS.
+ * Invalidates the cached authenticated client so the next call
+ * to getAuthenticatedSupabase() picks up the new token.
  */
 export function setSupabaseToken(token: string | null) {
-    currentToken = token;
+    if (token !== currentToken) {
+        currentToken = token;
+        cachedAuthClient = null; // Force recreation on next access
+    }
 }
 
 /**
- * Get the current JWT token
- */
-export function getSupabaseToken(): string | null {
-    return currentToken;
-}
-
-/**
- * Create a Supabase client with the current auth token
- * Use this for authenticated requests with RLS
+ * Get a Supabase client with the current Clerk auth token.
+ * Caches the client and only recreates when the token changes.
+ * Falls back to the base (anon) client when no token is set.
  */
 export function getAuthenticatedSupabase(): SupabaseClient {
     if (!currentToken) {
         return supabase;
     }
 
-    return createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-            detectSessionInUrl: false,
-        },
-        global: {
-            headers: {
-                Authorization: `Bearer ${currentToken}`,
+    if (!cachedAuthClient) {
+        cachedAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+                detectSessionInUrl: false,
             },
-        },
-    });
+            global: {
+                headers: {
+                    Authorization: `Bearer ${currentToken}`,
+                },
+            },
+        });
+    }
+
+    return cachedAuthClient;
 }
 
 export default supabase;

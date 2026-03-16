@@ -21,7 +21,17 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
+import {
+  Dumbbell,
+  Heart,
+  UtensilsCrossed,
+  Briefcase,
+  Compass,
+  BookOpen,
+  ChevronUp,
+  ChevronDown,
+  LucideIcon,
+} from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/colors';
@@ -34,6 +44,16 @@ import {
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
 import { saveInterests, createProfile } from '@/store/profile';
+
+// Map group icon names to lucide components
+const GROUP_ICON_MAP: Record<string, LucideIcon> = {
+  dumbbell: Dumbbell,
+  heart: Heart,
+  utensils: UtensilsCrossed,
+  briefcase: Briefcase,
+  compass: Compass,
+  'book-open': BookOpen,
+};
 
 const MIN_INTERESTS = PROFILE_CONSTRAINTS.interests.minCount;
 
@@ -224,11 +244,10 @@ export default function InterestsScreen() {
                   style={[styles.groupHeader, { borderColor: activeColors.border }]}
                 >
                   <View style={styles.groupHeaderLeft}>
-                    <Feather
-                      name={group.icon as any}
-                      size={18}
-                      color={activeColors.textSecondary}
-                    />
+                    {(() => {
+                      const IconComp = GROUP_ICON_MAP[group.icon] || Briefcase;
+                      return <IconComp size={18} color={activeColors.textSecondary} strokeWidth={2} />;
+                    })()}
                     <Text variant="base" weight="semibold" style={styles.groupTitle}>
                       {group.label}
                     </Text>
@@ -245,11 +264,10 @@ export default function InterestsScreen() {
                       </View>
                     )}
                   </View>
-                  <Feather
-                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={activeColors.textSecondary}
-                  />
+                  {isExpanded
+                    ? <ChevronUp size={20} color={activeColors.textSecondary} strokeWidth={2} />
+                    : <ChevronDown size={20} color={activeColors.textSecondary} strokeWidth={2} />
+                  }
                 </Pressable>
 
                 {/* Group Interests */}

@@ -7,7 +7,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '@/config/supabase';
+import { getAuthenticatedSupabase } from '@/config/supabase';
 import {
   Entry,
   Draft,
@@ -65,7 +65,7 @@ async function mapToEntry(dbEntry: DbEntry): Promise<Entry> {
  */
 export async function getAllEntries(userId: string): Promise<Entry[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('*')
       .eq('user_id', userId)
@@ -94,7 +94,7 @@ export async function getAllEntries(userId: string): Promise<Entry[]> {
  */
 export async function getEntryForDate(userId: string, date: string): Promise<Entry | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('*')
       .eq('user_id', userId)
@@ -143,7 +143,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
   const encryptedContent = await encryptContent(content);
 
   // Check if entry exists for today
-  const { data: existing } = await supabase
+  const { data: existing } = await getAuthenticatedSupabase()
     .from('entries')
     .select('id')
     .eq('user_id', userId)
@@ -155,7 +155,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
 
   if (existing) {
     // Update existing entry
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .update({
         encrypted_content: encryptedContent,
@@ -175,7 +175,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
     submittedAt = data.updated_at;
   } else {
     // Create new entry
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .insert({
         user_id: userId,
@@ -221,7 +221,7 @@ export async function getEntriesForMonth(
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('*')
       .eq('user_id', userId)
@@ -254,7 +254,7 @@ export async function getEntryDatesForMonth(
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('date')
       .eq('user_id', userId)
@@ -282,7 +282,7 @@ export async function getEntryStats(userId: string): Promise<{
   longestStreak: number;
 }> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('date')
       .eq('user_id', userId)
@@ -340,7 +340,7 @@ export async function getEntryStats(userId: string): Promise<{
  * Delete an entry (admin only or within 24 hours)
  */
 export async function deleteEntry(userId: string, entryId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await getAuthenticatedSupabase()
     .from('entries')
     .delete()
     .eq('user_id', userId)
@@ -442,7 +442,7 @@ export async function migrateLocalEntries(userId: string): Promise<number> {
       const encryptedContent = await encryptContent(content);
 
       // Check if already exists in Supabase
-      const { data: existing } = await supabase
+      const { data: existing } = await getAuthenticatedSupabase()
         .from('entries')
         .select('id')
         .eq('user_id', userId)
@@ -451,7 +451,7 @@ export async function migrateLocalEntries(userId: string): Promise<number> {
 
       if (!existing) {
         // Insert into Supabase
-        const { error } = await supabase
+        const { error } = await getAuthenticatedSupabase()
           .from('entries')
           .insert({
             user_id: userId,
@@ -490,7 +490,7 @@ export type ExportFormat = 'json' | 'txt' | 'csv';
  */
 export async function getEntryCount(userId: string): Promise<number> {
   try {
-    const { count, error } = await supabase
+    const { count, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId);
@@ -519,7 +519,7 @@ export async function getEntriesForReflection(
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    const { data, error } = await supabase
+    const { data, error } = await getAuthenticatedSupabase()
       .from('entries')
       .select('*')
       .eq('user_id', userId)

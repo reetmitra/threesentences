@@ -34,6 +34,7 @@ export default function SignupScreen() {
     const { startSSOFlow } = useSSO();
 
     const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function SignupScreen() {
     const handleSignup = useCallback(async () => {
         if (!isLoaded || !signUp) return;
 
-        if (!email || !password || !name) {
+        if (!email || !password || !name || !username) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
@@ -55,6 +56,7 @@ export default function SignupScreen() {
             await signUp.create({
                 emailAddress: email,
                 password,
+                username,
                 firstName: name.split(' ')[0],
                 lastName: name.split(' ').slice(1).join(' ') || undefined,
             });
@@ -72,7 +74,7 @@ export default function SignupScreen() {
         } finally {
             setLoading(false);
         }
-    }, [isLoaded, signUp, email, password, name]);
+    }, [isLoaded, signUp, email, password, name, username]);
 
     const handleVerification = useCallback(async () => {
         if (!isLoaded || !signUp) return;
@@ -223,6 +225,14 @@ export default function SignupScreen() {
                         value={name}
                         onChangeText={setName}
                         autoCapitalize="words"
+                    />
+                    <View style={styles.spacer} />
+                    <Input
+                        label="Username"
+                        placeholder="brucewayne"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
                     />
                     <View style={styles.spacer} />
                     <Input
