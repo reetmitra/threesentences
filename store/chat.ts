@@ -5,7 +5,7 @@
  * Uses Supabase for persistence with Realtime subscriptions.
  */
 
-import { supabase, getAuthenticatedSupabase } from '@/config/supabase';
+import { supabase } from '@/config/supabase';
 import {
   Conversation,
   Message,
@@ -118,7 +118,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
       .from('profiles')
       .select('user_id, name, username, profile_image')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     const currentUserInfo: UserInfo = currentProfile
       ? profileToUserInfo(currentProfile as DbProfile)
@@ -238,7 +238,7 @@ export async function sendMessage(
     throw new Error('Message cannot be empty');
   }
 
-  const { data: newMessage, error } = await getAuthenticatedSupabase()
+  const { data: newMessage, error } = await supabase
     .from('messages')
     .insert({
       sender_id: senderId,
@@ -264,7 +264,7 @@ export async function markMessagesAsRead(
   userId: string,
   partnerId: string
 ): Promise<void> {
-  await getAuthenticatedSupabase()
+  await supabase
     .from('messages')
     .update({ is_read: true })
     .eq('sender_id', partnerId)
@@ -276,7 +276,7 @@ export async function markMessagesAsRead(
  * Get unread message count
  */
 export async function getUnreadCount(userId: string): Promise<number> {
-  const { count, error } = await getAuthenticatedSupabase()
+  const { count, error } = await supabase
     .from('messages')
     .select('*', { count: 'exact', head: true })
     .eq('receiver_id', userId)
@@ -332,7 +332,7 @@ export async function sendGroupMessage(
     throw new Error('Message cannot be empty');
   }
 
-  const { data: newMessage, error } = await getAuthenticatedSupabase()
+  const { data: newMessage, error } = await supabase
     .from('messages')
     .insert({
       sender_id: senderId,
@@ -474,7 +474,7 @@ export async function deleteMessage(
   messageId: string,
   userId: string
 ): Promise<void> {
-  const { error } = await getAuthenticatedSupabase()
+  const { error } = await supabase
     .from('messages')
     .delete()
     .eq('id', messageId)
@@ -490,7 +490,7 @@ export async function deleteMessage(
  * Clear all chat data for testing
  */
 export async function clearChatData(userId: string): Promise<void> {
-  await getAuthenticatedSupabase()
+  await supabase
     .from('messages')
     .delete()
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);

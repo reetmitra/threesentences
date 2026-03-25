@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useUser } from '@clerk/clerk-expo';
+import { useAuth } from '@/hooks/useAuth';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,7 +45,7 @@ import { updateProfile, completeProfileSetup } from '@/store/profile';
 export default function ProfileSetupScreen() {
   const activeColors = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   // Form state
   const [username, setUsername] = useState('');

@@ -9,6 +9,7 @@
  */
 
 import { Entry } from '@/types/entry';
+import { supabase } from '@/config/supabase';
 
 // ============ Types ============
 
@@ -193,13 +194,20 @@ export async function generateReflection(
       };
     }
 
-    // Generate reflection
-    // In production, this would call an AI API with:
-    // - System prompt: generateSystemPrompt()
-    // - User prompt: generateUserPrompt(entries, timeRange)
-    
-    // For now, use mock response
-    const content = generateMockReflection(entries, timeRange);
+    // Call Supabase Edge Function
+
+    const { data, error: fnError } = await supabase.functions.invoke('generate-reflection', {
+      body: {
+        entries: entries.map(e => ({ date: e.date, content: e.content })),
+        timeRange,
+      },
+    });
+
+    if (fnError || !data?.content) {
+      throw new Error(fnError?.message || 'Empty response from AI service');
+    }
+
+    const content = data.content;
 
     const reflection: Reflection = {
       id: `reflection-${Date.now()}`,

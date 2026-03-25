@@ -1,3 +1,11 @@
+/**
+ * Three™ - FlipTextReveal
+ *
+ * Staggered per-character reveal using only opacity + translateY.
+ * NOTE: rotateX is intentionally omitted — it is not supported by
+ * React Native's native driver and causes animation jank on iOS.
+ */
+
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { colors } from '@/theme/colors';
@@ -26,22 +34,21 @@ export function FlipTextReveal({
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Staggered flip-up for each character
+    // Staggered fade-up — opacity + translateY only (native driver safe)
     const charAnimations = chars.map((_, i) =>
       Animated.timing(animValues[i], {
         toValue: 1,
-        duration: 600,
+        duration: 500,
         delay: i * staggerDelay,
-        easing: Easing.out(Easing.back(1.4)),
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       })
     );
 
-    // Subtitle fade-in after all characters are revealed
     const subtitleAnimation = Animated.timing(subtitleOpacity, {
       toValue: 1,
-      duration: 800,
-      easing: Easing.out(Easing.ease),
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     });
 
@@ -58,11 +65,7 @@ export function FlipTextReveal({
           const opacity = animValues[i];
           const translateY = animValues[i].interpolate({
             inputRange: [0, 1],
-            outputRange: [40, 0],
-          });
-          const rotateX = animValues[i].interpolate({
-            inputRange: [0, 1],
-            outputRange: ['-90deg', '0deg'],
+            outputRange: [20, 0],
           });
 
           return (
@@ -74,7 +77,7 @@ export function FlipTextReveal({
                   fontSize: charSize,
                   color,
                   opacity,
-                  transform: [{ translateY }, { rotateX }],
+                  transform: [{ translateY }],
                 },
               ]}
             >
@@ -113,9 +116,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   char: {
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: -2,
+    fontWeight: '700',
+    letterSpacing: -1,
   },
   subtitle: {
     marginTop: 8,

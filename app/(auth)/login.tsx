@@ -1,8 +1,5 @@
 /**
  * Three™ - Login Screen
- *
- * Sign in using Clerk authentication.
- * Supports email/password and OAuth (Apple, Google).
  */
 
 import React, { useState, useCallback } from 'react';
@@ -16,31 +13,20 @@ import {
     ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useSignIn, useSSO } from '@clerk/clerk-expo';
-import * as WebBrowser from 'expo-web-browser';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-
-// Warm up browser for OAuth
-WebBrowser.maybeCompleteAuthSession();
+import { supabase } from '@/config/supabase';
 
 export default function LoginScreen() {
-    const { signIn, setActive, isLoaded } = useSignIn();
-    const { startSSOFlow } = useSSO();
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [appleLoading, setAppleLoading] = useState(false);
 
     const handleLogin = useCallback(async () => {
-        if (!isLoaded || !signIn) return;
-
         if (!email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
@@ -48,57 +34,15 @@ export default function LoginScreen() {
 
         try {
             setLoading(true);
-
-            const signInAttempt = await signIn.create({
-                identifier: email,
-                password,
-            });
-
-            if (signInAttempt.status === 'complete') {
-                await setActive({ session: signInAttempt.createdSessionId });
-                router.replace('/');
-            } else {
-                // Handle additional steps if needed (e.g., 2FA)
-                console.log('Sign in requires additional steps:', signInAttempt.status);
-                Alert.alert('Sign In', 'Additional verification required');
-            }
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            router.replace('/');
         } catch (error: any) {
-            console.error('Sign in error:', error);
-            Alert.alert(
-                'Login Failed',
-                error.errors?.[0]?.message || error.message || 'An error occurred'
-            );
+            Alert.alert('Login Failed', error.message || 'An error occurred');
         } finally {
             setLoading(false);
         }
-    }, [isLoaded, signIn, setActive, email, password]);
-
-    const handleAppleSignIn = useCallback(async () => {
-        if (!isLoaded) return;
-
-        try {
-            setAppleLoading(true);
-
-            const { createdSessionId, setActive: ssoSetActive } = await startSSOFlow({
-                strategy: 'oauth_apple',
-            });
-
-            if (createdSessionId) {
-                await ssoSetActive!({ session: createdSessionId });
-                router.replace('/');
-            }
-        } catch (error: any) {
-            console.error('Apple sign in error:', error);
-            if (error.message !== 'Sign in was cancelled') {
-                Alert.alert(
-                    'Apple Sign In Failed',
-                    error.errors?.[0]?.message || error.message || 'An error occurred'
-                );
-            }
-        } finally {
-            setAppleLoading(false);
-        }
-    }, [isLoaded, startSSOFlow]);
+    }, [email, password]);
 
     return (
         <KeyboardAvoidingView
@@ -107,12 +51,12 @@ export default function LoginScreen() {
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Logo size={80} animated={true} />
+                    <Logo size={60} animated={false} />
                     <Text variant="2xl" weight="bold" style={styles.title}>
                         Welcome Back
                     </Text>
                     <Text variant="base" color="secondary" style={styles.subtitle}>
-                        Sign in to continue your journey
+                        Sign in to continue
                     </Text>
                 </View>
 
@@ -124,6 +68,7 @@ export default function LoginScreen() {
                         onChangeText={setEmail}
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        autoComplete="email"
                     />
                     <View style={styles.spacer} />
                     <Input
@@ -132,49 +77,23 @@ export default function LoginScreen() {
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
+                        autoComplete="password"
                     />
 
-                    <View style={styles.forgotPassword}>
-                        <TouchableOpacity>
-                            <Text variant="sm" color="secondary">
-                                Forgot Password?
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                    <View style={styles.divider} />
 
                     <Button
                         title="Sign In"
                         onPress={handleLogin}
                         loading={loading}
-                        disabled={!isLoaded}
                         style={styles.button}
                     />
-
-                    {Platform.OS === 'ios' && (
-                        <>
-                            <View style={styles.divider}>
-                                <View style={styles.dividerLine} />
-                                <Text variant="sm" color="secondary" style={styles.dividerText}>
-                                    or
-                                </Text>
-                                <View style={styles.dividerLine} />
-                            </View>
-
-                            <AppleAuthentication.AppleAuthenticationButton
-                                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                                cornerRadius={12}
-                                style={styles.appleButton}
-                                onPress={handleAppleSignIn}
-                            />
-                        </>
-                    )}
 
                     <View style={styles.footer}>
                         <Text variant="sm" color="secondary">
                             Don't have an account?{' '}
                         </Text>
-                        <TouchableOpacity onPress={() => router.push('/signup')}>
+                        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
                             <Text variant="sm" weight="bold" color="primary">
                                 Sign Up
                             </Text>
@@ -213,30 +132,11 @@ const styles = StyleSheet.create({
     spacer: {
         height: spacing[4],
     },
-    forgotPassword: {
-        alignItems: 'flex-end',
-        marginTop: spacing[3],
-        marginBottom: spacing[6],
+    divider: {
+        height: spacing[8],
     },
     button: {
         marginTop: spacing[2],
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: spacing[6],
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: colors.dark.border,
-    },
-    dividerText: {
-        marginHorizontal: spacing[4],
-    },
-    appleButton: {
-        width: '100%',
-        height: 50,
     },
     footer: {
         flexDirection: 'row',

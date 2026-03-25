@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { Sparkles, Brain } from 'lucide-react-native';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@/hooks/useAuth';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { ReflectionCard } from '@/components/ReflectionCard';

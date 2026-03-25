@@ -74,6 +74,46 @@ jest.mock('@/config/supabase', () => ({
       };
     },
   },
+  getAuthenticatedSupabase: jest.fn(() => ({
+    from: (table: string) => {
+      mockSupabaseFrom(table);
+      return {
+        select: () => ({
+          eq: (field: string, value: string) => ({
+            single: () => mockSupabaseSingle(),
+            maybeSingle: () => mockSupabaseMaybeSingle(),
+          }),
+          or: () => ({
+            eq: () => ({
+              limit: () => mockSupabaseSelect(),
+            }),
+          }),
+          contains: () => ({
+            neq: () => ({
+              eq: () => ({
+                limit: () => mockSupabaseSelect(),
+              }),
+            }),
+          }),
+        }),
+        insert: (data: unknown) => ({
+          select: () => ({
+            single: () => mockSupabaseInsert(data),
+          }),
+        }),
+        update: (data: unknown) => ({
+          eq: () => ({
+            select: () => ({
+              single: () => mockSupabaseUpdate(data),
+            }),
+          }),
+        }),
+        delete: () => ({
+          eq: () => mockSupabaseDelete(),
+        }),
+      };
+    },
+  })),
 }));
 
 const testUserId = 'test-user-123';
@@ -86,7 +126,7 @@ const mockDbProfile = {
   age: 28,
   bio: 'Test bio',
   profile_image: null,
-  interests: ['marathon', 'meditation'] as string[],
+  interests: ['marathon', 'meditation', 'yoga'] as string[],
   is_complete: true,
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z',
@@ -116,7 +156,7 @@ describe('profile store', () => {
       expect(profile?.userId).toBe(testUserId);
       expect(profile?.name).toBe('Test User');
       expect(profile?.username).toBe('testuser');
-      expect(profile?.interests).toEqual(['marathon', 'meditation']);
+      expect(profile?.interests).toEqual(['marathon', 'meditation', 'yoga']);
     });
 
     it('maps database fields to app format', async () => {
@@ -249,7 +289,7 @@ describe('profile store', () => {
     it('calculates interest count correctly', async () => {
       const summary = await getProfileSummary(testUserId);
 
-      expect(summary?.interestCount).toBe(2);
+      expect(summary?.interestCount).toBe(3);
     });
   });
 

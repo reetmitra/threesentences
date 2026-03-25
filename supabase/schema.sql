@@ -141,41 +141,70 @@ ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
 
 -- Profiles
 CREATE POLICY "profiles_select" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE USING (auth.jwt() ->> 'sub' = user_id);
+CREATE POLICY "profiles_insert" ON public.profiles FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE USING (auth.uid()::text = user_id);
 
 -- Friends
-CREATE POLICY "friends_select" ON public.friends FOR SELECT USING (auth.jwt() ->> 'sub' IN (user_id, friend_id));
-CREATE POLICY "friends_insert" ON public.friends FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "friends_update" ON public.friends FOR UPDATE USING (auth.jwt() ->> 'sub' IN (user_id, friend_id));
-CREATE POLICY "friends_delete" ON public.friends FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+CREATE POLICY "friends_select" ON public.friends FOR SELECT USING (auth.uid()::text IN (user_id, friend_id));
+CREATE POLICY "friends_insert" ON public.friends FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "friends_update" ON public.friends FOR UPDATE USING (auth.uid()::text IN (user_id, friend_id));
+CREATE POLICY "friends_delete" ON public.friends FOR DELETE USING (auth.uid()::text = user_id);
 
 -- Groups
 CREATE POLICY "groups_select" ON public.groups FOR SELECT USING (true);
-CREATE POLICY "groups_insert" ON public.groups FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = created_by);
-CREATE POLICY "groups_update" ON public.groups FOR UPDATE USING (auth.jwt() ->> 'sub' = created_by);
-CREATE POLICY "groups_delete" ON public.groups FOR DELETE USING (auth.jwt() ->> 'sub' = created_by);
+CREATE POLICY "groups_insert" ON public.groups FOR INSERT WITH CHECK (auth.uid()::text = created_by);
+CREATE POLICY "groups_update" ON public.groups FOR UPDATE USING (auth.uid()::text = created_by);
+CREATE POLICY "groups_delete" ON public.groups FOR DELETE USING (auth.uid()::text = created_by);
 
 -- Group Members
 CREATE POLICY "group_members_select" ON public.group_members FOR SELECT USING (true);
-CREATE POLICY "group_members_insert" ON public.group_members FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "group_members_delete" ON public.group_members FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+CREATE POLICY "group_members_insert" ON public.group_members FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "group_members_delete" ON public.group_members FOR DELETE USING (
+    auth.uid()::text = user_id
+    OR EXISTS (
+        SELECT 1 FROM public.group_members gm
+        WHERE gm.group_id = group_members.group_id
+        AND gm.user_id = auth.uid()::text
+        AND gm.role = 'admin'
+    )
+);
 
 -- Messages
-CREATE POLICY "messages_select" ON public.messages FOR SELECT USING (auth.jwt() ->> 'sub' IN (sender_id, receiver_id));
-CREATE POLICY "messages_insert" ON public.messages FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = sender_id);
-CREATE POLICY "messages_update" ON public.messages FOR UPDATE USING (auth.jwt() ->> 'sub' = receiver_id);
+CREATE POLICY "messages_select" ON public.messages FOR SELECT USING (
+    auth.uid()::text IN (sender_id, receiver_id)
+    OR (
+        group_id IS NOT NULL
+        AND EXISTS (
+            SELECT 1 FROM public.group_members
+            WHERE group_members.group_id = messages.group_id
+            AND group_members.user_id = auth.uid()::text
+        )
+    )
+);
+CREATE POLICY "messages_insert" ON public.messages FOR INSERT WITH CHECK (auth.uid()::text = sender_id);
+CREATE POLICY "messages_update" ON public.messages FOR UPDATE USING (
+    auth.uid()::text = receiver_id
+    OR (
+        group_id IS NOT NULL
+        AND auth.uid()::text != sender_id
+        AND EXISTS (
+            SELECT 1 FROM public.group_members
+            WHERE group_members.group_id = messages.group_id
+            AND group_members.user_id = auth.uid()::text
+        )
+    )
+);
 
 -- Entries
-CREATE POLICY "entries_select" ON public.entries FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "entries_insert" ON public.entries FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "entries_update" ON public.entries FOR UPDATE USING (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "entries_delete" ON public.entries FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+CREATE POLICY "entries_select" ON public.entries FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY "entries_insert" ON public.entries FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "entries_update" ON public.entries FOR UPDATE USING (auth.uid()::text = user_id);
+CREATE POLICY "entries_delete" ON public.entries FOR DELETE USING (auth.uid()::text = user_id);
 
 -- Reflections
-CREATE POLICY "reflections_select" ON public.reflections FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "reflections_insert" ON public.reflections FOR INSERT WITH CHECK (auth.jwt() ->> 'sub' = user_id);
-CREATE POLICY "reflections_delete" ON public.reflections FOR DELETE USING (auth.jwt() ->> 'sub' = user_id);
+CREATE POLICY "reflections_select" ON public.reflections FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY "reflections_insert" ON public.reflections FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "reflections_delete" ON public.reflections FOR DELETE USING (auth.uid()::text = user_id);
 
 -- Waitlist (public insert, no read access for privacy)
 CREATE POLICY "waitlist_insert" ON public.waitlist FOR INSERT WITH CHECK (true);

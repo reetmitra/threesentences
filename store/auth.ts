@@ -41,7 +41,7 @@ export function setCurrentUser(user: User | null): void {
 
 /**
  * Get the current authenticated user
- * @deprecated Use useUser() hook from @clerk/clerk-expo instead
+ * @deprecated Use useAuth() hook from @/hooks/useAuth instead
  */
 export function getCurrentUser(): User | null {
     return cachedUser;
@@ -49,7 +49,7 @@ export function getCurrentUser(): User | null {
 
 /**
  * Check for existing session
- * @deprecated Use useAuth().isSignedIn from @clerk/clerk-expo instead
+ * @deprecated Use useAuth().isSignedIn from @/hooks/useAuth instead
  */
 export async function getSession(): Promise<AuthSession | null> {
     if (cachedUser) {

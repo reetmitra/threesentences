@@ -22,8 +22,8 @@ import {
 
 describe('profile types', () => {
   describe('INTEREST_CATEGORIES', () => {
-    it('has 46 elite interests', () => {
-      expect(INTEREST_CATEGORIES.length).toBe(46);
+    it('has 44 elite interests', () => {
+      expect(INTEREST_CATEGORIES.length).toBe(44);
     });
 
     it('each interest has id, label, and group', () => {
@@ -48,7 +48,7 @@ describe('profile types', () => {
       expect(ids).toContain('marathon');
       expect(ids).toContain('meditation');
       expect(ids).toContain('venture-capital');
-      expect(ids).toContain('private-jet');
+      expect(ids).toContain('aviation');
     });
   });
 

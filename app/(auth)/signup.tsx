@@ -1,8 +1,5 @@
 /**
  * Three™ - Signup Screen
- *
- * Create account using Clerk authentication.
- * Supports email/password and OAuth (Apple, Google).
  */
 
 import React, { useState, useCallback } from 'react';
@@ -16,34 +13,22 @@ import {
     ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useSignUp, useSSO } from '@clerk/clerk-expo';
-import * as WebBrowser from 'expo-web-browser';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-
-// Warm up browser for OAuth
-WebBrowser.maybeCompleteAuthSession();
+import { supabase } from '@/config/supabase';
 
 export default function SignupScreen() {
-    const { signUp, setActive, isLoaded } = useSignUp();
-    const { startSSOFlow } = useSSO();
-
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [pendingVerification, setPendingVerification] = useState(false);
-    const [code, setCode] = useState('');
 
     const handleSignup = useCallback(async () => {
-        if (!isLoaded || !signUp) return;
-
         if (!email || !password || !name || !username) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
@@ -52,136 +37,34 @@ export default function SignupScreen() {
         try {
             setLoading(true);
 
-            // Create the user
-            await signUp.create({
-                emailAddress: email,
+            const { data, error } = await supabase.auth.signUp({
+                email,
                 password,
-                username,
-                firstName: name.split(' ')[0],
-                lastName: name.split(' ').slice(1).join(' ') || undefined,
+                options: {
+                    data: { name, username },
+                },
             });
 
-            // Send email verification
-            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+            if (error) throw error;
 
-            setPendingVerification(true);
-        } catch (error: any) {
-            console.error('Sign up error:', error);
-            Alert.alert(
-                'Signup Failed',
-                error.errors?.[0]?.message || error.message || 'An error occurred'
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [isLoaded, signUp, email, password, name, username]);
-
-    const handleVerification = useCallback(async () => {
-        if (!isLoaded || !signUp) return;
-
-        try {
-            setLoading(true);
-
-            const signUpAttempt = await signUp.attemptEmailAddressVerification({
-                code,
-            });
-
-            if (signUpAttempt.status === 'complete') {
-                await setActive({ session: signUpAttempt.createdSessionId });
-                // Navigate to interest selection
-                router.push({
-                    pathname: '/(auth)/interests',
-                    params: { name },
-                });
-            } else {
-                console.log('Verification incomplete:', signUpAttempt.status);
-                Alert.alert('Verification', 'Please check your verification code');
-            }
-        } catch (error: any) {
-            console.error('Verification error:', error);
-            Alert.alert(
-                'Verification Failed',
-                error.errors?.[0]?.message || error.message || 'Invalid code'
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [isLoaded, signUp, setActive, code, name]);
-
-    const handleAppleSignIn = useCallback(async () => {
-        if (!isLoaded) return;
-
-        try {
-            const { createdSessionId, setActive: ssoSetActive } = await startSSOFlow({
-                strategy: 'oauth_apple',
-            });
-
-            if (createdSessionId) {
-                await ssoSetActive!({ session: createdSessionId });
+            if (data.session) {
+                // No email confirmation required — let index.tsx handle routing
                 router.replace('/');
-            }
-        } catch (error: any) {
-            console.error('Apple sign up error:', error);
-            if (error.message !== 'Sign in was cancelled') {
+            } else {
+                // Email confirmation required
                 Alert.alert(
-                    'Apple Sign In Failed',
-                    error.errors?.[0]?.message || error.message || 'An error occurred'
+                    'Check your email',
+                    'We sent a confirmation link to ' + email + '. Click it to activate your account, then sign in.',
+                    [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
                 );
             }
+        } catch (error: any) {
+            Alert.alert('Signup Failed', error.message || 'An error occurred');
+        } finally {
+            setLoading(false);
         }
-    }, [isLoaded, startSSOFlow]);
+    }, [email, password, name, username]);
 
-    // Verification code screen
-    if (pendingVerification) {
-        return (
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.container}
-            >
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.header}>
-                        <Logo size={60} animated={false} />
-                        <Text variant="2xl" weight="bold" style={styles.title}>
-                            Verify Email
-                        </Text>
-                        <Text variant="base" color="secondary" style={styles.subtitle}>
-                            We sent a code to {email}
-                        </Text>
-                    </View>
-
-                    <View style={styles.form}>
-                        <Input
-                            label="Verification Code"
-                            placeholder="Enter 6-digit code"
-                            value={code}
-                            onChangeText={setCode}
-                            keyboardType="number-pad"
-                            autoCapitalize="none"
-                        />
-
-                        <View style={styles.divider} />
-
-                        <Button
-                            title="Verify"
-                            onPress={handleVerification}
-                            loading={loading}
-                            style={styles.button}
-                        />
-
-                        <View style={styles.footer}>
-                            <TouchableOpacity onPress={() => setPendingVerification(false)}>
-                                <Text variant="sm" color="secondary">
-                                    Go back
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        );
-    }
-
-    // Signup form
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -199,26 +82,6 @@ export default function SignupScreen() {
                 </View>
 
                 <View style={styles.form}>
-                    {Platform.OS === 'ios' && (
-                        <>
-                            <AppleAuthentication.AppleAuthenticationButton
-                                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
-                                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                                cornerRadius={12}
-                                style={styles.appleButton}
-                                onPress={handleAppleSignIn}
-                            />
-
-                            <View style={styles.orDivider}>
-                                <View style={styles.dividerLine} />
-                                <Text variant="sm" color="secondary" style={styles.dividerText}>
-                                    or
-                                </Text>
-                                <View style={styles.dividerLine} />
-                            </View>
-                        </>
-                    )}
-
                     <Input
                         label="Name"
                         placeholder="Bruce Wayne"
@@ -231,7 +94,7 @@ export default function SignupScreen() {
                         label="Username"
                         placeholder="brucewayne"
                         value={username}
-                        onChangeText={setUsername}
+                        onChangeText={(text) => setUsername(text.toLowerCase())}
                         autoCapitalize="none"
                     />
                     <View style={styles.spacer} />
@@ -242,6 +105,7 @@ export default function SignupScreen() {
                         onChangeText={setEmail}
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        autoComplete="email"
                     />
                     <View style={styles.spacer} />
                     <Input
@@ -250,6 +114,7 @@ export default function SignupScreen() {
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
+                        autoComplete="new-password"
                     />
 
                     <View style={styles.divider} />
@@ -258,7 +123,6 @@ export default function SignupScreen() {
                         title="Sign Up"
                         onPress={handleSignup}
                         loading={loading}
-                        disabled={!isLoaded}
                         style={styles.button}
                     />
 
@@ -307,23 +171,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: spacing[8],
-    },
-    orDivider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: spacing[6],
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: colors.dark.border,
-    },
-    dividerText: {
-        marginHorizontal: spacing[4],
-    },
-    appleButton: {
-        width: '100%',
-        height: 50,
     },
     button: {
         marginTop: spacing[2],

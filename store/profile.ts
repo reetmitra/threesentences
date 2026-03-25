@@ -5,7 +5,7 @@
  * Handles profile creation, updates, and validation.
  */
 
-import { getAuthenticatedSupabase } from '@/config/supabase';
+import { supabase } from '@/config/supabase';
 import {
   UserProfile,
   ProfileUpdate,
@@ -56,7 +56,7 @@ function mapToUserProfile(dbProfile: DbProfile): UserProfile {
  */
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const { data, error } = await getAuthenticatedSupabase()
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
@@ -106,7 +106,7 @@ export async function createProfile(
     updated_at: profile.updatedAt,
   };
 
-  const { data, error } = await getAuthenticatedSupabase()
+  const { data, error } = await supabase
     .from('profiles')
     .insert(insertData)
     .select()
@@ -164,7 +164,7 @@ export async function updateProfile(
     updated_at: updatedProfile.updatedAt,
   };
 
-  const { data, error } = await getAuthenticatedSupabase()
+  const { data, error } = await supabase
     .from('profiles')
     .update(updateData)
     .eq('user_id', userId)
@@ -173,6 +173,9 @@ export async function updateProfile(
 
   if (error) {
     console.error('Failed to update profile:', error.message, error.code, error.details);
+    if (error.code === '23505') {
+      throw new Error('This username is not available');
+    }
     throw new Error(`Failed to update profile: ${error.message}`);
   }
 
@@ -198,7 +201,7 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
     return false;
   }
 
-  const { data, error } = await getAuthenticatedSupabase()
+  const { data, error } = await supabase
     .from('profiles')
     .select('id')
     .eq('username', username)
@@ -229,7 +232,14 @@ export async function setUsername(
     throw new Error('This username is not available');
   }
 
-  return updateProfile(userId, { username });
+  try {
+    return await updateProfile(userId, { username });
+  } catch (error: any) {
+    if (error.message === 'This username is not available' || error.message?.includes('23505')) {
+      throw new Error('This username was just taken. Please choose another.');
+    }
+    throw error;
+  }
 }
 
 /**
@@ -287,7 +297,7 @@ export async function getProfileSummary(userId: string): Promise<{
  * Delete profile data
  */
 export async function deleteProfile(userId: string): Promise<void> {
-  const { error } = await getAuthenticatedSupabase()
+  const { error } = await supabase
     .from('profiles')
     .delete()
     .eq('user_id', userId);
@@ -329,7 +339,7 @@ export async function removeProfileImage(userId: string): Promise<UserProfile> {
  * Search profiles by username or name
  */
 export async function searchProfiles(query: string, limit = 20): Promise<UserProfile[]> {
-  const { data, error } = await getAuthenticatedSupabase()
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
@@ -352,7 +362,7 @@ export async function getProfilesByInterest(
   excludeUserId: string,
   limit = 20
 ): Promise<UserProfile[]> {
-  const { data, error } = await getAuthenticatedSupabase()
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .contains('interests', [interest])

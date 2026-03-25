@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth } from '@/hooks/useAuth';
 import { hasCompletedOnboarding, hasLaunchedBefore, markFirstLaunch } from '@/store/onboarding';
 import { isProfileComplete } from '@/store/profile';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
@@ -17,7 +17,6 @@ const RETURNING_LOADING_TIME = 1500;    // 1.5s fast return
 
 export default function Index() {
   const { isSignedIn, isLoaded: authLoaded, userId } = useAuth();
-  const { user } = useUser();
 
   const [isLoading, setIsLoading] = useState(true);
   const [shouldShowOnboarding, setShouldShowOnboarding] = useState(false);
@@ -82,7 +81,7 @@ export default function Index() {
     return <Redirect href="/(onboarding)" />;
   }
 
-  // If profile setup is incomplete, redirect to interests selection
+  // If profile setup is incomplete, redirect to profile setup
   if (needsProfileSetup) {
     return <Redirect href="/(auth)/interests" />;
   }

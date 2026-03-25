@@ -87,7 +87,8 @@ export interface Database {
                 Row: {
                     id: string
                     sender_id: string
-                    receiver_id: string
+                    receiver_id: string | null
+                    group_id: string | null
                     content: string
                     is_read: boolean
                     created_at: string
@@ -95,7 +96,8 @@ export interface Database {
                 Insert: {
                     id?: string
                     sender_id: string
-                    receiver_id: string
+                    receiver_id?: string | null
+                    group_id?: string | null
                     content: string
                     is_read?: boolean
                     created_at?: string
@@ -103,7 +105,8 @@ export interface Database {
                 Update: {
                     id?: string
                     sender_id?: string
-                    receiver_id?: string
+                    receiver_id?: string | null
+                    group_id?: string | null
                     content?: string
                     is_read?: boolean
                     created_at?: string
@@ -114,8 +117,8 @@ export interface Database {
                     id: string
                     user_id: string
                     date: string
-                    sentences: string[]
-                    mood: 'great' | 'good' | 'okay' | 'bad' | 'terrible' | null
+                    encrypted_content: string
+                    timezone: string
                     created_at: string
                     updated_at: string
                 }
@@ -123,8 +126,8 @@ export interface Database {
                     id?: string
                     user_id: string
                     date: string
-                    sentences: string[]
-                    mood?: 'great' | 'good' | 'okay' | 'bad' | 'terrible' | null
+                    encrypted_content: string
+                    timezone?: string
                     created_at?: string
                     updated_at?: string
                 }
@@ -132,8 +135,8 @@ export interface Database {
                     id?: string
                     user_id?: string
                     date?: string
-                    sentences?: string[]
-                    mood?: 'great' | 'good' | 'okay' | 'bad' | 'terrible' | null
+                    encrypted_content?: string
+                    timezone?: string
                     created_at?: string
                     updated_at?: string
                 }

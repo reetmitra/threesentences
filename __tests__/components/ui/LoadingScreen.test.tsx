@@ -1,46 +1,32 @@
 /**
  * Tests for LoadingScreen Component
- *
- * Tests the loading screen component rendering.
  */
 
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
-describe('LoadingScreen Component', () => {
+jest.mock('react-native-reanimated', () =>
+  require('react-native-reanimated/mock')
+);
+
+jest.mock('react-native-svg', () => ({
+  Svg: 'Svg',
+  Path: 'Path',
+}));
+
+describe('LoadingScreen', () => {
   it('renders without crashing', () => {
-    const { getByText } = render(<LoadingScreen />);
-    expect(getByText('363')).toBeTruthy();
+    expect(() => render(<LoadingScreen />)).not.toThrow();
   });
 
-  it('displays the app title', () => {
+  it('displays the word mark', () => {
     const { getByText } = render(<LoadingScreen />);
-    expect(getByText('Three Sentences')).toBeTruthy();
+    expect(getByText('THREE')).toBeTruthy();
   });
 
   it('displays the tagline', () => {
     const { getByText } = render(<LoadingScreen />);
-    expect(getByText('be better, do better.')).toBeTruthy();
-  });
-
-  it('displays the brand footer', () => {
-    const { getByText } = render(<LoadingScreen />);
-    expect(getByText('THREESIXTYTHREE')).toBeTruthy();
-  });
-
-  it('renders the Logo363 component', () => {
-    const { getByText } = render(<LoadingScreen />);
-    // Logo363 renders "363" text
-    expect(getByText('363')).toBeTruthy();
-  });
-
-  it('renders all required elements', () => {
-    const { getByText } = render(<LoadingScreen />);
-
-    expect(getByText('363')).toBeTruthy();
-    expect(getByText('Three Sentences')).toBeTruthy();
-    expect(getByText('be better, do better.')).toBeTruthy();
-    expect(getByText('THREESIXTYTHREE')).toBeTruthy();
+    expect(getByText('be better, do better')).toBeTruthy();
   });
 });

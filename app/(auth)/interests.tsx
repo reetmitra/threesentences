@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useUser } from '@clerk/clerk-expo';
+import { useAuth } from '@/hooks/useAuth';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -43,7 +43,7 @@ import {
   InterestCategoryGroup,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
-import { saveInterests, createProfile } from '@/store/profile';
+import { createProfile, updateProfile } from '@/store/profile';
 
 // Map group icon names to lucide components
 const GROUP_ICON_MAP: Record<string, LucideIcon> = {
@@ -60,7 +60,7 @@ const MIN_INTERESTS = PROFILE_CONSTRAINTS.interests.minCount;
 export default function InterestsScreen() {
   const activeColors = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const [selectedInterests, setSelectedInterests] = useState<InterestId[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,10 +82,16 @@ export default function InterestsScreen() {
     // Animate button entrance
     buttonOpacity.value = withDelay(600, withTiming(1, { duration: 300 }));
 
-    // Initialize profile if needed
+    // Initialize profile row with name from signup metadata.
+    // Use the same fallback chain as handleContinue so the row is never name=''.
     const initProfile = async () => {
       if (user?.id) {
-        const userName = params.name || user.firstName || undefined;
+        const userName =
+          params.name ||
+          user.name ||
+          user.firstName ||
+          user.email?.split('@')[0] ||
+          'User';
         await createProfile(user.id, userName);
       }
     };
@@ -134,13 +140,30 @@ export default function InterestsScreen() {
     try {
       setLoading(true);
       if (user?.id) {
-        await saveInterests(user.id, selectedInterests);
+        // Resolve display name: full metadata name → first name → email prefix → fallback
+        // This guarantees name is never empty so validateProfile always passes,
+        // even for accounts created before user_metadata was stored at signup.
+        const resolvedName =
+          user.name ||
+          user.firstName ||
+          user.email?.split('@')[0] ||
+          'User';
+
+        // Username fallback: metadata → email prefix (stripped to alphanumeric)
+        const resolvedUsername =
+          user.username ||
+          user.email?.split('@')[0]?.replace(/[^a-z0-9_]/gi, '').toLowerCase() ||
+          `user${user.id.slice(0, 6)}`;
+
+        await updateProfile(user.id, {
+          name: resolvedName,
+          username: resolvedUsername,
+          interests: selectedInterests,
+          isComplete: true,
+        });
       }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push({
-        pathname: '/(auth)/profile-setup',
-        params: { name: params.name },
-      });
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Failed to save interests:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

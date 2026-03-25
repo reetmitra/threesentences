@@ -5,7 +5,7 @@
  * Dark-only UI with white accents.
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { PenTool, Calendar, Settings, BarChart3, Users } from 'lucide-react-native';
@@ -111,9 +111,6 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-      <View style={styles.brandingContainer} pointerEvents="none">
-        <Text style={styles.brandingText}>by @363v1</Text>
-      </View>
     </View>
   );
 }
@@ -122,22 +119,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-  },
-  brandingContainer: {
-    position: 'absolute',
-    bottom: 64,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 4,
-    backgroundColor: 'transparent',
-  },
-  brandingText: {
-    color: '#333333',
-    fontSize: 10,
-    fontWeight: '500',
-    letterSpacing: 1,
   },
 });
 

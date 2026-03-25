@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Download,
   Trash2,
@@ -121,8 +121,7 @@ function SettingsRow({
 export default function SettingsScreen() {
   const activeColors = colors.dark;
   const { showToast } = useToast();
-  const { signOut, userId } = useAuth();
-  const { user } = useUser();
+  const { signOut, userId, user } = useAuth();
 
   const [isLoading, setIsLoading] = useState(true);
   const [entryCount, setEntryCount] = useState(0);

@@ -237,7 +237,7 @@ export default function OnboardingScreen() {
 
   const handleGetStarted = async () => {
     await completeOnboarding();
-    router.replace('/(auth)/signup');
+    router.replace('/(auth)/interests');
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
