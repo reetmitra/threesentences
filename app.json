@@ -40,7 +40,8 @@
         {
           "sounds": []
         }
-      ]
+      ],
+      "react-native-quick-crypto"
     ]
   }
 }

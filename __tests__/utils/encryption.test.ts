@@ -1,7 +1,5 @@
 /**
- * Tests for Encryption Utility
- *
- * Per PRD Section 7.1: All entries encrypted at rest
+ * Tests for Encryption Utility (v2: AES-256-GCM)
  */
 
 import {
@@ -10,82 +8,117 @@ import {
   isEncrypted,
   hashContent,
 } from '@/utils/encryption';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+
+// Use Node's built-in crypto as a drop-in for react-native-quick-crypto in tests
+jest.mock('react-native-quick-crypto', () => require('crypto'));
+
+// Stateful SecureStore mock so encrypt/decrypt reuse the same key within a test
+// Variable must be prefixed with "mock" to be accessible inside jest.mock() factory
+const mockSecureStoreMap = new Map<string, string>();
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn((key: string) => Promise.resolve(mockSecureStoreMap.get(key) ?? null)),
+  setItemAsync: jest.fn((key: string, value: string) => {
+    mockSecureStoreMap.set(key, value);
+    return Promise.resolve();
+  }),
+  WHEN_UNLOCKED: 'WHEN_UNLOCKED',
+}));
 
 describe('encryption', () => {
   beforeEach(() => {
-    // Clear storage before each test
-    (global as any).clearMockStorage();
+    jest.clearAllMocks();
+    mockSecureStoreMap.clear();
+    (global as any).clearMockStorage?.();
+    // Re-bind mocks after clearAllMocks so the map-backed implementations still work
+    (SecureStore.getItemAsync as jest.Mock).mockImplementation((key: string) =>
+      Promise.resolve(mockSecureStoreMap.get(key) ?? null)
+    );
+    (SecureStore.setItemAsync as jest.Mock).mockImplementation((key: string, value: string) => {
+      mockSecureStoreMap.set(key, value);
+      return Promise.resolve();
+    });
   });
 
   describe('encryptContent', () => {
     it('encrypts plaintext successfully', async () => {
-      const plaintext = 'Hello, World!';
-      const encrypted = await encryptContent(plaintext);
-
+      const encrypted = await encryptContent('Hello, World!');
       expect(encrypted).toBeDefined();
       expect(typeof encrypted).toBe('string');
-      expect(encrypted).not.toBe(plaintext);
+      expect(encrypted).not.toBe('Hello, World!');
     });
 
-    it('returns string in correct format (iv:ciphertext:checksum)', async () => {
+    it('produces v2 format: v2:<iv>:<payload>', async () => {
       const encrypted = await encryptContent('Test message');
       const parts = encrypted.split(':');
-
+      expect(parts[0]).toBe('v2');
       expect(parts).toHaveLength(3);
+      expect(parts[1]).toHaveLength(24); // 12-byte IV = 24 hex chars
+      expect(parts[2].length).toBeGreaterThan(32); // ciphertext + 16-byte tag
     });
 
-    it('generates different ciphertext for same plaintext (due to random IV)', async () => {
-      const plaintext = 'Same content';
-      const encrypted1 = await encryptContent(plaintext);
-      const encrypted2 = await encryptContent(plaintext);
-
-      // IVs should be different
-      const iv1 = encrypted1.split(':')[0];
-      const iv2 = encrypted2.split(':')[0];
-      expect(iv1).not.toBe(iv2);
+    it('generates different IVs for same plaintext', async () => {
+      const a = await encryptContent('Same content');
+      const b = await encryptContent('Same content');
+      expect(a.split(':')[1]).not.toBe(b.split(':')[1]);
     });
 
     it('handles empty string', async () => {
       const encrypted = await encryptContent('');
       expect(encrypted).toBeDefined();
-      expect(encrypted.split(':')).toHaveLength(3);
+      expect(encrypted.startsWith('v2:')).toBe(true);
     });
 
     it('handles long content', async () => {
-      const longContent = 'A'.repeat(10000);
-      const encrypted = await encryptContent(longContent);
+      const encrypted = await encryptContent('A'.repeat(10000));
       expect(encrypted).toBeDefined();
     });
 
     it('handles special characters', async () => {
-      const specialChars = '!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./"';
-      const encrypted = await encryptContent(specialChars);
+      const encrypted = await encryptContent('!@#$%^&*()_+{}|:"<>?~`-=[]\\;\',./');
       expect(encrypted).toBeDefined();
     });
 
     it('handles unicode characters', async () => {
-      const unicode = '你好世界 🌍 مرحبا';
-      const encrypted = await encryptContent(unicode);
+      const encrypted = await encryptContent('你好世界 🌍 مرحبا');
       expect(encrypted).toBeDefined();
     });
 
-    it('creates encryption key if none exists', async () => {
+    it('creates key in SecureStore on first use', async () => {
       await encryptContent('Test');
-
-      expect(AsyncStorage.getItem).toHaveBeenCalledWith('@threesentences/encryption_key');
-      expect(AsyncStorage.setItem).toHaveBeenCalled();
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+        'threesentences_encryption_key',
+        expect.any(String),
+        expect.objectContaining({ keychainAccessible: 'WHEN_UNLOCKED' })
+      );
     });
 
-    it('reuses existing encryption key', async () => {
-      // First encryption creates the key
+    it('reuses existing key from SecureStore', async () => {
+      const existingKey = 'a'.repeat(64);
+      (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(existingKey);
       await encryptContent('First');
-      const setItemCalls = (AsyncStorage.setItem as jest.Mock).mock.calls.length;
-
-      // Second encryption should reuse the key
       await encryptContent('Second');
-      // setItem for key should not be called again
-      // (only the initial key creation sets the key)
+      // setItemAsync should NOT be called (key already exists)
+      expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    });
+
+    it('migrates key from AsyncStorage to SecureStore', async () => {
+      const AsyncStorageMod = require('@react-native-async-storage/async-storage');
+      // The mock uses __esModule: true with a default export
+      const AsyncStorage = AsyncStorageMod.default ?? AsyncStorageMod;
+      const legacyKey = 'a'.repeat(64);
+      // Seed legacy key into AsyncStorage (using the real mock map via setItem)
+      await AsyncStorage.setItem('@threesentences/encryption_key', legacyKey);
+      // SecureStore has no key (secureStoreMap is empty from beforeEach)
+
+      await encryptContent('test');
+
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+        'threesentences_encryption_key',
+        legacyKey,
+        expect.objectContaining({ keychainAccessible: 'WHEN_UNLOCKED' })
+      );
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@threesentences/encryption_key');
     });
   });
 
@@ -93,31 +126,30 @@ describe('encryption', () => {
     it('decrypts encrypted content correctly', async () => {
       const plaintext = 'Hello, World!';
       const encrypted = await encryptContent(plaintext);
-      const decrypted = await decryptContent(encrypted);
-
-      expect(decrypted).toBe(plaintext);
+      expect(await decryptContent(encrypted)).toBe(plaintext);
     });
 
-    it('handles round-trip encryption/decryption', async () => {
-      const testCases = [
+    it('handles round-trip for various content types', async () => {
+      const cases = [
         'Simple text',
         'Text with numbers 123',
         'Special chars: !@#$%',
         'Multi\nline\ntext',
         'Emoji: 🎉🔐',
+        '',
       ];
-
-      for (const text of testCases) {
-        const encrypted = await encryptContent(text);
-        const decrypted = await decryptContent(encrypted);
-        expect(decrypted).toBe(text);
+      for (const text of cases) {
+        expect(await decryptContent(await encryptContent(text))).toBe(text);
       }
     });
 
-    it('handles empty string round-trip', async () => {
-      const encrypted = await encryptContent('');
-      const decrypted = await decryptContent(encrypted);
-      expect(decrypted).toBe('');
+    it('throws on tampered ciphertext (GCM auth tag fails)', async () => {
+      const encrypted = await encryptContent('original text');
+      const parts = encrypted.split(':');
+      const payload = parts[2];
+      // Flip last two hex chars
+      const tampered = payload.slice(0, -2) + (payload.slice(-2) === 'ff' ? '00' : 'ff');
+      await expect(decryptContent(`v2:${parts[1]}:${tampered}`)).rejects.toThrow();
     });
 
     it('throws error for invalid format', async () => {
@@ -128,21 +160,21 @@ describe('encryption', () => {
       await expect(decryptContent('only:two')).rejects.toThrow();
     });
 
-    it('verifies checksum integrity', async () => {
-      // The checksum is verified during decryption
-      // Our mock hash function is simple, so we just verify the format is correct
-      const encrypted = await encryptContent('Test');
-      const parts = encrypted.split(':');
-
-      expect(parts).toHaveLength(3);
-      expect(parts[2]).toHaveLength(8); // Checksum is 8 hex chars
+    it('recognizes v1 format for legacy fallback path', () => {
+      // v1 format: <24-char iv hex>:<cipher hex>:<8-char checksum>
+      const v1Format = '123456789012345678901234:aabbcc:abcd1234';
+      expect(isEncrypted(v1Format)).toBe(true);
     });
   });
 
   describe('isEncrypted', () => {
-    it('returns true for encrypted content', async () => {
+    it('returns true for v2 encrypted content', async () => {
       const encrypted = await encryptContent('Test');
       expect(isEncrypted(encrypted)).toBe(true);
+    });
+
+    it('returns true for valid v1 format', () => {
+      expect(isEncrypted('123456789012345678901234:abcdef1234567890:12345678')).toBe(true);
     });
 
     it('returns false for plain text', () => {
@@ -158,49 +190,36 @@ describe('encryption', () => {
       expect(isEncrypted('one:two:three:four')).toBe(false);
     });
 
-    it('returns false for invalid IV length', () => {
+    it('returns false for invalid IV length in v1', () => {
       expect(isEncrypted('abc:1234567890abcdef:12345678')).toBe(false);
     });
 
-    it('returns false for invalid checksum length', () => {
-      // Valid IV length (24 hex chars = 12 bytes), but wrong checksum
+    it('returns false for invalid checksum length in v1', () => {
       expect(isEncrypted('123456789012345678901234:abcdef:123')).toBe(false);
     });
 
     it('returns false for non-hex characters', () => {
       expect(isEncrypted('ghij56789012345678901234:abcdef:12345678')).toBe(false);
     });
-
-    it('correctly identifies valid encrypted format', () => {
-      // 24 hex chars (12 bytes) IV, any length hex cipher, 8 char checksum
-      const validFormat = '123456789012345678901234:abcdef1234567890:12345678';
-      expect(isEncrypted(validFormat)).toBe(true);
-    });
   });
 
   describe('hashContent', () => {
-    it('returns hash string for content', async () => {
+    it('returns a hash string', async () => {
       const hash = await hashContent('Test content');
-      expect(hash).toBeDefined();
       expect(typeof hash).toBe('string');
+      expect(hash.length).toBeGreaterThan(0);
     });
 
     it('returns consistent hash for same content', async () => {
-      const content = 'Same content';
-      const hash1 = await hashContent(content);
-      const hash2 = await hashContent(content);
-      expect(hash1).toBe(hash2);
+      expect(await hashContent('same')).toBe(await hashContent('same'));
     });
 
     it('returns different hash for different content', async () => {
-      const hash1 = await hashContent('Content A');
-      const hash2 = await hashContent('Content B');
-      expect(hash1).not.toBe(hash2);
+      expect(await hashContent('A')).not.toBe(await hashContent('B'));
     });
 
     it('handles empty string', async () => {
-      const hash = await hashContent('');
-      expect(hash).toBeDefined();
+      expect(await hashContent('')).toBeDefined();
     });
   });
 });

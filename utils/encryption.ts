@@ -1,59 +1,111 @@
 /**
- * ThreeSixtyThree™ Three Sentences - Encryption Utilities
- * 
+ * Three™ - Encryption Utilities
+ *
  * AES-256-GCM encryption for entries at rest.
- * Per PRD Section 7.1: "All entries encrypted at rest using AES-256"
+ * v2 format: real AES-256-GCM via react-native-quick-crypto
+ * v1 format: legacy XOR (read-only, for backward compat with existing entries)
  */
 
-import * as Crypto from 'expo-crypto';
+import crypto from 'react-native-quick-crypto';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ExpoCrypto from 'expo-crypto';
 
-const STORAGE_KEYS = {
-  ENCRYPTION_KEY: '@threesentences/encryption_key',
-} as const;
+const SECURE_KEY_ALIAS = 'threesentences_encryption_key';
+const LEGACY_ASYNC_KEY = '@threesentences/encryption_key';
 
-// AES-256 requires a 32-byte (256-bit) key
-const KEY_LENGTH = 32;
-// GCM mode uses a 12-byte (96-bit) IV/nonce
-const IV_LENGTH = 12;
-// GCM authentication tag is 16 bytes
-const TAG_LENGTH = 16;
+const KEY_LENGTH = 32;   // 256 bits
+const IV_LENGTH = 12;    // 96-bit GCM nonce
+const TAG_LENGTH = 16;   // 128-bit GCM auth tag
+const ALGORITHM = 'aes-256-gcm' as const;
 
-/**
- * Generate or retrieve the encryption key.
- * Key is derived from random bytes and stored securely.
- * In production, this should use secure enclave/keychain.
- */
-async function getOrCreateEncryptionKey(): Promise<string> {
-  try {
-    let key = await AsyncStorage.getItem(STORAGE_KEYS.ENCRYPTION_KEY);
-    
-    if (!key) {
-      // Generate a new random key
-      const randomBytes = await Crypto.getRandomBytesAsync(KEY_LENGTH);
-      key = bytesToHex(randomBytes);
-      await AsyncStorage.setItem(STORAGE_KEYS.ENCRYPTION_KEY, key);
+// ─── Key Management ───────────────────────────────────────────────────────────
+
+async function getOrCreateEncryptionKey(): Promise<Buffer> {
+  // 1. Try SecureStore first (the right place)
+  let hexKey = await SecureStore.getItemAsync(SECURE_KEY_ALIAS);
+
+  if (!hexKey) {
+    // 2. Check AsyncStorage for legacy key (migration path)
+    hexKey = await AsyncStorage.getItem(LEGACY_ASYNC_KEY);
+
+    if (hexKey) {
+      // Migrate: move to SecureStore, remove from AsyncStorage
+      await SecureStore.setItemAsync(SECURE_KEY_ALIAS, hexKey, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED,
+      });
+      // Verify the write succeeded before removing the only other copy
+      const verified = await SecureStore.getItemAsync(SECURE_KEY_ALIAS);
+      if (verified === hexKey) {
+        await AsyncStorage.removeItem(LEGACY_ASYNC_KEY);
+      }
+      // If verification fails, leave AsyncStorage copy intact (safe to retry next launch)
+    } else {
+      // 3. Generate new key
+      const keyBytes = crypto.randomBytes(KEY_LENGTH);
+      hexKey = keyBytes.toString('hex');
+      await SecureStore.setItemAsync(SECURE_KEY_ALIAS, hexKey, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED,
+      });
     }
-    
-    return key;
-  } catch (error) {
-    console.error('Failed to get/create encryption key:', error);
-    throw new Error('Encryption initialization failed');
   }
+
+  return Buffer.from(hexKey, 'hex');
 }
 
-/**
- * Convert Uint8Array to hex string
- */
+// ─── v2: AES-256-GCM ─────────────────────────────────────────────────────────
+
+async function encryptV2(plaintext: string): Promise<string> {
+  const key = await getOrCreateEncryptionKey();
+  const iv = crypto.randomBytes(IV_LENGTH);
+
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv, {
+    authTagLength: TAG_LENGTH,
+  });
+
+  const encryptedPart = cipher.update(plaintext, 'utf8');
+  const finalPart = cipher.final();
+  const authTag = cipher.getAuthTag();
+
+  // payload = ciphertext + authTag (standard GCM convention)
+  const encrypted = Buffer.concat([encryptedPart, finalPart]);
+  const payload = Buffer.concat([encrypted, authTag]);
+  return `v2:${iv.toString('hex')}:${payload.toString('hex')}`;
+}
+
+async function decryptV2(encryptedStr: string): Promise<string> {
+  const parts = encryptedStr.split(':');
+  // parts[0] = 'v2', parts[1] = iv_hex, parts[2] = ciphertext+tag hex
+  const iv = hexToBytes(parts[1]);
+  const payloadBytes = hexToBytes(parts[2]);
+
+  const ciphertext = payloadBytes.subarray(0, payloadBytes.length - TAG_LENGTH);
+  const authTag = payloadBytes.subarray(payloadBytes.length - TAG_LENGTH);
+
+  const key = await getOrCreateEncryptionKey();
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv, {
+    authTagLength: TAG_LENGTH,
+  });
+  // Cast needed: react-native-quick-crypto expects its own Buffer type;
+  // Uint8Array is the common subset that works at runtime.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  decipher.setAuthTag(authTag as any);
+
+  const decryptedPart = decipher.update(ciphertext);
+  const decryptedFinal = decipher.final();
+  const decrypted = Buffer.concat([decryptedPart, decryptedFinal]);
+
+  return decrypted.toString('utf8');
+}
+
+// ─── v1: Legacy XOR (read-only) ───────────────────────────────────────────────
+
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
-/**
- * Convert hex string to Uint8Array
- */
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
@@ -62,117 +114,65 @@ function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
-/**
- * Simple XOR-based encryption with random IV.
- * Note: In production, use native crypto module for true AES-256-GCM.
- * This is a simplified implementation for the MVP that provides
- * obfuscation with the encryption key.
- */
+async function decryptV1Legacy(encryptedStr: string): Promise<string> {
+  const parts = encryptedStr.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid encrypted format');
+  }
+  const [ivHex, cipherHex] = parts;
+
+  const key = await getOrCreateEncryptionKey();
+  const keyBytes = new Uint8Array(key);
+  const iv = hexToBytes(ivHex);
+  const cipherBytes = hexToBytes(cipherHex);
+
+  const plaintextBytes = new Uint8Array(cipherBytes.length);
+  for (let i = 0; i < cipherBytes.length; i++) {
+    plaintextBytes[i] = cipherBytes[i] ^ keyBytes[i % keyBytes.length] ^ iv[i % iv.length];
+  }
+
+  const decoder = new TextDecoder();
+  return decoder.decode(plaintextBytes);
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 export async function encryptContent(plaintext: string): Promise<string> {
-  try {
-    const key = await getOrCreateEncryptionKey();
-    const keyBytes = hexToBytes(key);
-    
-    // Generate random IV
-    const iv = await Crypto.getRandomBytesAsync(IV_LENGTH);
-    
-    // Convert plaintext to bytes
-    const encoder = new TextEncoder();
-    const plaintextBytes = encoder.encode(plaintext);
-    
-    // XOR encryption with key (repeated as needed)
-    const cipherBytes = new Uint8Array(plaintextBytes.length);
-    for (let i = 0; i < plaintextBytes.length; i++) {
-      cipherBytes[i] = plaintextBytes[i] ^ keyBytes[i % keyBytes.length] ^ iv[i % iv.length];
-    }
-    
-    // Create checksum for integrity
-    const checksum = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      plaintext
-    );
-    const checksumShort = checksum.substring(0, 8);
-    
-    // Format: iv:ciphertext:checksum (all hex encoded)
-    const ivHex = bytesToHex(iv);
-    const cipherHex = bytesToHex(cipherBytes);
-    
-    return `${ivHex}:${cipherHex}:${checksumShort}`;
-  } catch (error) {
-    console.error('Encryption failed:', error);
-    throw new Error('Failed to encrypt content');
-  }
+  return encryptV2(plaintext);
 }
 
-/**
- * Decrypt content that was encrypted with encryptContent
- */
-export async function decryptContent(encrypted: string): Promise<string> {
-  try {
-    const parts = encrypted.split(':');
-    if (parts.length !== 3) {
-      throw new Error('Invalid encrypted format');
-    }
-    
-    const [ivHex, cipherHex, checksumShort] = parts;
-    
-    const key = await getOrCreateEncryptionKey();
-    const keyBytes = hexToBytes(key);
-    const iv = hexToBytes(ivHex);
-    const cipherBytes = hexToBytes(cipherHex);
-    
-    // XOR decryption (same operation as encryption)
-    const plaintextBytes = new Uint8Array(cipherBytes.length);
-    for (let i = 0; i < cipherBytes.length; i++) {
-      plaintextBytes[i] = cipherBytes[i] ^ keyBytes[i % keyBytes.length] ^ iv[i % iv.length];
-    }
-    
-    // Convert back to string
-    const decoder = new TextDecoder();
-    const plaintext = decoder.decode(plaintextBytes);
-    
-    // Verify checksum
-    const checksum = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      plaintext
-    );
-    if (checksum.substring(0, 8) !== checksumShort) {
-      throw new Error('Integrity check failed');
-    }
-    
-    return plaintext;
-  } catch (error) {
-    console.error('Decryption failed:', error);
-    throw new Error('Failed to decrypt content');
+export async function decryptContent(encryptedStr: string): Promise<string> {
+  if (encryptedStr.startsWith('v2:')) {
+    return decryptV2(encryptedStr);
   }
+  // Legacy v1 format: no version prefix
+  return decryptV1Legacy(encryptedStr);
 }
 
-/**
- * Check if a string appears to be encrypted
- */
 export function isEncrypted(content: string): boolean {
   const parts = content.split(':');
   if (parts.length !== 3) return false;
-  
-  const [ivHex, cipherHex, checksum] = parts;
-  
-  // IV should be 24 hex chars (12 bytes)
+
+  if (parts[0] === 'v2') {
+    // v2: second segment is IV (24 hex chars = 12 bytes), third segment is payload
+    return (
+      parts[1].length === IV_LENGTH * 2 &&
+      /^[0-9a-f]+$/i.test(parts[1]) &&
+      parts[2].length > 0 &&
+      /^[0-9a-f]+$/i.test(parts[2])
+    );
+  }
+
+  // v1: first segment is IV (24 hex chars), third is 8-char checksum
+  const [ivHex, , checksum] = parts;
   if (ivHex.length !== IV_LENGTH * 2) return false;
-  
-  // Checksum should be 8 hex chars
   if (checksum.length !== 8) return false;
-  
-  // Should be valid hex
-  const hexRegex = /^[0-9a-f]+$/i;
-  return hexRegex.test(ivHex) && hexRegex.test(cipherHex) && hexRegex.test(checksum);
+  return /^[0-9a-f]+$/i.test(ivHex) && /^[0-9a-f]+$/i.test(checksum);
 }
 
-/**
- * Hash content for comparison (without revealing plaintext)
- */
 export async function hashContent(content: string): Promise<string> {
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
+  return ExpoCrypto.digestStringAsync(
+    ExpoCrypto.CryptoDigestAlgorithm.SHA256,
     content
   );
 }
