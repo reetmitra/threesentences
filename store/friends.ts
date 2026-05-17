@@ -325,7 +325,7 @@ export async function acceptFriendRequest(
     .from('profiles')
     .select('user_id, name, username, profile_image, interests')
     .eq('user_id', (request as DbFriend).user_id)
-    .single();
+    .maybeSingle();
 
   return {
     id: requestId,
@@ -517,7 +517,7 @@ export async function getFriendshipStatus(
       .or(
         `and(user_id.eq.${currentUserId},friend_id.eq.${otherUserId}),and(user_id.eq.${otherUserId},friend_id.eq.${currentUserId})`
       )
-      .single();
+      .maybeSingle();
 
     if (!friendship) return 'none';
 
