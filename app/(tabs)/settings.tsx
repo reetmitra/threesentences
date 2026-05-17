@@ -336,7 +336,9 @@ export default function SettingsScreen() {
 
         {/* Profile Header Card */}
         {isLoading ? (
-          <SkeletonStatsCard style={{ marginBottom: spacing[5] }} />
+          <View style={{ marginBottom: spacing[5] }}>
+            <SkeletonStatsCard />
+          </View>
         ) : (
           <Pressable
             style={[styles.profileCard, { backgroundColor: activeColors.surface }]}

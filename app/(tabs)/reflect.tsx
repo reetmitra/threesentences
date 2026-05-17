@@ -103,7 +103,7 @@ export default function ReflectScreen() {
       }
 
       if (result.success && result.reflection) {
-        await saveReflection(result.reflection);
+        await saveReflection(userId!, result.reflection);
         setLatestReflection(result.reflection);
       } else {
         setError(result.error || 'Failed to generate reflection');
