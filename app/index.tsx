@@ -83,7 +83,7 @@ export default function Index() {
 
   // If profile setup is incomplete, redirect to profile setup
   if (needsProfileSetup) {
-    return <Redirect href="/(auth)/interests" />;
+    return <Redirect href="/(auth)/profile-setup" />;
   }
 
   // All good - go to main app

@@ -62,16 +62,18 @@ export default function ProfileSetupScreen() {
   const checkScale = useSharedValue(0);
 
   useEffect(() => {
-    // Animate form entrance
     formOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
 
-    // Generate username suggestion
-    if (params.name) {
+    // Prefer username from signup metadata, fall back to suggestion from name param
+    if (user?.username) {
+      setUsername(user.username);
+      validateUsernameInput(user.username);
+    } else if (params.name) {
       const suggested = suggestUsername(params.name);
       setUsername(suggested);
       validateUsernameInput(suggested);
     }
-  }, [formOpacity, params.name]);
+  }, [formOpacity, params.name, user]);
 
   const validateUsernameInput = useCallback(
     (value: string) => {
