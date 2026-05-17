@@ -1,9 +1,9 @@
 /**
  * Tests for Auth Store
  *
- * Tests Clerk-based authentication utilities.
- * Note: Most auth is now handled by Clerk React hooks.
- * This file tests the backward compatibility functions.
+ * Tests auth store backward compatibility utilities.
+ * Main auth is handled by the useAuth() hook in hooks/useAuth.ts (Supabase).
+ * This file tests the legacy cache functions used by social/chat screens.
  */
 
 import { getCurrentUser, setCurrentUser, getSession } from '@/store/auth';

@@ -57,7 +57,7 @@ import {
   getSuggestedFriends,
 } from '@/store/friends';
 import { getOrCreateConversation } from '@/store/chat';
-import { getCurrentUser } from '@/store/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { getProfile } from '@/store/profile';
 
 type TabType = 'friends' | 'requests';
@@ -65,6 +65,7 @@ type TabType = 'friends' | 'requests';
 export default function SocialScreen() {
   const activeColors = colors.dark;
   const { showToast } = useToast();
+  const { userId, user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -106,22 +107,21 @@ export default function SocialScreen() {
 
   const loadData = async () => {
     try {
-      const user = getCurrentUser();
-      if (!user) return;
+      if (!userId) return;
 
-      const profile = await getProfile(user.id);
+      const profile = await getProfile(userId);
       const userInfo: UserInfo = {
-        id: user.id,
-        name: profile?.name || user.name || 'User',
+        id: userId,
+        name: profile?.name || user?.name || 'User',
         username: profile?.username || 'user',
         profileImage: profile?.profileImage,
       };
       setCurrentUser(userInfo);
 
       const [friendsList, requests, suggested] = await Promise.all([
-        getFriends(user.id),
-        getPendingRequests(user.id),
-        getSuggestedFriends(user.id),
+        getFriends(userId),
+        getPendingRequests(userId),
+        getSuggestedFriends(userId),
       ]);
 
       setFriends(friendsList);

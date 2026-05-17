@@ -58,10 +58,11 @@ import {
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
 import { getProfile, updateProfile, updateProfileImage } from '@/store/profile';
-import { getCurrentUser } from '@/store/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
   const activeColors = colors.dark;
+  const { userId } = useAuth();
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -93,13 +94,12 @@ export default function ProfileScreen() {
 
   const loadProfile = async () => {
     try {
-      const user = getCurrentUser();
-      if (!user) {
+      if (!userId) {
         router.replace('/(auth)/login');
         return;
       }
 
-      const userProfile = await getProfile(user.id);
+      const userProfile = await getProfile(userId);
       if (userProfile) {
         setProfile(userProfile);
         // Initialize form fields
@@ -271,9 +271,8 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const user = getCurrentUser();
-              if (user) {
-                await updateProfileImage(user.id, null);
+              if (userId) {
+                await updateProfileImage(userId, null);
                 setProfileImage(undefined);
                 if (profile) {
                   setProfile({ ...profile, profileImage: undefined });
@@ -292,9 +291,8 @@ export default function ProfileScreen() {
 
   const saveProfileImage = async (uri: string) => {
     try {
-      const user = getCurrentUser();
-      if (user) {
-        await updateProfileImage(user.id, uri);
+      if (userId) {
+        await updateProfileImage(userId, uri);
         setProfileImage(uri);
         if (profile) {
           setProfile({ ...profile, profileImage: uri });
@@ -351,10 +349,9 @@ export default function ProfileScreen() {
       setSaving(true);
       saveButtonScale.value = withSpring(0.95);
 
-      const user = getCurrentUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!userId) throw new Error('Not authenticated');
 
-      const updatedProfile = await updateProfile(user.id, {
+      const updatedProfile = await updateProfile(userId, {
         name: name.trim(),
         username,
         age: age ? parseInt(age, 10) : undefined,

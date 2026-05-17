@@ -1,14 +1,9 @@
 /**
- * Three™ - Firebase Config (Deprecated)
+ * Three™ - Firebase Config (Removed)
  *
- * NOTE: Firebase Auth has been replaced with Clerk.
- * This file is kept for reference but should not be used.
- * Remove this file once all Firebase dependencies are cleaned up.
+ * Firebase is no longer used. Auth is handled by Supabase.
+ * This stub exists to avoid breaking any test mocks that reference this path.
  */
-
-// Firebase is no longer used for authentication
-// Clerk is now the authentication provider
-// See config/clerk.ts for the new auth configuration
 
 export const isConfigured = false;
 export const auth = null;

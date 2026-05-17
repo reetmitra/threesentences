@@ -43,12 +43,13 @@ import {
     sendMessage,
     markMessagesAsRead,
 } from '@/store/chat';
-import { getCurrentUser } from '@/store/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { getProfile } from '@/store/profile';
 
 export default function ChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const activeColors = colors.dark;
+    const { userId, user } = useAuth();
 
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -65,24 +66,21 @@ export default function ChatScreen() {
     }, [id]);
 
     const loadData = async () => {
-        if (!id) return;
+        if (!id || !userId) return;
 
         try {
-            const user = getCurrentUser();
-            if (!user) return;
-
-            const profile = await getProfile(user.id);
+            const profile = await getProfile(userId);
             const userInfo: UserInfo = {
-                id: user.id,
-                name: profile?.name || user.name || 'User',
+                id: userId,
+                name: profile?.name || user?.name || 'User',
                 username: profile?.username || 'user',
                 profileImage: profile?.profileImage,
             };
             setCurrentUser(userInfo);
 
             const [conv, msgs] = await Promise.all([
-                getConversationById(user.id, id),
-                getMessages(user.id, id),
+                getConversationById(userId, id),
+                getMessages(userId, id),
             ]);
 
             setConversation(conv);
@@ -90,7 +88,7 @@ export default function ChatScreen() {
 
             // Mark as read
             if (conv) {
-                await markMessagesAsRead(user.id, id);
+                await markMessagesAsRead(userId, id);
             }
         } catch (error) {
             console.error('Failed to load chat:', error);

@@ -1,7 +1,7 @@
 /**
  * Three™ - Root Index
  *
- * Handles initial routing based on Clerk auth and onboarding state.
+ * Handles initial routing based on Supabase auth and onboarding state.
  * Shows loading screen on every app launch.
  */
 

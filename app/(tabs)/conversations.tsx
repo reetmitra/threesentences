@@ -31,12 +31,13 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { Conversation, UserInfo } from '@/types/social';
 import { getConversations } from '@/store/chat';
-import { getCurrentUser } from '@/store/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { getProfile } from '@/store/profile';
 
 export default function ConversationsScreen() {
     const activeColors = colors.dark;
     const { showToast } = useToast();
+    const { userId, user } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
@@ -52,19 +53,18 @@ export default function ConversationsScreen() {
 
     const loadData = async () => {
         try {
-            const user = getCurrentUser();
-            if (!user) return;
+            if (!userId) return;
 
-            const profile = await getProfile(user.id);
+            const profile = await getProfile(userId);
             const userInfo: UserInfo = {
-                id: user.id,
-                name: profile?.name || user.name || 'User',
+                id: userId,
+                name: profile?.name || user?.name || 'User',
                 username: profile?.username || 'user',
                 profileImage: profile?.profileImage,
             };
             setCurrentUser(userInfo);
 
-            const convos = await getConversations(user.id);
+            const convos = await getConversations(userId);
             setConversations(convos);
         } catch (error) {
             console.error('Failed to load conversations:', error);

@@ -118,7 +118,7 @@ export function getInterestById(id: InterestId): Interest | undefined {
  * User profile data structure
  */
 export interface UserProfile {
-  /** User ID (Clerk ID or Supabase UUID) */
+  /** User ID (Supabase UUID) */
   userId: string;
 
   /** Display name */

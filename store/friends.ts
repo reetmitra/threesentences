@@ -2,7 +2,7 @@
  * Three™ - Friends Store
  *
  * Manages friend connections, requests, and user discovery.
- * Uses Supabase for backend persistence with Clerk authentication.
+ * Uses Supabase for backend persistence and authentication.
  */
 
 import { supabase } from '@/config/supabase';

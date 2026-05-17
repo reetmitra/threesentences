@@ -314,7 +314,7 @@ export default function SettingsScreen() {
   };
 
   const displayName = userProfile?.name || user?.firstName || 'User';
-  const displayEmail = user?.emailAddresses?.[0]?.emailAddress;
+  const displayEmail = user?.email;
   const initials = displayName.charAt(0).toUpperCase();
 
   return (
