@@ -92,8 +92,10 @@ CREATE TABLE public.entries (
 CREATE TABLE public.reflections (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id TEXT NOT NULL,
-  entry_id UUID REFERENCES public.entries(id) ON DELETE CASCADE,
+  time_range INTEGER NOT NULL CHECK (time_range IN (7, 30, 90)),
+  entries_analyzed INTEGER NOT NULL DEFAULT 0,
   content TEXT NOT NULL,
+  has_crisis_indicators BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

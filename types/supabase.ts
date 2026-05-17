@@ -145,22 +145,28 @@ export interface Database {
                 Row: {
                     id: string
                     user_id: string
-                    entry_id: string
+                    time_range: 7 | 30 | 90
+                    entries_analyzed: number
                     content: string
+                    has_crisis_indicators: boolean
                     created_at: string
                 }
                 Insert: {
                     id?: string
                     user_id: string
-                    entry_id: string
+                    time_range: 7 | 30 | 90
+                    entries_analyzed?: number
                     content: string
+                    has_crisis_indicators?: boolean
                     created_at?: string
                 }
                 Update: {
                     id?: string
                     user_id?: string
-                    entry_id?: string
+                    time_range?: 7 | 30 | 90
+                    entries_analyzed?: number
                     content?: string
+                    has_crisis_indicators?: boolean
                     created_at?: string
                 }
             }
