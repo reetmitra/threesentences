@@ -7,5 +7,10 @@
         "./*"
       ]
     }
-  }
+  },
+  "exclude": [
+    "landing",
+    "video",
+    "node_modules"
+  ]
 }
