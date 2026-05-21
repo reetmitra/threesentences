@@ -1,5 +1,12 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, Animated, Pressable } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { StyleSheet, Pressable, View } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
@@ -15,92 +22,82 @@ interface ToastProps {
   onDismiss: () => void;
 }
 
-export function Toast({ type, message, visible, duration = 3000, onDismiss }: ToastProps) {
+const EASE_OUT = Easing.out(Easing.ease);
+
+export function Toast({ type, message, visible, duration = 2400, onDismiss }: ToastProps) {
   const insets = useSafeAreaInsets();
-  const translateY = useRef(new Animated.Value(-80)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useSharedValue(-10);
+  const opacity = useSharedValue(0);
 
   const hide = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -80,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onDismiss());
-  }, [onDismiss, translateY, opacity]);
+    opacity.value = withTiming(0, { duration: 180, easing: EASE_OUT });
+    translateY.value = withTiming(-10, { duration: 180, easing: EASE_OUT }, (finished) => {
+      if (finished) runOnJS(onDismiss)();
+    });
+  }, [onDismiss, opacity, translateY]);
 
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 280,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      const timer = setTimeout(() => {
-        hide();
-      }, duration);
+      translateY.value = withTiming(0, { duration: 240, easing: EASE_OUT });
+      opacity.value = withTiming(1, { duration: 240, easing: EASE_OUT });
+      const timer = setTimeout(() => hide(), duration);
       return () => clearTimeout(timer);
     }
-  }, [visible, hide, duration]);
+  }, [visible, duration, hide]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const borderColor = type === 'error' ? colors.dark.warn : colors.dark.frame;
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          top: insets.top + spacing[3],
-          transform: [{ translateY }],
-          opacity,
-          borderColor,
-          pointerEvents: 'box-none' as const,
-        },
-      ]}
+    <View
+      style={{
+        position: 'absolute',
+        alignSelf: 'center',
+        width: '100%',
+        top: insets.top + spacing[3],
+        pointerEvents: visible ? 'box-none' : 'none',
+        zIndex: 9999,
+        elevation: 10,
+      }}
     >
-      <Pressable onPress={hide}>
-        <Text
-          family="monoMedium"
-          variant="sm"
-          fixedSize
-          uppercase
-          style={styles.message}
-        >
-          {message}
-        </Text>
-      </Pressable>
-    </Animated.View>
+      <Animated.View
+        style={[
+          styles.container,
+          { borderColor },
+          animatedStyle,
+        ]}
+      >
+        <Pressable onPress={hide} hitSlop={8}>
+          <Text
+            family="monoMedium"
+            variant="sm"
+            fixedSize
+            uppercase
+            style={styles.message}
+          >
+            {message}
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
     alignSelf: 'center',
     backgroundColor: colors.dark.surface,
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: spacing[5],
     paddingVertical: spacing[2],
-    zIndex: 9999,
-    elevation: 10,
   },
   message: {
     color: colors.dark.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: 1.4,
   },
 });
