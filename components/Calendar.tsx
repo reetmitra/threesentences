@@ -117,8 +117,8 @@ export function Calendar({
         key={cell.date}
         style={[
           styles.dayCell,
-          cell.isToday && [styles.todayCell, { borderColor: activeColors.accent }],
-          isSelected && { backgroundColor: activeColors.surfaceHover },
+          cell.isToday && [styles.todayCell, { borderColor: activeColors.textPrimary }],
+          isSelected && { backgroundColor: activeColors.surfaceHi },
         ]}
         onPress={() => canSelect && cell.date && onSelectDate(cell.date)}
         disabled={!canSelect}
@@ -128,19 +128,37 @@ export function Calendar({
       >
         <Text
           variant="base"
-          weight={cell.isToday ? 'bold' : 'regular'}
           style={[
             styles.dayText,
-            { color: activeColors.textPrimary },
-            cell.isFuture && { color: activeColors.textTertiary },
-            !cell.hasEntry && cell.isPast && { color: activeColors.textTertiary },
+            cell.isToday
+              ? { color: activeColors.textBright }
+              : cell.hasEntry
+              ? { color: activeColors.textPrimary }
+              : { color: activeColors.textTertiary },
           ]}
         >
           {cell.day}
         </Text>
-        {cell.hasEntry && (
+        {cell.hasEntry ? (
           <View
-            style={[styles.entryDot, { backgroundColor: activeColors.accent }]}
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: activeColors.textPrimary,
+              marginTop: 3,
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: 2,
+              borderWidth: 1,
+              borderColor: activeColors.frame,
+              marginTop: 3,
+            }}
           />
         )}
       </Pressable>
@@ -153,8 +171,8 @@ export function Calendar({
       <View style={styles.weekdayRow}>
         {WEEKDAYS.map((day, index) => (
           <View key={`header-${index}`} style={styles.weekdayCell}>
-            <Text variant="sm" color="secondary" weight="medium">
-              {day}
+            <Text family="mono" variant="xs" style={{ color: activeColors.textTertiary, letterSpacing: 1 }}>
+              {day.toUpperCase()}
             </Text>
           </View>
         ))}
@@ -197,16 +215,9 @@ const styles = StyleSheet.create({
     minWidth: 44,
   },
   todayCell: {
-    borderWidth: 2,
+    borderWidth: 1,
   },
   dayText: {
     textAlign: 'center',
-  },
-  entryDot: {
-    position: 'absolute',
-    bottom: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
 });
