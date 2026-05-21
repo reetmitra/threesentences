@@ -28,7 +28,7 @@ import Animated, {
   FadeIn,
   Easing,
 } from 'react-native-reanimated';
-import { Edit3 } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { SentenceCounter } from '@/components/SentenceCounter';
@@ -182,7 +182,7 @@ function NoEditDemo() {
       {/* Edit icon with strikethrough */}
       {typingDone && (
         <Animated.View style={[styles.noEditIconContainer, editStyle]}>
-          <Edit3 size={22} color={c.textTertiary} />
+          <Icon name="edit" size={22} color={c.textTertiary} />
           {/* Red strikethrough line */}
           <Animated.View
             style={[
@@ -202,6 +202,32 @@ function NoEditDemo() {
         </Animated.View>
       )}
     </Animated.View>
+  );
+}
+
+function PageDot({ active }: { active: boolean }) {
+  const width = useSharedValue(active ? 22 : 6);
+
+  useEffect(() => {
+    width.value = withTiming(active ? 22 : 6, {
+      duration: 240,
+      easing: Easing.ease,
+    });
+  }, [active]);
+
+  const style = useAnimatedStyle(() => ({ width: width.value }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: active ? colors.dark.textBright : colors.dark.frame,
+        },
+        style,
+      ]}
+    />
   );
 }
 
@@ -309,15 +335,9 @@ export default function OnboardingScreen() {
           key={index}
           onPress={() => handleDotPress(index)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.dotWrapper}
         >
-          <View
-            style={[
-              styles.dot,
-              index === currentIndex
-                ? { backgroundColor: c.textBright, width: 20, height: 6, borderRadius: 3 }
-                : { backgroundColor: c.frame, width: 6, height: 6, borderRadius: 3 },
-            ]}
-          />
+          <PageDot active={index === currentIndex} />
         </TouchableOpacity>
       ))}
     </View>
@@ -407,6 +427,9 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 24,
+  },
+  dotWrapper: {
+    marginHorizontal: 4,
   },
   nextButton: {
     width: '100%',
