@@ -1,53 +1,51 @@
 /**
  * Three™ - Bottom Sheet Component
  *
- * Animated slide-up modal with spring physics and dark backdrop.
+ * Animated slide-up modal with brand easing and blurred backdrop.
+ * Spec §1.5: entrance 280ms (sheet), 180ms (backdrop); exit 220ms both.
  */
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Pressable, Modal, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, Dimensions, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
-  runOnJS,
+  Easing,
 } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const BRAND = Easing.bezier(0.16, 1, 0.3, 1);
+const EASE_OUT = Easing.out(Easing.ease);
 
 interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  /** Max height as fraction of screen (0-1). Default 0.6 */
   maxHeight?: number;
 }
 
-export function BottomSheet({
-  visible,
-  onClose,
-  children,
-  maxHeight = 0.6,
-}: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, children, maxHeight = 0.6 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
-
   const sheetHeight = SCREEN_HEIGHT * maxHeight;
 
   useEffect(() => {
     if (visible) {
-      translateY.value = withSpring(0, { damping: 20, stiffness: 200 });
-      backdropOpacity.value = withTiming(1, { duration: 250 });
+      backdropOpacity.value = withTiming(1, { duration: reduced ? 0 : 180, easing: EASE_OUT });
+      translateY.value = withTiming(0, { duration: reduced ? 0 : 280, easing: BRAND });
     } else {
-      translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 });
-      backdropOpacity.value = withTiming(0, { duration: 200 });
+      translateY.value = withTiming(SCREEN_HEIGHT, { duration: reduced ? 0 : 220, easing: BRAND });
+      backdropOpacity.value = withTiming(0, { duration: reduced ? 0 : 220, easing: EASE_OUT });
     }
-  }, [visible]);
+  }, [visible, reduced]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -57,35 +55,42 @@ export function BottomSheet({
     opacity: backdropOpacity.value,
   }));
 
-  const handleClose = () => {
-    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 250 });
-    backdropOpacity.value = withTiming(0, { duration: 200 });
-    setTimeout(onClose, 300);
-  };
-
-  if (!visible) return null;
-
   return (
-    <Modal transparent visible={visible} animationType="none" statusBarTranslucent>
+    <Modal
+      visible={visible}
+      transparent
+      statusBarTranslucent
+      onRequestClose={onClose}
+      animationType="none"
+    >
       {/* Backdrop */}
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+      <Animated.View style={[StyleSheet.absoluteFillObject, backdropStyle]}>
+        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose}>
+          {Platform.OS === 'ios' ? (
+            <BlurView
+              intensity={20}
+              tint="dark"
+              style={[StyleSheet.absoluteFillObject, styles.backdrop]}
+            />
+          ) : (
+            <View style={[StyleSheet.absoluteFillObject, styles.backdrop]} />
+          )}
+        </Pressable>
       </Animated.View>
 
       {/* Sheet */}
       <Animated.View
         style={[
           styles.sheet,
-          { maxHeight: sheetHeight, paddingBottom: insets.bottom + spacing[4] },
+          {
+            height: sheetHeight,
+            paddingBottom: insets.bottom + spacing[4],
+            backgroundColor: colors.dark.surface,
+          },
           sheetStyle,
         ]}
       >
-        {/* Handle bar */}
-        <View style={styles.handleContainer}>
-          <View style={styles.handle} />
-        </View>
-
-        {/* Content */}
+        <View style={[styles.handle, { backgroundColor: colors.dark.frame }]} />
         {children}
       </Animated.View>
     </Modal>
@@ -94,28 +99,23 @@ export function BottomSheet({
 
 const styles = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   sheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.dark.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: spacing[4],
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: spacing[3],
-    paddingBottom: spacing[4],
+    overflow: 'hidden',
   },
   handle: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.dark.border,
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
 });
