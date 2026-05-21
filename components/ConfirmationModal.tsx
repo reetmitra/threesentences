@@ -1,18 +1,9 @@
-/**
- * ThreeSixtyThree™ Three Sentences - Confirmation Modal
- *
- * Displays before final submission with 363 philosophy messaging.
- * "Presence over perfection."
- */
-
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
-import { BottomSheet } from '@/components/ui/BottomSheet';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import * as Haptics from 'expo-haptics';
+import { spacing, componentRadius } from '@/theme/spacing';
 
 interface ConfirmationModalProps {
   visible: boolean;
@@ -21,94 +12,70 @@ interface ConfirmationModalProps {
   loading?: boolean;
 }
 
-export function ConfirmationModal({
-  visible,
-  onCancel,
-  onConfirm,
-  loading = false,
-}: ConfirmationModalProps) {
-  const activeColors = colors.dark;
-
-  const handleConfirm = async () => {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onConfirm();
-  };
+export function ConfirmationModal({ visible, onCancel, onConfirm, loading }: ConfirmationModalProps) {
+  const c = colors.dark;
 
   return (
-    <BottomSheet visible={visible} onClose={onCancel} maxHeight={0.5}>
-      <View style={styles.content}>
-        <Text variant="xl" weight="bold" style={styles.title}>
-          Submit Entry
-        </Text>
-
-        <Text variant="base" color="secondary" style={styles.message}>
-          Once submitted, this entry cannot be edited or deleted. Your words
-          will stand as written, capturing how you felt in this moment.
-        </Text>
-
-        <View style={[styles.philosophy, { backgroundColor: activeColors.surfaceHover }]}>
-          <Text variant="base" color="secondary" style={styles.philosophyText}>
-            This is the ThreeSixtyThree™ way:
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onCancel}>
+        <View
+          style={[styles.sheet, { backgroundColor: c.surface, borderColor: c.frame }]}
+          onStartShouldSetResponder={() => true}
+        >
+          <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
+            Submit entry?
           </Text>
-          <Text
-            variant="lg"
-            weight="semibold"
-            style={[styles.philosophyHighlight, { color: activeColors.textPrimary }]}
-          >
-            Presence over perfection.
+          <Text serif variant="base" style={{ color: c.textSecondary, lineHeight: 26, marginBottom: spacing[6] }}>
+            Once submitted, your entry is permanent. Three sentences, locked.
           </Text>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              onPress={onCancel}
+              style={[styles.ghostButton, { borderColor: c.frame }]}
+            >
+              <Text family="sansSemibold" variant="base" style={{ color: c.textSecondary }}>Cancel</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Button title="Submit" onPress={onConfirm} loading={loading} />
+            </View>
+          </View>
         </View>
-
-        <View style={styles.buttons}>
-          <Button
-            title="Cancel"
-            variant="ghost"
-            onPress={onCancel}
-            style={styles.cancelButton}
-          />
-          <Button
-            title="Submit"
-            variant="primary"
-            onPress={handleConfirm}
-            loading={loading}
-            style={styles.submitButton}
-          />
-        </View>
-      </View>
-    </BottomSheet>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: spacing[2],
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(6,6,8,0.85)',
+    justifyContent: 'flex-end',
   },
-  title: {
-    marginBottom: spacing[3],
+  sheet: {
+    borderTopLeftRadius: componentRadius.bottomSheet,
+    borderTopRightRadius: componentRadius.bottomSheet,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    padding: spacing[6],
+    paddingBottom: spacing[8],
   },
-  message: {
-    marginBottom: spacing[4],
-    lineHeight: 24,
-  },
-  philosophy: {
-    padding: spacing[4],
-    borderRadius: 12,
-    marginBottom: spacing[5],
-  },
-  philosophyText: {
-    marginBottom: spacing[1],
-  },
-  philosophyHighlight: {
-    fontStyle: 'italic',
-  },
-  buttons: {
+  actions: {
     flexDirection: 'row',
     gap: spacing[3],
+    alignItems: 'center',
   },
-  cancelButton: {
-    flex: 1,
-  },
-  submitButton: {
-    flex: 1,
+  ghostButton: {
+    height: 52,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: spacing[5],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
