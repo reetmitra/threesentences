@@ -1,7 +1,7 @@
 /**
  * Tests for Spacing Theme
  *
- * 4px-based spacing scale for consistent layout
+ * Noir editorial spacing scale: 4/6/8/10/12/14/16/18/20/22/24/28/32/40/48/56/64/72/80/100/120 px
  */
 
 import { spacing, radius, componentRadius } from '@/theme/spacing';
@@ -12,24 +12,18 @@ describe('spacing theme', () => {
       expect(spacing[1]).toBe(4);
     });
 
-    it('has correct spacing values based on 4px scale', () => {
-      expect(spacing[1]).toBe(4);   // 1 * 4
-      expect(spacing[2]).toBe(8);   // 2 * 4
-      expect(spacing[3]).toBe(12);  // 3 * 4
-      expect(spacing[4]).toBe(16);  // 4 * 4
-      expect(spacing[5]).toBe(20);  // 5 * 4
-      expect(spacing[6]).toBe(24);  // 6 * 4
-      expect(spacing[8]).toBe(32);  // 8 * 4
-      expect(spacing[10]).toBe(40); // 10 * 4
-      expect(spacing[12]).toBe(48); // 12 * 4
-      expect(spacing[16]).toBe(64); // 16 * 4
-      expect(spacing[20]).toBe(80); // 20 * 4
-    });
-
-    it('all values are multiples of 4', () => {
-      Object.values(spacing).forEach((value) => {
-        expect(value % 4).toBe(0);
-      });
+    it('has correct spacing values', () => {
+      expect(spacing[1]).toBe(4);
+      expect(spacing[2]).toBe(8);
+      expect(spacing[3]).toBe(12);
+      expect(spacing[4]).toBe(16);
+      expect(spacing[5]).toBe(20);
+      expect(spacing[6]).toBe(24);
+      expect(spacing[8]).toBe(32);
+      expect(spacing[10]).toBe(40);
+      expect(spacing[12]).toBe(48);
+      expect(spacing[16]).toBe(64);
+      expect(spacing[20]).toBe(80);
     });
 
     it('values increase progressively', () => {
@@ -60,7 +54,7 @@ describe('spacing theme', () => {
     });
 
     it('has full radius for circular elements', () => {
-      expect(radius.full).toBe(9999);
+      expect(radius.full).toBe(999);
     });
 
     it('radius values increase progressively', () => {
@@ -72,20 +66,20 @@ describe('spacing theme', () => {
   });
 
   describe('component radius defaults', () => {
-    it('has button radius (12px)', () => {
-      expect(componentRadius.button).toBe(12);
+    it('has button radius (pill)', () => {
+      expect(componentRadius.button).toBe(999);
     });
 
-    it('has input radius (8px)', () => {
-      expect(componentRadius.input).toBe(8);
+    it('has input radius (10px)', () => {
+      expect(componentRadius.input).toBe(10);
     });
 
-    it('has card radius (12px)', () => {
-      expect(componentRadius.card).toBe(12);
+    it('has card radius (16px)', () => {
+      expect(componentRadius.card).toBe(16);
     });
 
-    it('has modal radius (16px)', () => {
-      expect(componentRadius.modal).toBe(16);
+    it('has modal radius (24px)', () => {
+      expect(componentRadius.modal).toBe(24);
     });
 
     it('all component radii are valid numbers', () => {
@@ -97,20 +91,21 @@ describe('spacing theme', () => {
   });
 
   describe('consistency checks', () => {
-    it('button radius matches lg radius', () => {
-      expect(componentRadius.button).toBe(radius.lg);
+    it('button radius is pill (999)', () => {
+      expect(componentRadius.button).toBe(radius.full);
     });
 
-    it('input radius matches md radius', () => {
-      expect(componentRadius.input).toBe(radius.md);
+    it('input radius is between md and lg', () => {
+      expect(componentRadius.input).toBeGreaterThan(radius.md);
+      expect(componentRadius.input).toBeLessThan(radius.lg + 2);
     });
 
-    it('card radius matches lg radius', () => {
-      expect(componentRadius.card).toBe(radius.lg);
+    it('card radius matches xl radius', () => {
+      expect(componentRadius.card).toBe(radius.xl);
     });
 
-    it('modal radius matches xl radius', () => {
-      expect(componentRadius.modal).toBe(radius.xl);
+    it('modal radius matches 3xl radius', () => {
+      expect(componentRadius.modal).toBe(radius['3xl']);
     });
   });
 });

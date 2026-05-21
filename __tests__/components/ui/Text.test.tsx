@@ -61,28 +61,6 @@ describe('Text Component', () => {
     });
   });
 
-  describe('weights', () => {
-    it('renders with regular weight (default)', () => {
-      const { getByText } = render(<Text>Regular</Text>);
-      expect(getByText('Regular')).toBeTruthy();
-    });
-
-    it('renders with medium weight', () => {
-      const { getByText } = render(<Text weight="medium">Medium</Text>);
-      expect(getByText('Medium')).toBeTruthy();
-    });
-
-    it('renders with semibold weight', () => {
-      const { getByText } = render(<Text weight="semibold">Semibold</Text>);
-      expect(getByText('Semibold')).toBeTruthy();
-    });
-
-    it('renders with bold weight', () => {
-      const { getByText } = render(<Text weight="bold">Bold</Text>);
-      expect(getByText('Bold')).toBeTruthy();
-    });
-  });
-
   describe('colors', () => {
     it('renders with primary color (default)', () => {
       const { getByText } = render(<Text>Primary</Text>);
@@ -104,35 +82,39 @@ describe('Text Component', () => {
       expect(getByText('Accent')).toBeTruthy();
     });
 
-    it('renders with warning color', () => {
-      const { getByText } = render(<Text color="warning">Warning</Text>);
-      expect(getByText('Warning')).toBeTruthy();
-    });
-
-    it('renders with error color', () => {
-      const { getByText } = render(<Text color="error">Error</Text>);
-      expect(getByText('Error')).toBeTruthy();
+    it('renders with warn color', () => {
+      const { getByText } = render(<Text color="warn">Warn</Text>);
+      expect(getByText('Warn')).toBeTruthy();
     });
   });
 
   describe('font families', () => {
-    it('renders with primary font (default)', () => {
+    it('renders with default sans family', () => {
       const { getByText } = render(<Text>Primary Font</Text>);
       expect(getByText('Primary Font')).toBeTruthy();
     });
 
-    it('renders with serif font', () => {
+    it('renders with sansSemibold family', () => {
+      const { getByText } = render(<Text family="sansSemibold">Semibold</Text>);
+      expect(getByText('Semibold')).toBeTruthy();
+    });
+
+    it('renders with sansBold family', () => {
+      const { getByText } = render(<Text family="sansBold">Bold</Text>);
+      expect(getByText('Bold')).toBeTruthy();
+    });
+
+    it('renders with serif font via serif shorthand', () => {
       const { getByText } = render(<Text serif>Serif Font</Text>);
       expect(getByText('Serif Font')).toBeTruthy();
     });
 
-    it('renders with mono font', () => {
+    it('renders with mono font via mono shorthand', () => {
       const { getByText } = render(<Text mono>Mono Font</Text>);
       expect(getByText('Mono Font')).toBeTruthy();
     });
 
     it('serif takes precedence over mono when both specified', () => {
-      // Based on the implementation, serif should be checked before mono
       const { getByText } = render(<Text serif mono>Both</Text>);
       expect(getByText('Both')).toBeTruthy();
     });
