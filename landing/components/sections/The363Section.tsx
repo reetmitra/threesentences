@@ -1,98 +1,91 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-import { TextScramble } from "@/components/ui/text-scramble";
-import { blurIn, fadeUp, defaultTransition } from "@/lib/animations";
-import { useCountUp } from "@/lib/useCountUp";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Reveal } from "@/components/ui/Reveal";
 
 export function The363Section() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-  const count = useCountUp(363, 1.8, isInView);
+  const [count, setCount] = useState(0);
+  const countRef = useRef<HTMLDivElement>(null);
+  const triggered = useRef(false);
+
+  useEffect(() => {
+    const el = countRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !triggered.current) {
+          triggered.current = true;
+          observer.disconnect();
+          let current = 0;
+          const step = () => {
+            current = Math.min(current + 3, 363);
+            setCount(current);
+            if (current < 363) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section
-      ref={ref}
-      className="min-h-[70vh] flex items-center justify-center px-6 py-24 relative overflow-hidden"
-    >
-      {/* Giant background watermark */}
-      <motion.span
-        className="absolute inset-0 flex items-center justify-center text-[20rem] sm:text-[28rem] md:text-[36rem] font-bold font-mono text-white/[0.03] select-none pointer-events-none leading-none"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={isInView ? { opacity: 1, scale: 1 } : {}}
-        transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
+    <section className="relative py-32 px-6 overflow-hidden text-center">
+      {/* Giant watermark "363" behind all content */}
+      <motion.div
         aria-hidden
+        className="absolute inset-0 flex items-center justify-center select-none pointer-events-none"
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 0.03, scale: 1 }}
+        viewport={{ once: true, margin: "0px 0px -20% 0px" }}
+        transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          fontSize: "clamp(200px, 30vw, 400px)",
+          color: "#FFFFF0",
+          fontWeight: 700,
+          lineHeight: 1,
+          fontFamily: "monospace",
+        }}
       >
         363
-      </motion.span>
+      </motion.div>
 
       {/* Foreground content */}
-      <div className="relative z-10 max-w-2xl mx-auto text-center">
-        {/* Label */}
-        <TextScramble
-          className="text-xs uppercase tracking-[0.3em] text-white/30"
-          duration={0.8}
-          speed={0.04}
-          trigger={isInView}
-          characterSet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        >
-          Not 365.
-        </TextScramble>
-
-        {/* Counter */}
-        <motion.div
-          className="mt-6 mb-8"
-          variants={blurIn}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-        >
-          <span className="text-7xl sm:text-8xl md:text-9xl font-bold font-mono text-white tabular-nums">
-            {String(count).padStart(3, "0")}
-          </span>
-        </motion.div>
-
-        {/* Philosophy pivot */}
-        <motion.div
-          className="space-y-2"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.25, delayChildren: 0.7 } },
-          }}
-        >
-          <motion.p
-            variants={fadeUp}
-            transition={defaultTransition}
-            className="text-xl sm:text-2xl text-white/50 font-light"
+      <div className="relative z-10 max-w-2xl mx-auto">
+        {/* Count-up number */}
+        <div ref={countRef}>
+          <div
+            className="tabular-nums font-mono font-bold"
+            style={{
+              fontSize: "clamp(80px, 12vw, 130px)",
+              color: "#FFFFF0",
+              lineHeight: 1,
+            }}
           >
-            You cannot be perfect.
-          </motion.p>
-          <motion.p
-            variants={blurIn}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-            className="text-xl sm:text-2xl text-white/80 font-medium"
-          >
-            But you can be relentless.
-          </motion.p>
-        </motion.div>
+            {count}
+          </div>
+          <p className="mt-3 text-sm uppercase tracking-widest text-white/40">
+            daily reflections captured
+          </p>
+        </div>
 
-        {/* Grace explanation */}
-        <motion.p
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          transition={{ ...defaultTransition, delay: 1.0 }}
-          className="text-sm text-white/20 max-w-md mx-auto leading-relaxed mt-10"
-        >
-          Two days of grace. Because life happens. Miss a day,
-          forgive yourself, and show up tomorrow.
-        </motion.p>
+        {/* Two-color headline */}
+        <Reveal delay={0.2}>
+          <h2 className="mt-10 text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight">
+            <span style={{ color: "#FFFFF0" }}>Three sentences.</span>{" "}
+            <span className="text-white/40">Every day.</span>
+          </h2>
+        </Reveal>
+
+        {/* Supporting copy */}
+        <Reveal delay={0.35}>
+          <p className="mt-5 text-base sm:text-lg text-white/50 max-w-md mx-auto leading-relaxed">
+            The constraint that changes everything.
+          </p>
+        </Reveal>
       </div>
     </section>
   );
