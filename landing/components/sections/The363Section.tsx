@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Reveal } from "@/components/ui/Reveal";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 export function The363Section() {
   const [count, setCount] = useState(0);
   const countRef = useRef<HTMLDivElement>(null);
   const triggered = useRef(false);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     const el = countRef.current;
@@ -18,15 +20,19 @@ export function The363Section() {
         if (entry.isIntersecting && !triggered.current) {
           triggered.current = true;
           observer.disconnect();
-          let current = 0;
-          const step = () => {
-            current = Math.min(current + 3, 363);
-            setCount(current);
-            if (current < 363) {
-              rafId = requestAnimationFrame(step);
-            }
-          };
-          rafId = requestAnimationFrame(step);
+          if (reduced) {
+            setCount(363); // instant snap
+          } else {
+            let current = 0;
+            const step = () => {
+              current = Math.min(current + 3, 363);
+              setCount(current);
+              if (current < 363) {
+                rafId = requestAnimationFrame(step);
+              }
+            };
+            rafId = requestAnimationFrame(step);
+          }
         }
       },
       { threshold: 0.3 }
@@ -36,7 +42,7 @@ export function The363Section() {
       observer.disconnect();
       cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [reduced]);
 
   return (
     <section className="relative py-32 px-6 overflow-hidden text-center">
@@ -44,8 +50,8 @@ export function The363Section() {
       <motion.div
         aria-hidden
         className="absolute inset-0 flex items-center justify-center select-none pointer-events-none"
-        initial={{ opacity: 0, scale: 0.9 }}
-        whileInView={{ opacity: 0.03, scale: 1 }}
+        initial={{ opacity: reduced ? 0.03 : 0, scale: reduced ? 1 : 0.9 }}
+        whileInView={reduced ? undefined : { opacity: 0.03, scale: 1 }}
         viewport={{ once: true, margin: "0px 0px -20% 0px" }}
         transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
         style={{

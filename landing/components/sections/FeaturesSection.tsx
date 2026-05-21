@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Reveal } from "@/components/ui/Reveal";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const TABS = ["Today", "History", "Insights", "Circle"] as const;
 type Tab = (typeof TABS)[number];
@@ -213,6 +214,7 @@ export function FeaturesSection() {
   const [activeTab, setActiveTab] = useState<Tab>("Today");
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cycleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reduced = useReducedMotion();
 
   const startCycle = () => {
     if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
@@ -230,20 +232,23 @@ export function FeaturesSection() {
     // Clear auto-cycle on manual click
     if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
 
-    // Restart cycle after 6s idle
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => {
-      startCycle();
-    }, 6000);
+    // Restart cycle after 6s idle (only if not reduced)
+    if (!reduced) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        startCycle();
+      }, 6000);
+    }
   };
 
   useEffect(() => {
+    if (reduced) return; // skip auto-cycle
     startCycle();
     return () => {
       if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
-  }, []);
+  }, [reduced]);
 
   return (
     <section className="py-24 px-6">
@@ -288,10 +293,10 @@ export function FeaturesSection() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: reduced ? 0 : 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              exit={{ opacity: 0, y: reduced ? 0 : -8 }}
+              transition={reduced ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
             >
               {TAB_CONTENT[activeTab]()}
             </motion.div>

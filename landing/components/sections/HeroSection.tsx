@@ -2,17 +2,25 @@
 
 import { motion } from "framer-motion";
 import { useScrollY } from "@/hooks/useScrollY";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface HeroSectionProps {
   onCTAClick: () => void;
 }
 
-function FloatingMark() {
+const lpFloat = {
+  animate: {
+    y: [0, -10, 0],
+    transition: { duration: 4.5, ease: "easeInOut" as const, repeat: Infinity },
+  },
+};
+
+function FloatingMark({ reduced }: { reduced: boolean }) {
   return (
     <motion.div
       className="flex gap-[14px] items-center mb-10"
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 4.5, ease: "easeInOut", repeat: Infinity }}
+      animate={reduced ? undefined : "animate"}
+      variants={lpFloat}
     >
       {[0, 1, 2].map((i) => (
         <div
@@ -27,11 +35,31 @@ function FloatingMark() {
 
 export function HeroSection({ onCTAClick }: HeroSectionProps) {
   const scrollY = useScrollY();
+  const reduced = useReducedMotion();
   const elevated = scrollY > 40;
 
-  const heroOpacity = Math.max(0, 1 - scrollY / 600);
-  const heroY = Math.min(scrollY * 0.3, 200);
-  const glowY = scrollY * 0.15;
+  const heroOpacity = reduced ? 1 : Math.max(0, 1 - scrollY / 600);
+  const heroY = reduced ? 0 : Math.min(scrollY * 0.3, 200);
+  const glowY = reduced ? 0 : scrollY * 0.15;
+
+  const heroStyle = reduced
+    ? {}
+    : {
+        opacity: heroOpacity,
+        transform: `translateY(${heroY}px)`,
+      };
+
+  const glowStyle = reduced
+    ? {
+        background:
+          "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
+      }
+    : {
+        background:
+          "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
+        transform: `translateY(${glowY}px)`,
+        opacity: heroOpacity,
+      };
 
   return (
     <section className="min-h-screen flex flex-col relative overflow-hidden">
@@ -69,29 +97,26 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
-          transform: `translateY(${glowY}px)`,
-          opacity: heroOpacity,
-        }}
+        style={glowStyle}
       />
 
       {/* Hero content */}
       <main
         className="flex-1 flex flex-col items-center justify-center px-6 relative pt-24"
-        style={{
-          transform: `translateY(${heroY}px)`,
-          opacity: heroOpacity,
-        }}
+        style={heroStyle}
       >
         <div className="text-center max-w-3xl mx-auto">
-          <FloatingMark />
+          <FloatingMark reduced={reduced} />
 
           <motion.h1
             className="text-7xl sm:text-8xl font-bold tracking-tight text-white leading-none mb-6"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }
+            }
           >
             Three Sentences
           </motion.h1>
@@ -100,7 +125,11 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
             className="font-mono text-[10px] tracking-[3px] uppercase text-white/30 mb-4"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }
+            }
           >
             BE BETTER. DO BETTER.
           </motion.p>
@@ -109,7 +138,7 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
             className="text-white/40 text-base max-w-lg mx-auto mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+            transition={reduced ? { duration: 0 } : { duration: 0.8, delay: 0.5 }}
           >
             A daily journaling practice built on one unbreakable constraint.
           </motion.p>
@@ -118,7 +147,11 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
             className="flex flex-col sm:flex-row gap-4 justify-center"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.7 }
+            }
           >
             <button
               onClick={onCTAClick}
@@ -133,7 +166,7 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
       {/* Scroll cue */}
       <div
         className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 pointer-events-none"
-        style={{ opacity: heroOpacity }}
+        style={reduced ? {} : { opacity: heroOpacity }}
       >
         <span className="font-mono text-[9px] tracking-[3px] uppercase text-white/25">
           Scroll
