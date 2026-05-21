@@ -1,17 +1,10 @@
-/**
- * ThreeSixtyThree™ Three Sentences - Tab Layout
- * 
- * Five tabs: Today, History, Social, Guide, Settings
- * Dark-only UI with white accents.
- */
-
 import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
-import { PenTool, Calendar, Settings, BarChart3, Users } from 'lucide-react-native';
+import { Edit3, Calendar, MessageCircle, Flame, Settings } from 'lucide-react-native';
 
 export default function TabLayout() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
 
   return (
     <View style={styles.container}>
@@ -19,15 +12,15 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: activeColors.background,
+            backgroundColor: c.background,
             borderTopWidth: 0,
             elevation: 0,
-            paddingTop: 8,
-            paddingBottom: 8,
+            paddingTop: 10,
+            paddingBottom: 10,
             height: 64,
           },
-          tabBarActiveTintColor: '#FFFFFF',
-          tabBarInactiveTintColor: '#888888',
+          tabBarActiveTintColor: c.textBright,
+          tabBarInactiveTintColor: c.textSecondary,
           tabBarShowLabel: false,
         }}
       >
@@ -35,90 +28,52 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Today',
-            tabBarIcon: ({ color }) => (
-              <PenTool color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'Today tab - write your daily entry',
+            tabBarIcon: ({ color }) => <Edit3 color={color} size={24} strokeWidth={1.5} />,
+            tabBarAccessibilityLabel: 'Today — write your entry',
           }}
         />
         <Tabs.Screen
           name="history"
           options={{
             title: 'History',
-            tabBarIcon: ({ color }) => (
-              <Calendar color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'History tab - view past entries',
+            tabBarIcon: ({ color }) => <Calendar color={color} size={24} strokeWidth={1.5} />,
+            tabBarAccessibilityLabel: 'History — past entries',
           }}
         />
         <Tabs.Screen
           name="social"
           options={{
-            title: 'Social',
-            tabBarIcon: ({ color }) => (
-              <Users color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'Social tab - friends and chat',
+            title: 'The Circle',
+            tabBarIcon: ({ color }) => <MessageCircle color={color} size={24} strokeWidth={1.5} />,
+            tabBarAccessibilityLabel: 'The Circle — friends',
           }}
         />
         <Tabs.Screen
           name="guide"
           options={{
             title: 'Insights',
-            tabBarIcon: ({ color }) => (
-              <BarChart3 color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'Insights tab - streaks, prompts, and progress',
+            tabBarIcon: ({ color }) => <Flame color={color} size={24} strokeWidth={1.5} />,
+            tabBarAccessibilityLabel: 'Insights — streaks and progress',
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({ color }) => (
-              <Settings color={color} size={24} strokeWidth={1.5} />
-            ),
-            tabBarAccessibilityLabel: 'Settings tab - export data and preferences',
+            tabBarIcon: ({ color }) => <Settings color={color} size={24} strokeWidth={1.5} />,
+            tabBarAccessibilityLabel: 'Settings — preferences',
           }}
         />
-        {/* Hidden screens - accessed via navigation */}
-        <Tabs.Screen
-          name="profile"
-          options={{
-            href: null,
-            title: 'Profile',
-          }}
-        />
-        <Tabs.Screen
-          name="reflect"
-          options={{
-            href: null,
-            title: 'Reflect',
-          }}
-        />
-        <Tabs.Screen
-          name="conversations"
-          options={{
-            href: null,
-            title: 'Messages',
-          }}
-        />
-        <Tabs.Screen
-          name="chat"
-          options={{
-            href: null,
-            title: 'Chat',
-          }}
-        />
+        {/* Hidden screens */}
+        <Tabs.Screen name="profile" options={{ href: null, title: 'Profile' }} />
+        <Tabs.Screen name="reflect" options={{ href: null, title: 'Reflect' }} />
+        <Tabs.Screen name="conversations" options={{ href: null, title: 'Messages' }} />
+        <Tabs.Screen name="chat" options={{ href: null, title: 'Chat' }} />
       </Tabs>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
+  container: { flex: 1, backgroundColor: '#060608' },
 });
-

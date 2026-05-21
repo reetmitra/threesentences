@@ -1,9 +1,3 @@
-/**
- * ThreeSixtyThree™ Three Sentences - Today Screen
- *
- * The main entry screen. Write three sentences, submit, done.
- */
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
@@ -29,53 +23,34 @@ import { EntryCard } from '@/components/EntryCard';
 import { SkeletonToday } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, componentRadius, edgePadding } from '@/theme/spacing';
 import { countSentences } from '@/utils/sentenceDetection';
-import {
-  getTodayEntry,
-  saveEntry,
-  saveDraft,
-  getDraft,
-  getEntryStats,
-} from '@/store/entries';
+import { getTodayEntry, saveEntry, saveDraft, getDraft, getEntryStats } from '@/store/entries';
 import { Entry, getTodayDateString } from '@/types/entry';
 
 const AUTO_SAVE_INTERVAL = 5000;
 
-// Custom Animated Button Component
-const AnimatedButton = ({
+function SubmitButton({
   status,
   onPress,
-  disabled
+  disabled,
 }: {
   status: 'idle' | 'submitting' | 'success';
   onPress: () => void;
   disabled: boolean;
-}) => {
+}) {
+  const c = colors.dark;
   const [initialWidth, setInitialWidth] = useState<number | null>(null);
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const fadeValue = useRef(new Animated.Value(1)).current;
   const widthAnim = useRef(new Animated.Value(1)).current;
+  const fadeValue = useRef(new Animated.Value(1)).current;
+  const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (status === 'success') {
       Animated.parallel([
-        Animated.timing(widthAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: false,
-        }),
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: false,
-        }),
-        Animated.timing(fadeValue, {
-          toValue: 0,
-          duration: 400,
-          delay: 800,
-          useNativeDriver: false,
-        }),
+        Animated.timing(widthAnim, { toValue: 0, duration: 300, useNativeDriver: false }),
+        Animated.timing(spinValue, { toValue: 1, duration: 400, useNativeDriver: false }),
+        Animated.timing(fadeValue, { toValue: 0, duration: 400, delay: 800, useNativeDriver: false }),
       ]).start();
     } else if (status === 'idle') {
       widthAnim.setValue(1);
@@ -84,77 +59,47 @@ const AnimatedButton = ({
     }
   }, [status]);
 
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
+  const spin = spinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const animatedWidth = initialWidth
-    ? widthAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [56, initialWidth],
-    })
+    ? widthAnim.interpolate({ inputRange: [0, 1], outputRange: [56, initialWidth] })
     : '100%';
 
-  const renderContent = () => {
-    if (status === 'submitting') {
-      return <ActivityIndicator color="#FFFFFF" size="small" />;
-    }
-    if (status === 'success') {
-      return (
-        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Check color="#FFFFFF" size={24} />
-        </Animated.View>
-      );
-    }
-    return (
-      <Animated.View style={{ opacity: fadeValue }}>
-        <Text variant="base" weight="medium" style={{ color: '#FFFFFF' }}>Done</Text>
-      </Animated.View>
-    );
-  };
+  const isEnabled = !disabled && status === 'idle';
 
   return (
     <View
       style={{ width: '100%', alignItems: 'center' }}
-      onLayout={(e) => {
-        if (!initialWidth) setInitialWidth(e.nativeEvent.layout.width);
-      }}
+      onLayout={(e) => { if (!initialWidth) setInitialWidth(e.nativeEvent.layout.width); }}
     >
-      <Animated.View
-        style={{
-          opacity: fadeValue,
-          width: animatedWidth,
-          height: 56,
-        }}
-      >
+      <Animated.View style={{ opacity: fadeValue, width: animatedWidth, height: 52 }}>
         <TouchableOpacity
           onPress={onPress}
-          disabled={disabled || status !== 'idle'}
+          disabled={!isEnabled}
           style={[
-            styles.animatedButton,
+            styles.submitButton,
             {
-              backgroundColor: disabled ? '#2A2A2A' : '#333333',
-              opacity: disabled && status === 'idle' ? 0.5 : 1,
-              width: '100%',
-              marginTop: 0,
-            }
+              backgroundColor: isEnabled ? c.textBright : c.frame,
+              opacity: disabled && status === 'idle' ? 0.4 : 1,
+            },
           ]}
         >
-          {renderContent()}
+          {status === 'submitting'
+            ? <ActivityIndicator color={c.paper} size="small" />
+            : status === 'success'
+            ? <Animated.View style={{ transform: [{ rotate: spin }] }}><Check color={c.paper} size={22} /></Animated.View>
+            : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: c.paper }}>Done</Text></Animated.View>
+          }
         </TouchableOpacity>
       </Animated.View>
     </View>
   );
-};
-
+}
 
 export default function TodayScreen() {
   const { userId } = useAuth();
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const { showToast } = useToast();
 
-  // State
   const [content, setContent] = useState('');
   const [todayEntry, setTodayEntry] = useState<Entry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -164,15 +109,12 @@ export default function TodayScreen() {
   const [milestoneStreak, setMilestoneStreak] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Refs for auto-save
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
 
-  // Calculate sentence count
   const sentenceCount = countSentences(content);
   const canSubmit = sentenceCount === 3;
 
-  // Load existing entry or draft on mount
   const loadData = useCallback(async () => {
     if (!userId) return;
     setIsLoading(true);
@@ -188,151 +130,96 @@ export default function TodayScreen() {
           lastSavedContent.current = draft.content;
         }
       }
-    } catch (error) {
-      console.error('Failed to load data:', error);
-      showToast('error', "Couldn't load today's entry. Pull to refresh.");
+    } catch {
+      showToast('error', 'Could not load today\'s entry');
     } finally {
       setIsLoading(false);
     }
   }, [userId]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
-
-  // Pull-to-refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
   }, [loadData]);
 
-  // Auto-save draft
   useEffect(() => {
     if (todayEntry) return;
-
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       if (content !== lastSavedContent.current && content.trim()) {
-        await saveDraft({
-          content,
-          date: getTodayDateString(),
-          lastSaved: new Date().toISOString()
-        });
+        await saveDraft({ content, date: getTodayDateString(), lastSaved: new Date().toISOString() });
         lastSavedContent.current = content;
       }
     }, AUTO_SAVE_INTERVAL);
-
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [content, todayEntry]);
 
-  // Handle submission
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || submissionStatus !== 'idle' || !userId) return;
-
     setShowConfirmation(false);
     setSubmissionStatus('submitting');
-
     try {
       const entry = await saveEntry(userId, content);
-
       setSubmissionStatus('success');
-      showToast('success', 'Entry saved. See you tomorrow.');
-
-      // Check for streak milestone
       const stats = await getEntryStats(userId);
       const streak = stats.currentStreak;
-
-      // Wait for animation to finish before switching screens
+      showToast('success', 'STREAK +1 · LOCKED');
       setTimeout(() => {
         setTodayEntry(entry);
         setContent('');
         setSubmissionStatus('idle');
-
-        // Show milestone modal if applicable
         if (isMilestone(streak)) {
           setMilestoneStreak(streak);
           setShowMilestone(true);
         }
       }, 1500);
-    } catch (error) {
-      console.error('Failed to save entry:', error);
-      showToast('error', 'Failed to save your entry. Please try again.');
+    } catch {
+      showToast('error', 'Save failed — try again');
       setSubmissionStatus('idle');
     }
   }, [content, canSubmit, submissionStatus, userId]);
 
-  // Format today's date
-  const formatTodayDate = () => {
-    const now = new Date();
-    return now.toLocaleDateString('en-US', {
+  const formatTodayDate = () =>
+    new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
-    });
-  };
+    }).toUpperCase();
 
-  // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: activeColors.background }]}
-        edges={['top']}
-      >
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
         <SkeletonToday />
       </SafeAreaView>
     );
   }
 
-  // Entry already submitted
   if (todayEntry) {
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: activeColors.background }]}
-        edges={['top']}
-      >
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={activeColors.accent}
-            />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} />}
         >
           <View style={styles.header}>
-            <Text variant="sm" color="secondary" style={styles.dateLabel}>
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: 6 }}>
               {formatTodayDate()}
             </Text>
-            <Text variant="2xl" weight="bold">
+            <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary }}>
               Today's Entry
             </Text>
           </View>
-
           <EntryCard entry={todayEntry} />
-
           <View style={styles.submittedMessage}>
-            <Text variant="sm" color="secondary" centered>
-              You've already journaled today.{'\n'}
-              See you tomorrow.
+            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1 }}>
+              Locked · See you tomorrow
             </Text>
-
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => {
@@ -341,8 +228,8 @@ export default function TodayScreen() {
                 setSubmissionStatus('idle');
               }}
             >
-              <Text variant="xs" color="tertiary" style={{ textDecorationLine: 'underline' }}>
-                Edit Entry
+              <Text family="mono" variant="xs" style={{ color: c.textTertiary, textDecorationLine: 'underline', letterSpacing: 0.5 }}>
+                edit entry
               </Text>
             </TouchableOpacity>
           </View>
@@ -351,12 +238,8 @@ export default function TodayScreen() {
     );
   }
 
-  // Entry input mode
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
-      edges={['top']}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -364,10 +247,10 @@ export default function TodayScreen() {
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text variant="sm" color="secondary" style={styles.dateLabel}>
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: 6 }}>
               {formatTodayDate()}
             </Text>
-            <Text variant="2xl" weight="bold">
+            <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary }}>
               Three Sentences
             </Text>
           </View>
@@ -383,20 +266,12 @@ export default function TodayScreen() {
 
           <View style={styles.footer}>
             <SentenceCounter count={sentenceCount} target={3} />
-
-            <AnimatedButton
+            <View style={{ height: spacing[4] }} />
+            <SubmitButton
               status={submissionStatus}
               onPress={() => setShowConfirmation(true)}
               disabled={!canSubmit}
             />
-
-            {content.trim() && !canSubmit && submissionStatus === 'idle' && (
-              <Text variant="xs" color="tertiary" centered style={styles.hint}>
-                {sentenceCount < 3
-                  ? `${3 - sentenceCount} more sentence${3 - sentenceCount !== 1 ? 's' : ''} to go`
-                  : 'Please write exactly 3 sentences'}
-              </Text>
-            )}
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -407,7 +282,6 @@ export default function TodayScreen() {
         onConfirm={handleSubmit}
         loading={submissionStatus === 'submitting'}
       />
-
       <MilestoneModal
         visible={showMilestone}
         streak={milestoneStreak}
@@ -418,58 +292,15 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: spacing[4],
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing[4],
-  },
-  header: {
-    marginBottom: spacing[5],
-  },
-  dateLabel: {
-    marginBottom: spacing[1],
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  inputContainer: {
-    flex: 1,
-    marginBottom: spacing[4],
-  },
-  footer: {
-    paddingTop: spacing[6],
-  },
-  animatedButton: {
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hint: {
-    marginTop: spacing[4],
-  },
-  submittedMessage: {
-    marginTop: spacing[6],
-    paddingVertical: spacing[4],
-  },
-  editButton: {
-    marginTop: spacing[4],
-    alignSelf: 'center',
-    padding: spacing[2],
-  },
+  container: { flex: 1 },
+  keyboardView: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: edgePadding.content, paddingTop: spacing[4] },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: edgePadding.content, paddingBottom: spacing[8] },
+  header: { marginBottom: spacing[5] },
+  inputContainer: { flex: 1, marginBottom: spacing[4] },
+  footer: { paddingTop: spacing[4], paddingBottom: spacing[6] },
+  submitButton: { height: 52, borderRadius: componentRadius.button, alignItems: 'center', justifyContent: 'center', width: '100%' },
+  submittedMessage: { marginTop: spacing[6], alignItems: 'center', gap: spacing[3] },
+  editButton: { padding: spacing[2] },
 });
