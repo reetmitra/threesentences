@@ -58,7 +58,7 @@ const GROUP_ICON_MAP: Record<string, LucideIcon> = {
 const MIN_INTERESTS = PROFILE_CONSTRAINTS.interests.minCount;
 
 export default function InterestsScreen() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
   const { user } = useAuth();
 
@@ -201,15 +201,15 @@ export default function InterestsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
+      style={[styles.container, { backgroundColor: c.background }]}
       edges={['top', 'bottom']}
     >
       {/* Progress Bar */}
-      <View style={[styles.progressContainer, { backgroundColor: activeColors.surface }]}>
+      <View style={[styles.progressContainer, { backgroundColor: c.surface }]}>
         <Animated.View
           style={[
             styles.progressBar,
-            { backgroundColor: activeColors.accent },
+            { backgroundColor: c.textBright },
             progressAnimatedStyle,
           ]}
         />
@@ -222,10 +222,13 @@ export default function InterestsScreen() {
       >
         {/* Header */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
-          <Text variant="2xl" weight="bold" style={styles.title}>
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: spacing[2] }}>
+            Interests
+          </Text>
+          <Text family="sansSemibold" variant="2xl" style={[styles.title, { color: c.textPrimary }]}>
             What defines you?
           </Text>
-          <Text variant="base" color="secondary" style={styles.subtitle}>
+          <Text serif variant="base" style={[styles.subtitle, { color: c.textSecondary }]}>
             Select interests that reflect your lifestyle. This helps connect you with
             like-minded individuals.
           </Text>
@@ -236,11 +239,11 @@ export default function InterestsScreen() {
           entering={FadeIn.delay(300).duration(300)}
           style={styles.counterContainer}
         >
-          <Text variant="sm" color="secondary">
+          <Text family="mono" variant="sm" style={{ color: c.textSecondary }}>
             {selectedInterests.length} of {MIN_INTERESTS}+ selected
           </Text>
           {isEnoughSelected && (
-            <Text variant="sm" style={{ color: activeColors.accent }}>
+            <Text family="mono" variant="sm" style={{ color: c.textBright }}>
               {' '}
               Ready to continue
             </Text>
@@ -264,32 +267,32 @@ export default function InterestsScreen() {
                 {/* Group Header */}
                 <Pressable
                   onPress={() => handleToggleGroup(groupKey)}
-                  style={[styles.groupHeader, { borderColor: activeColors.border }]}
+                  style={[styles.groupHeader, { borderColor: c.frame }]}
                 >
                   <View style={styles.groupHeaderLeft}>
                     {(() => {
                       const IconComp = GROUP_ICON_MAP[group.icon] || Briefcase;
-                      return <IconComp size={18} color={activeColors.textSecondary} strokeWidth={2} />;
+                      return <IconComp size={18} color={c.textSecondary} strokeWidth={2} />;
                     })()}
-                    <Text variant="base" weight="semibold" style={styles.groupTitle}>
+                    <Text family="sansSemibold" variant="base" style={[styles.groupTitle, { color: c.textPrimary }]}>
                       {group.label}
                     </Text>
                     {selectedCount > 0 && (
                       <View
                         style={[
                           styles.selectedBadge,
-                          { backgroundColor: activeColors.accent },
+                          { backgroundColor: c.textBright },
                         ]}
                       >
-                        <Text variant="xs" weight="semibold" style={{ color: '#000' }}>
+                        <Text family="sansSemibold" variant="xs" style={{ color: c.paper }}>
                           {selectedCount}
                         </Text>
                       </View>
                     )}
                   </View>
                   {isExpanded
-                    ? <ChevronUp size={20} color={activeColors.textSecondary} strokeWidth={2} />
-                    : <ChevronDown size={20} color={activeColors.textSecondary} strokeWidth={2} />
+                    ? <ChevronUp size={20} color={c.textSecondary} strokeWidth={2} />
+                    : <ChevronDown size={20} color={c.textSecondary} strokeWidth={2} />
                   }
                 </Pressable>
 
@@ -306,19 +309,19 @@ export default function InterestsScreen() {
                             styles.interestChip,
                             {
                               backgroundColor: isSelected
-                                ? activeColors.accent
-                                : activeColors.surface,
+                                ? c.textBright
+                                : c.surface,
                               borderColor: isSelected
-                                ? activeColors.accent
-                                : activeColors.border,
+                                ? c.textBright
+                                : c.frame,
                             },
                           ]}
                         >
                           <Text
+                            family={isSelected ? 'sansSemibold' : 'sans'}
                             variant="sm"
-                            weight={isSelected ? 'semibold' : 'regular'}
                             style={{
-                              color: isSelected ? '#000' : activeColors.textPrimary,
+                              color: isSelected ? c.paper : c.textPrimary,
                             }}
                           >
                             {interest.label}
@@ -338,7 +341,7 @@ export default function InterestsScreen() {
       <Animated.View
         style={[
           styles.bottomSection,
-          { borderTopColor: activeColors.border },
+          { borderTopColor: c.frame },
           buttonAnimatedStyle,
         ]}
       >
@@ -353,7 +356,7 @@ export default function InterestsScreen() {
           loading={loading}
           style={styles.continueButton}
         />
-        <Text variant="xs" color="tertiary" centered style={styles.hint}>
+        <Text family="mono" variant="xs" style={[styles.hint, { color: c.textTertiary, textAlign: 'center' }]}>
           You can always update these later
         </Text>
       </Animated.View>

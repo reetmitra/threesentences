@@ -84,26 +84,26 @@ const SLIDES: OnboardingSlide[] = [
 
 /** Mini practice input for Slide 2 */
 function PracticeInput() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const [text, setText] = useState('');
   const sentenceCount = countSentences(text);
 
   return (
     <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.practiceContainer}>
-      <Text variant="sm" color="secondary" style={styles.practiceLabel}>
+      <Text family="mono" variant="sm" style={[styles.practiceLabel, { color: c.textSecondary }]}>
         Try it — write 3 sentences:
       </Text>
       <TextInput
         style={[
           styles.practiceInput,
           {
-            backgroundColor: activeColors.surface,
-            color: activeColors.textPrimary,
-            borderColor: sentenceCount === 3 ? activeColors.accent : activeColors.border,
+            backgroundColor: c.surface,
+            color: c.textPrimary,
+            borderColor: sentenceCount === 3 ? c.textBright : c.frame,
           },
         ]}
         placeholder="Start typing..."
-        placeholderTextColor={activeColors.textTertiary}
+        placeholderTextColor={c.textTertiary}
         multiline
         value={text}
         onChangeText={setText}
@@ -116,7 +116,7 @@ function PracticeInput() {
 
 /** No-edit demo animation for Slide 3 */
 function NoEditDemo() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
 
   // Typewriter text
   const DEMO_TEXT = 'Today I felt grateful.';
@@ -170,11 +170,11 @@ function NoEditDemo() {
   return (
     <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.noEditContainer}>
       {/* Simulated entry */}
-      <View style={[styles.noEditEntry, { backgroundColor: activeColors.surface }]}>
-        <Text variant="base" style={{ color: activeColors.textPrimary, minHeight: 24 }}>
+      <View style={[styles.noEditEntry, { backgroundColor: c.surface }]}>
+        <Text variant="base" style={{ color: c.textPrimary, minHeight: 24 }}>
           {displayText}
           {!typingDone && (
-            <Text variant="base" style={{ color: activeColors.accent }}>|</Text>
+            <Text variant="base" style={{ color: c.textBright }}>|</Text>
           )}
         </Text>
       </View>
@@ -182,12 +182,12 @@ function NoEditDemo() {
       {/* Edit icon with strikethrough */}
       {typingDone && (
         <Animated.View style={[styles.noEditIconContainer, editStyle]}>
-          <Edit3 size={22} color={activeColors.textTertiary} />
+          <Edit3 size={22} color={c.textTertiary} />
           {/* Red strikethrough line */}
           <Animated.View
             style={[
               styles.strikethrough,
-              { backgroundColor: activeColors.error },
+              { backgroundColor: c.warn },
               strikeStyle,
             ]}
           />
@@ -196,7 +196,7 @@ function NoEditDemo() {
 
       {typingDone && (
         <Animated.View entering={FadeIn.delay(1400).duration(400)}>
-          <Text variant="xs" color="secondary" centered style={styles.noEditLabel}>
+          <Text family="mono" variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
             Entries are permanent once submitted
           </Text>
         </Animated.View>
@@ -206,7 +206,7 @@ function NoEditDemo() {
 }
 
 export default function OnboardingScreen() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -265,26 +265,30 @@ export default function OnboardingScreen() {
     }
   ).current;
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
+  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => (
     <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
       <View style={styles.slideContent}>
+        {/* Slide eyebrow */}
+        <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 2, marginBottom: spacing[4] }}>
+          {`0${index + 1} / 04`}
+        </Text>
         {item.subtitle && (
-          <Text variant="sm" color="secondary" style={styles.subtitle}>
+          <Text family="mono" variant="sm" uppercase style={[styles.subtitle, { color: c.textSecondary, letterSpacing: 2 }]}>
             {item.subtitle}
           </Text>
         )}
-        <Text variant="3xl" weight="bold" style={styles.title}>
+        <Text family="sansSemibold" variant="2xl" style={[styles.title, { color: c.textPrimary, marginBottom: spacing[3] }]}>
           {item.title}
         </Text>
-        <Text variant="lg" color="secondary" style={styles.description}>
+        <Text serif variant="base" style={[styles.description, { color: c.textSecondary, lineHeight: 28 }]}>
           {item.description}
         </Text>
         {item.highlight && (
-          <View style={[styles.highlightBox, { backgroundColor: activeColors.surface }]}>
+          <View style={[styles.highlightBox, { backgroundColor: c.surface }]}>
             <Text
+              serif
               variant="base"
-              weight="medium"
-              style={[styles.highlight, { color: activeColors.textPrimary }]}
+              style={[styles.highlight, { color: c.textPrimary }]}
             >
               {item.highlight}
             </Text>
@@ -309,13 +313,9 @@ export default function OnboardingScreen() {
           <View
             style={[
               styles.dot,
-              {
-                backgroundColor:
-                  index === currentIndex
-                    ? activeColors.accent
-                    : activeColors.surfaceHover,
-              },
-              index === currentIndex && styles.dotActive,
+              index === currentIndex
+                ? { backgroundColor: c.textBright, width: 20, height: 6, borderRadius: 3 }
+                : { backgroundColor: c.frame, width: 6, height: 6, borderRadius: 3 },
             ]}
           />
         </TouchableOpacity>
@@ -325,7 +325,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
+      style={[styles.container, { backgroundColor: c.background }]}
       edges={['top', 'bottom']}
     >
       <FlatList

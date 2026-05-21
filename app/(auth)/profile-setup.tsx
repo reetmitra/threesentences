@@ -43,7 +43,7 @@ import {
 import { updateProfile, completeProfileSetup } from '@/store/profile';
 
 export default function ProfileSetupScreen() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
   const { user } = useAuth();
 
@@ -180,7 +180,7 @@ export default function ProfileSetupScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
+      style={[styles.container, { backgroundColor: c.background }]}
       edges={['top', 'bottom']}
     >
       <KeyboardAvoidingView
@@ -195,11 +195,11 @@ export default function ProfileSetupScreen() {
         >
           {/* Header */}
           <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-            <Text variant="2xl" weight="bold" style={styles.title}>
-              Complete Your Profile
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+              Profile setup
             </Text>
-            <Text variant="base" color="secondary" style={styles.subtitle}>
-              Let others in the community get to know you better
+            <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[2] }}>
+              Who are you?
             </Text>
           </Animated.View>
 
@@ -208,23 +208,23 @@ export default function ProfileSetupScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
                 <Text
+                  family="mono"
                   variant="sm"
-                  color="secondary"
-                  weight="medium"
-                  style={styles.inputLabel}
+                  uppercase
+                  style={[styles.inputLabel, { color: c.textSecondary }]}
                 >
                   Username *
                 </Text>
                 <Animated.View style={checkAnimatedStyle}>
                   {usernameValid && (
-                    <Check size={16} color={activeColors.accent} strokeWidth={3} />
+                    <Check size={16} color={c.textBright} strokeWidth={3} />
                   )}
                 </Animated.View>
               </View>
               <View style={styles.usernameContainer}>
                 <Text
                   variant="base"
-                  style={[styles.usernamePrefix, { color: activeColors.textTertiary }]}
+                  style={[styles.usernamePrefix, { color: c.textTertiary }]}
                 >
                   @
                 </Text>
@@ -242,7 +242,7 @@ export default function ProfileSetupScreen() {
                 <Animated.View entering={FadeIn.duration(200)}>
                   <Text
                     variant="xs"
-                    style={[styles.errorText, { color: activeColors.error }]}
+                    style={[styles.errorText, { color: c.warn }]}
                   >
                     {usernameError}
                   </Text>
@@ -253,10 +253,10 @@ export default function ProfileSetupScreen() {
             {/* Age Input */}
             <View style={styles.inputGroup}>
               <Text
+                family="mono"
                 variant="sm"
-                color="secondary"
-                weight="medium"
-                style={styles.inputLabel}
+                uppercase
+                style={[styles.inputLabel, { color: c.textSecondary }]}
               >
                 Age (optional)
               </Text>
@@ -272,7 +272,7 @@ export default function ProfileSetupScreen() {
                 <Animated.View entering={FadeIn.duration(200)}>
                   <Text
                     variant="xs"
-                    style={[styles.errorText, { color: activeColors.error }]}
+                    style={[styles.errorText, { color: c.warn }]}
                   >
                     {ageError}
                   </Text>
@@ -284,14 +284,14 @@ export default function ProfileSetupScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
                 <Text
+                  family="mono"
                   variant="sm"
-                  color="secondary"
-                  weight="medium"
-                  style={styles.inputLabel}
+                  uppercase
+                  style={[styles.inputLabel, { color: c.textSecondary }]}
                 >
                   Bio (optional)
                 </Text>
-                <Text variant="xs" color="tertiary">
+                <Text family="mono" variant="xs" style={{ color: c.textTertiary }}>
                   {bio.length}/{PROFILE_CONSTRAINTS.bio.maxLength}
                 </Text>
               </View>
@@ -309,7 +309,7 @@ export default function ProfileSetupScreen() {
         </ScrollView>
 
         {/* Bottom Action */}
-        <View style={[styles.bottomSection, { borderTopColor: activeColors.border }]}>
+        <View style={[styles.bottomSection, { borderTopColor: c.frame }]}>
           <Animated.View style={buttonAnimatedStyle}>
             <Button
               title="Let's Go"
