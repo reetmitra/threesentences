@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Animated, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
@@ -20,6 +20,21 @@ export function Toast({ type, message, visible, duration = 3000, onDismiss }: To
   const translateY = useRef(new Animated.Value(-80)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
+  const hide = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: -80,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onDismiss());
+  }, [onDismiss, translateY, opacity]);
+
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -40,22 +55,7 @@ export function Toast({ type, message, visible, duration = 3000, onDismiss }: To
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [visible]);
-
-  const hide = () => {
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: -80,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onDismiss());
-  };
+  }, [visible, hide, duration]);
 
   const borderColor = type === 'error' ? colors.dark.warn : colors.dark.frame;
 
@@ -68,9 +68,9 @@ export function Toast({ type, message, visible, duration = 3000, onDismiss }: To
           transform: [{ translateY }],
           opacity,
           borderColor,
+          pointerEvents: 'box-none' as const,
         },
       ]}
-      pointerEvents="box-none"
     >
       <Pressable onPress={hide}>
         <Text
