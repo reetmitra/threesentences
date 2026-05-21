@@ -1,9 +1,3 @@
-/**
- * Three™ - Streak Counter Component
- *
- * Card showing current/longest streak and progress toward 363.
- */
-
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -14,7 +8,6 @@ import Animated, {
   FadeInDown,
   Easing,
 } from 'react-native-reanimated';
-import { Flame, Trophy, Target } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -25,14 +18,9 @@ interface StreakCounterProps {
   totalEntries: number;
 }
 
-export function StreakCounter({
-  currentStreak,
-  longestStreak,
-  totalEntries,
-}: StreakCounterProps) {
-  const activeColors = colors.dark;
+export function StreakCounter({ currentStreak, longestStreak, totalEntries }: StreakCounterProps) {
+  const c = colors.dark;
   const progressWidth = useSharedValue(0);
-
   const progressPercent = Math.min(totalEntries / 363, 1);
 
   useEffect(() => {
@@ -49,62 +37,76 @@ export function StreakCounter({
   return (
     <Animated.View
       entering={FadeInDown.duration(400)}
-      style={[styles.container, { backgroundColor: activeColors.surface }]}
+      style={[styles.container, { backgroundColor: c.surface, borderColor: c.frame }]}
     >
-      {/* Streak stats row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Flame size={20} color={activeColors.warning} strokeWidth={2} />
-          <Text variant="2xl" weight="bold">
-            {currentStreak}
+      {/* Hero streak numeral */}
+      <View style={styles.heroRow}>
+        <Text
+          family="serifSemiboldItalic"
+          fixedSize
+          style={[styles.heroNumber, { color: c.textPrimary }]}
+        >
+          {currentStreak}
+        </Text>
+        <View style={styles.heroMeta}>
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+            Day streak
           </Text>
-          <Text variant="xs" color="secondary">
-            Current
-          </Text>
+          {currentStreak > 0 && (
+            <Text family="mono" variant="xs" style={{ color: c.textTertiary, marginTop: 2 }}>
+              keep going
+            </Text>
+          )}
         </View>
+      </View>
 
-        <View style={[styles.divider, { backgroundColor: activeColors.border }]} />
-
+      {/* 3-stat tiles */}
+      <View style={[styles.statsRow, { borderTopColor: c.frame }]}>
         <View style={styles.statItem}>
-          <Trophy size={20} color={activeColors.textSecondary} strokeWidth={2} />
-          <Text variant="2xl" weight="bold">
+          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
             {longestStreak}
           </Text>
-          <Text variant="xs" color="secondary">
-            Longest
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
+            Best
           </Text>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: activeColors.border }]} />
+        <View style={[styles.divider, { backgroundColor: c.frame }]} />
 
         <View style={styles.statItem}>
-          <Target size={20} color={activeColors.textSecondary} strokeWidth={2} />
-          <Text variant="2xl" weight="bold">
+          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
             {totalEntries}
           </Text>
-          <Text variant="xs" color="secondary">
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
             Total
+          </Text>
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: c.frame }]} />
+
+        <View style={styles.statItem}>
+          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
+            {363 - totalEntries > 0 ? 363 - totalEntries : 0}
+          </Text>
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
+            To go
           </Text>
         </View>
       </View>
 
-      {/* Progress bar */}
-      <View style={styles.progressSection}>
+      {/* Progress to 363 */}
+      <View style={[styles.progressSection, { borderTopColor: c.frame }]}>
         <View style={styles.progressLabelRow}>
-          <Text variant="xs" color="tertiary">
+          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
             Progress to 363
           </Text>
-          <Text variant="xs" color="tertiary">
+          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
             {totalEntries}/363
           </Text>
         </View>
-        <View style={[styles.progressTrack, { backgroundColor: activeColors.background }]}>
+        <View style={[styles.progressTrack, { backgroundColor: c.frame }]}>
           <Animated.View
-            style={[
-              styles.progressFill,
-              { backgroundColor: activeColors.accent },
-              progressStyle,
-            ]}
+            style={[styles.progressFill, { backgroundColor: c.textBright }, progressStyle]}
           />
         </View>
       </View>
@@ -115,25 +117,43 @@ export function StreakCounter({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    padding: spacing[4],
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: spacing[4],
+    overflow: 'hidden',
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[5],
+    paddingBottom: spacing[4],
+    gap: spacing[3],
+  },
+  heroNumber: {
+    fontSize: 64,
+    lineHeight: 68,
+  },
+  heroMeta: {
+    paddingBottom: 6,
   },
   statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingVertical: spacing[4],
   },
   statItem: {
-    alignItems: 'center',
-    gap: 2,
     flex: 1,
+    alignItems: 'center',
+    gap: 4,
   },
   divider: {
-    width: 1,
-    height: 48,
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
   },
   progressSection: {
-    marginTop: spacing[4],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing[5],
+    paddingVertical: spacing[4],
   },
   progressLabelRow: {
     flexDirection: 'row',
@@ -141,12 +161,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing[2],
   },
   progressTrack: {
-    height: 4,
-    borderRadius: 2,
+    height: 2,
+    borderRadius: 1,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 1,
   },
 });
