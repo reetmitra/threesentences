@@ -9,6 +9,9 @@ import { GlowOrb } from "@/components/GlowOrb";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { ProblemSection } from "@/components/sections/ProblemSection";
 import { ConstraintSection } from "@/components/sections/ConstraintSection";
+import { HowSection } from "@/components/sections/HowSection";
+import { FeaturesSection } from "@/components/sections/FeaturesSection";
+import { FAQSection } from "@/components/sections/FAQSection";
 import { The363Section } from "@/components/sections/The363Section";
 import { PrinciplesSection } from "@/components/sections/PrinciplesSection";
 import { AIReflectionSection } from "@/components/sections/AIReflectionSection";
@@ -60,6 +63,12 @@ export default function LandingPage() {
         <SectionDivider />
         <ConstraintSection />
         <DemoSlides />
+        <SectionDivider />
+        <HowSection />
+        <SectionDivider />
+        <FeaturesSection />
+        <SectionDivider />
+        <FAQSection />
         <SectionDivider />
         <The363Section />
         <SectionDivider />
