@@ -1,10 +1,52 @@
+import { useEffect } from 'react';
 import { View, StyleSheet, Easing } from 'react-native';
 import { Tabs } from 'expo-router';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing as ReanimatedEasing,
+} from 'react-native-reanimated';
 import { colors } from '@/theme/colors';
 import { Calendar, Settings } from 'lucide-react-native';
 import { Icon } from '@/components/ui/Icon';
+import { Text } from '@/components/ui/Text';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const c = colors.dark;
+
+function OfflineBanner() {
+  const isConnected = useNetworkStatus();
+  const reduced = useReducedMotion();
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(-8);
+  const EASE_OUT = ReanimatedEasing.out(ReanimatedEasing.ease);
+
+  useEffect(() => {
+    const dur = reduced ? 0 : 200;
+    if (!isConnected) {
+      opacity.value = withTiming(1, { duration: dur, easing: EASE_OUT });
+      translateY.value = withTiming(0, { duration: dur, easing: EASE_OUT });
+    } else {
+      opacity.value = withTiming(0, { duration: dur, easing: EASE_OUT });
+      translateY.value = withTiming(-8, { duration: dur, easing: EASE_OUT });
+    }
+  }, [isConnected, reduced]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.offlineBanner, style]} pointerEvents="none">
+      <Text family="monoMedium" variant="xs" uppercase style={{ color: '#F59E0B', letterSpacing: 1 }}>
+        · Offline · drafts saved locally
+      </Text>
+    </Animated.View>
+  );
+}
 
 export default function TabLayout() {
 
@@ -81,10 +123,23 @@ export default function TabLayout() {
         <Tabs.Screen name="conversations" options={{ href: null, title: 'Messages' }} />
         <Tabs.Screen name="chat" options={{ href: null, title: 'Chat' }} />
       </Tabs>
+      <OfflineBanner />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
+  offlineBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(245,158,11,0.2)',
+    paddingVertical: 6,
+    alignItems: 'center',
+    zIndex: 100,
+  },
 });
