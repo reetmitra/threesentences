@@ -66,3 +66,30 @@ export const springTransition: Transition = {
   damping: 18,
   mass: 1,
 };
+
+export const lpFloat: Variants = {
+  animate: {
+    y: [0, -10, 0],
+    transition: { duration: 4.5, ease: "easeInOut", repeat: Infinity },
+  },
+};
+
+export const lpModalIn: Variants = {
+  hidden: { opacity: 0, y: 16, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1 },
+};
+
+export const lpFadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+export const brandTransition: Transition = {
+  duration: 0.9,
+  ease: [0.16, 1, 0.3, 1] as any,
+};
+
+export const modalTransition: Transition = {
+  duration: 0.3,
+  ease: [0.16, 1, 0.3, 1] as any,
+};
