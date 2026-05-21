@@ -1,147 +1,150 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { TextScramble } from "@/components/ui/text-scramble";
-import { GradualSpacing } from "@/components/ui/gradual-spacing";
+import { useScrollY } from "@/hooks/useScrollY";
 
 interface HeroSectionProps {
   onCTAClick: () => void;
 }
 
-export function HeroSection({ onCTAClick }: HeroSectionProps) {
-  const [scrambleRelease, setScrambleRelease] = useState(false);
+function FloatingMark() {
+  return (
+    <motion.div
+      className="flex gap-[14px] items-center mb-10"
+      animate={{ y: [0, -10, 0] }}
+      transition={{ duration: 4.5, ease: "easeInOut", repeat: Infinity }}
+    >
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="w-[10px] h-[10px] rounded-full"
+          style={{ backgroundColor: "#FFFFF0" }}
+        />
+      ))}
+    </motion.div>
+  );
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => setScrambleRelease(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+export function HeroSection({ onCTAClick }: HeroSectionProps) {
+  const scrollY = useScrollY();
+  const elevated = scrollY > 40;
+
+  const heroOpacity = Math.max(0, 1 - scrollY / 600);
+  const heroY = Math.min(scrollY * 0.3, 200);
+  const glowY = scrollY * 0.15;
 
   return (
     <section className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Navigation */}
-      <motion.nav
-        className="fixed top-0 left-0 right-0 z-50 px-6 py-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
+      {/* Nav */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50"
+        style={{
+          padding: elevated ? "14px 64px" : "24px 64px",
+          background: elevated ? "rgba(6,6,8,0.78)" : "transparent",
+          backdropFilter: elevated ? "blur(16px)" : "none",
+          WebkitBackdropFilter: elevated ? "blur(16px)" : "none",
+          borderBottom: `1px solid ${elevated ? "rgba(255,255,255,0.06)" : "transparent"}`,
+          transition: "all 240ms ease",
+        }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold tracking-tight">THREE</span>
-            <span className="text-[10px] text-white/30 tracking-wider uppercase">
+            <span className="font-mono text-xs tracking-[3px] uppercase text-white/60">
+              Three Sentences
+            </span>
+            <span className="font-mono text-[9px] tracking-[2px] uppercase text-white/20">
               by 363™
             </span>
           </div>
-          <Button variant="outline" onClick={onCTAClick} className="text-sm">
+          <button
+            onClick={onCTAClick}
+            className="font-mono text-[11px] tracking-[2px] uppercase text-white/50 border border-white/10 px-4 py-2 rounded-full hover:text-white hover:border-white/30 transition-colors duration-200"
+          >
             Join the waitlist
-          </Button>
+          </button>
         </div>
-      </motion.nav>
+      </nav>
 
-      {/* Hero Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 relative">
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
-          {/* Main Logo */}
-          <div className="mb-6 flex flex-col items-center">
-            <GradualSpacing
-              text="THREE"
-              duration={0.6}
-              delayMultiple={0.08}
-              className="text-7xl sm:text-8xl md:text-[9rem] font-bold tracking-tight text-white leading-none"
-            />
-            <motion.p
-              className="text-sm sm:text-base text-white/50 tracking-wide mt-6 font-light text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 1.4 }}
-            >
-              be better, do better
-            </motion.p>
-            <motion.p
-              className="text-xs text-white/30 tracking-[0.2em] uppercase mt-3 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 1.6 }}
-            >
-              by 363™
-            </motion.p>
-          </div>
+      {/* Background glow */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
+          transform: `translateY(${glowY}px)`,
+          opacity: heroOpacity,
+        }}
+      />
 
-          {/* Tagline */}
+      {/* Hero content */}
+      <main
+        className="flex-1 flex flex-col items-center justify-center px-6 relative pt-24"
+        style={{
+          transform: `translateY(${heroY}px)`,
+          opacity: heroOpacity,
+        }}
+      >
+        <div className="text-center max-w-3xl mx-auto">
+          <FloatingMark />
+
+          <motion.h1
+            className="text-7xl sm:text-8xl font-bold tracking-tight text-white leading-none mb-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          >
+            Three Sentences
+          </motion.h1>
+
           <motion.p
+            className="font-mono text-[10px] tracking-[3px] uppercase text-white/30 mb-4"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+          >
+            BE BETTER. DO BETTER.
+          </motion.p>
+
+          <motion.p
+            className="text-white/40 text-base max-w-lg mx-auto mb-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1.8 }}
-            className="text-sm text-white/30 tracking-wide mb-8 mt-12"
+            transition={{ duration: 0.8, delay: 0.5 }}
           >
-            Three sentences. Every day.
+            A daily journaling practice built on one unbreakable constraint.
           </motion.p>
 
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 2.0 }}
-            className="text-sm text-white/30 max-w-lg mx-auto leading-relaxed mb-10"
-          >
-            A private community for high achievers who reflect daily.
-            Write three sentences, stay accountable, and grow alongside
-            people who are building something meaningful.
-          </motion.p>
-
-          {/* Release Date */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 2.2 }}
-            className="mb-10"
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.7 }}
           >
-            <TextScramble
-              className="text-xs text-white/20 uppercase tracking-[0.3em] font-mono"
-              duration={1.5}
-              speed={0.04}
-              trigger={scrambleRelease}
-              characterSet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            >
-              Q4 2026
-            </TextScramble>
-          </motion.div>
-
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 2.4 }}
-          >
-            <Button
-              size="lg"
+            <button
               onClick={onCTAClick}
-              className="text-base px-8 py-6 h-auto"
+              className="bg-white text-black font-mono text-xs tracking-[2px] uppercase px-8 py-3 rounded-full hover:-translate-y-px transition-transform duration-200"
             >
-              Get early access
-            </Button>
+              Join the waitlist
+            </button>
           </motion.div>
         </div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 3 }}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-px h-16 bg-gradient-to-b from-transparent to-white/20" />
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full bg-white/40"
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </div>
-        </motion.div>
       </main>
+
+      {/* Scroll cue */}
+      <div
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 pointer-events-none"
+        style={{ opacity: heroOpacity }}
+      >
+        <span className="font-mono text-[9px] tracking-[3px] uppercase text-white/25">
+          Scroll
+        </span>
+        <div
+          className="w-px h-14"
+          style={{
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.25), transparent)",
+          }}
+        />
+      </div>
     </section>
   );
 }
