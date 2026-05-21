@@ -12,18 +12,13 @@ import Animated, {
   withSpring,
   withTiming,
   FadeIn,
+  FadeInUp,
   SlideInLeft,
   Layout,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import {
-  MessageCircle,
-  UserPlus,
-  UserMinus,
-  Check,
-  X,
-  Clock,
-} from 'lucide-react-native';
+import { UserPlus, UserMinus, Clock } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/colors';
@@ -49,6 +44,7 @@ interface FriendCardProps {
   onRemoveFriend?: (user: UserInfo) => void;
   showActions?: boolean;
   index?: number;
+  isNew?: boolean;
 }
 
 const SPRING_CONFIG = {
@@ -68,6 +64,7 @@ export function FriendCard({
   onRemoveFriend,
   showActions = true,
   index = 0,
+  isNew = false,
 }: FriendCardProps) {
   const activeColors = colors.dark;
 
@@ -124,7 +121,7 @@ export function FriendCard({
                 }}
                 style={[styles.iconButton, { backgroundColor: activeColors.accent }]}
               >
-                <MessageCircle size={18} color={activeColors.background} strokeWidth={2} />
+                <Icon name="chat" size={18} color={activeColors.background} strokeWidth={2} />
               </Pressable>
             )}
           </View>
@@ -151,7 +148,7 @@ export function FriendCard({
                 }}
                 style={[styles.iconButton, { backgroundColor: activeColors.accent }]}
               >
-                <Check size={18} color={activeColors.background} strokeWidth={3} />
+                <Icon name="check" size={18} color={activeColors.background} strokeWidth={3} />
               </Pressable>
             )}
             {onRejectRequest && (
@@ -162,7 +159,7 @@ export function FriendCard({
                 }}
                 style={[styles.iconButton, { backgroundColor: activeColors.surfaceHover }]}
               >
-                <X size={18} color={activeColors.textSecondary} strokeWidth={2} />
+                <Icon name="close" size={18} color={activeColors.textSecondary} strokeWidth={2} />
               </Pressable>
             )}
           </View>
@@ -189,7 +186,11 @@ export function FriendCard({
   };
 
   return (
-    <Animated.View style={[styles.wrapper, animatedStyle]} layout={Layout.springify()}>
+    <Animated.View
+      style={[styles.wrapper, animatedStyle]}
+      layout={Layout.springify()}
+      entering={isNew ? FadeInUp.duration(300) : undefined}
+    >
       <AnimatedPressable
         onPress={handlePress}
         onPressIn={handlePressIn}

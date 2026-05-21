@@ -4,7 +4,7 @@
  * Main social hub with friends list, requests, and user search.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -26,13 +26,8 @@ import Animated, {
   Layout,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import {
-  Search,
-  Users,
-  MessageCircle,
-  Bell,
-  X,
-} from 'lucide-react-native';
+import { Users } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { FriendCard, FriendRequestCard } from '@/components/social';
 import { SkeletonFriendsList } from '@/components/ui/Skeleton';
@@ -76,6 +71,8 @@ export default function SocialScreen() {
   const [suggestedFriends, setSuggestedFriends] = useState<UserSearchResult[]>([]);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [newFriendId, setNewFriendId] = useState<string | null>(null);
+  const newFriendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animations
   const searchFocus = useSharedValue(0);
@@ -192,11 +189,34 @@ export default function SocialScreen() {
 
   const handleAcceptRequest = async (request: FriendRequest) => {
     if (!currentUser) return;
+
+    // Optimistic: remove request immediately
+    setPendingRequests((prev) => prev.filter((r) => r.id !== request.id));
+
+    // Optimistic: add the new friend at the TOP of the list
+    const optimisticFriend: Friend = {
+      id: request.id,
+      odUserId: currentUser.id,
+      friendUser: request.fromUser,
+      friendsSince: new Date().toISOString(),
+    };
+    setFriends((prev) => [optimisticFriend, ...prev]);
+
+    // Mark as new so FriendCard plays FadeInUp
+    if (newFriendTimerRef.current) clearTimeout(newFriendTimerRef.current);
+    setNewFriendId(request.fromUser.id);
+    newFriendTimerRef.current = setTimeout(() => setNewFriendId(null), 500);
+
     try {
       await acceptFriendRequest(request.id, currentUser.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await loadData();
+      // Refresh in background to sync server state without visual disruption
+      loadData();
     } catch (error) {
+      // Roll back on failure
+      setFriends((prev) => prev.filter((f) => f.id !== request.id));
+      setPendingRequests((prev) => [...prev, request]);
+      setNewFriendId(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', (error as Error).message);
     }
@@ -274,6 +294,7 @@ export default function SocialScreen() {
             friendshipStatus="friends"
             onMessage={handleMessage}
             index={index}
+            isNew={friend.friendUser.id === newFriendId}
           />
         ))
       )}
@@ -307,7 +328,7 @@ export default function SocialScreen() {
     <View style={styles.section}>
       {pendingRequests.length === 0 ? (
         <View style={styles.emptyState}>
-          <Bell size={48} color={c.textTertiary} strokeWidth={1.5} />
+          <Icon name="bell" size={48} color={c.textTertiary} strokeWidth={1.5} />
           <Text family="sansSemibold" variant="lg" style={[styles.emptyTitle, { color: c.textPrimary }]}>
             No pending requests
           </Text>
@@ -344,7 +365,7 @@ export default function SocialScreen() {
           onPress={() => router.push('/(tabs)/conversations')}
           style={styles.messagesButton}
         >
-          <MessageCircle size={24} color={c.textPrimary} strokeWidth={1.5} />
+          <Icon name="chat" size={24} color={c.textPrimary} strokeWidth={1.5} />
         </Pressable>
       </View>
 
@@ -356,7 +377,7 @@ export default function SocialScreen() {
           searchAnimatedStyle,
         ]}
       >
-        <Search size={20} color={c.textTertiary} strokeWidth={2} />
+        <Icon name="search" size={20} color={c.textTertiary} strokeWidth={2} />
         <TextInput
           style={[styles.searchInput, { color: c.textPrimary }]}
           placeholder="Search people..."
@@ -368,7 +389,7 @@ export default function SocialScreen() {
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => setSearchQuery('')}>
-            <X size={18} color={c.textTertiary} />
+            <Icon name="close" size={18} color={c.textTertiary} />
           </Pressable>
         )}
       </Animated.View>
