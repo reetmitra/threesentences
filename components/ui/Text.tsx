@@ -71,7 +71,7 @@ export function Text({
           fontSize,
           fontFamily: getFontFamily(),
           color: getTextColor(),
-          textAlign: centered ? 'center' : 'auto',
+          textAlign: centered ? 'center' : undefined,
           textTransform: uppercase ? 'uppercase' : undefined,
         },
         style,
