@@ -1,71 +1,81 @@
-/**
- * ThreeSixtyThree™ Three Sentences - Text Component
- * 
- * Typography with dynamic type support and dark-only styling.
- */
-
 import React from 'react';
 import { Text as RNText, TextProps as RNTextProps } from 'react-native';
 import { colors } from '@/theme/colors';
 import { typography, getScaledFontSizes } from '@/theme/typography';
 
+type FontFamily =
+  | 'sans'               // SchibstedGrotesk_400Regular — default UI
+  | 'sansSemibold'       // SchibstedGrotesk_600SemiBold — headings, CTAs
+  | 'sansBold'           // SchibstedGrotesk_700Bold
+  | 'serif'              // Newsreader_400Regular — reading-mode entries (upright)
+  | 'serifItalic'        // Newsreader_400Regular_Italic — wordmark, display numerals ≥ 40px ONLY
+  | 'serifSemiboldItalic' // Newsreader_600SemiBold_Italic — milestone numbers
+  | 'mono'               // IBMPlexMono_400Regular — metadata, eyebrows
+  | 'monoMedium';        // IBMPlexMono_500Medium — counters
+
 interface TextProps extends RNTextProps {
-  variant?: keyof typeof typography.fontSize;
-  weight?: keyof typeof typography.fontWeight;
-  color?: 'primary' | 'secondary' | 'tertiary' | 'accent' | 'warning' | 'error';
+  variant?: keyof ReturnType<typeof getScaledFontSizes>;
+  family?: FontFamily;
+  /** Shorthand: serif upright (reading mode) */
   serif?: boolean;
+  /** Shorthand: mono metadata */
   mono?: boolean;
+  color?: 'primary' | 'bright' | 'secondary' | 'tertiary' | 'accent' | 'warn';
   centered?: boolean;
-  /** Disable font scaling for specific cases (like sentence counter) */
   fixedSize?: boolean;
+  uppercase?: boolean;
 }
 
 export function Text({
   style,
   variant = 'base',
-  weight = 'regular',
-  color = 'primary',
+  family,
   serif,
   mono,
+  color = 'primary',
   centered,
   fixedSize = false,
+  uppercase,
   allowFontScaling = true,
   ...props
 }: TextProps) {
-  const activeColors = colors.dark; // Always dark mode
-
-  // Get font size - either scaled or fixed based on prop
+  const activeColors = colors.dark;
   const scaledSizes = getScaledFontSizes();
-  const fontSize = fixedSize ? typography.fontSize[variant] : scaledSizes[variant];
+  const fontSize = fixedSize
+    ? (typography.fontSize[variant as keyof typeof typography.fontSize] ?? 16)
+    : (scaledSizes[variant] ?? 16);
 
-  // Determine text color
-  const getTextColor = () => {
-    const colorMap: Record<string, keyof typeof activeColors> = {
-      primary: 'textPrimary',
-      secondary: 'textSecondary',
-      tertiary: 'textTertiary',
-      accent: 'accent',
-      warning: 'warning',
-      error: 'error',
-    };
-    return activeColors[colorMap[color] || 'textPrimary'];
+  const getFontFamily = (): string => {
+    if (family) return typography.fontFamily[family];
+    if (mono) return typography.fontFamily.mono;
+    if (serif) return typography.fontFamily.serif;
+    return typography.fontFamily.sans;
   };
 
-  const textStyle = {
-    fontSize,
-    fontWeight: typography.fontWeight[weight],
-    fontFamily: mono
-      ? typography.fontFamily.mono
-      : serif
-        ? typography.fontFamily.serif
-        : typography.fontFamily.primary,
-    color: getTextColor(),
-    textAlign: (centered ? 'center' : 'auto') as 'center' | 'auto' | 'left' | 'right' | 'justify',
+  const getTextColor = (): string => {
+    const map: Record<string, string> = {
+      primary: activeColors.textPrimary,
+      bright: activeColors.textBright,
+      secondary: activeColors.textSecondary,
+      tertiary: activeColors.textTertiary,
+      accent: activeColors.accent,
+      warn: activeColors.warn,
+    };
+    return map[color] ?? activeColors.textPrimary;
   };
 
   return (
     <RNText
-      style={[textStyle, style]}
+      style={[
+        {
+          fontSize,
+          fontFamily: getFontFamily(),
+          color: getTextColor(),
+          textAlign: centered ? 'center' : 'auto',
+          textTransform: uppercase ? 'uppercase' : undefined,
+        },
+        style,
+      ]}
       allowFontScaling={allowFontScaling && !fixedSize}
       {...props}
     />
