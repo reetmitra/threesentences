@@ -220,14 +220,16 @@ export async function getEntriesForMonth(
 ): Promise<Entry[]> {
   try {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 
     const { data, error } = await supabase
       .from('entries')
       .select('*')
       .eq('user_id', userId)
       .gte('date', startDate)
-      .lte('date', endDate)
+      .lt('date', endDate)
       .order('date', { ascending: false });
 
     if (error) {
@@ -253,14 +255,16 @@ export async function getEntryDatesForMonth(
 ): Promise<Set<string>> {
   try {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
 
     const { data, error } = await supabase
       .from('entries')
       .select('date')
       .eq('user_id', userId)
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lt('date', endDate);
 
     if (error) {
       console.error('Failed to fetch entry dates:', error);
