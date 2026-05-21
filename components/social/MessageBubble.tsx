@@ -5,18 +5,16 @@
  */
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
   withDelay,
-  interpolate,
-  FadeIn,
-  SlideInLeft,
-  SlideInRight,
+  Easing,
 } from 'react-native-reanimated';
-import { Check, CheckCheck } from 'lucide-react-native';
+import { CheckCheck } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -28,12 +26,11 @@ interface MessageBubbleProps {
   showTimestamp?: boolean;
   isLastInGroup?: boolean;
   index?: number;
+  failed?: boolean;
+  onRetry?: () => void;
 }
 
-const SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 150,
-};
+const FADE_UP_CONFIG = { duration: 240, easing: Easing.out(Easing.ease) };
 
 export function MessageBubble({
   message,
@@ -41,22 +38,24 @@ export function MessageBubble({
   showTimestamp = true,
   isLastInGroup = true,
   index = 0,
+  failed = false,
+  onRetry,
 }: MessageBubbleProps) {
   const activeColors = colors.dark;
   const isOwn = isOwnMessage(message, currentUserId);
 
-  // Animation values
-  const scale = useSharedValue(0.8);
+  // Animation values — pt-fade-up: opacity 0→1, translateY 12→0, 240ms ease-out
+  const translateY = useSharedValue(12);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
     const delay = Math.min(index * 30, 200);
-    scale.value = withDelay(delay, withSpring(1, SPRING_CONFIG));
-    opacity.value = withDelay(delay, withSpring(1, SPRING_CONFIG));
-  }, [index, scale, opacity]);
+    opacity.value = withDelay(delay, withTiming(1, FADE_UP_CONFIG));
+    translateY.value = withDelay(delay, withTiming(0, FADE_UP_CONFIG));
+  }, [index, translateY, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ translateY: translateY.value }],
     opacity: opacity.value,
   }));
 
@@ -77,7 +76,7 @@ export function MessageBubble({
       case 'sent':
         return (
           <View style={styles.statusIcon}>
-            <Check size={12} color={iconColor} strokeWidth={3} />
+            <Icon name="check" size={12} color={iconColor} strokeWidth={3} />
           </View>
         );
       case 'delivered':
@@ -113,6 +112,7 @@ export function MessageBubble({
             ? [styles.bubbleOwn, { backgroundColor: activeColors.accent }]
             : [styles.bubbleOther, { backgroundColor: activeColors.surface }],
           !isLastInGroup && (isOwn ? styles.bubbleOwnContinued : styles.bubbleOtherContinued),
+          failed && { borderWidth: 1, borderColor: activeColors.warn, backgroundColor: 'transparent' },
         ]}
       >
         <Text
@@ -125,6 +125,12 @@ export function MessageBubble({
           {message.content}
         </Text>
       </View>
+
+      {failed && isOwn && (
+        <Pressable onPress={onRetry} hitSlop={8}>
+          <Text variant="xs" style={{ color: activeColors.warn }}>✕ Failed · tap to retry</Text>
+        </Pressable>
+      )}
 
       {showTimestamp && (
         <View style={[styles.metaContainer, isOwn && styles.metaContainerOwn]}>

@@ -91,12 +91,6 @@ export function ChatInput({
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Animate button press
-    sendButtonScale.value = withSpring(0.8, { damping: 10 });
-    setTimeout(() => {
-      sendButtonScale.value = withSpring(1, SPRING_CONFIG);
-    }, 100);
-
     onSend(message.trim());
     setMessage('');
 
