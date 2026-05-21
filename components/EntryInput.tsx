@@ -9,11 +9,9 @@ import React, { useEffect, useRef } from 'react';
 import {
   TextInput,
   StyleSheet,
-  View,
   Platform,
 } from 'react-native';
 import { colors } from '@/theme/colors';
-import { typography } from '@/theme/typography';
 import { spacing } from '@/theme/spacing';
 
 interface EntryInputProps {
@@ -45,49 +43,42 @@ export function EntryInput({
   }, [autoFocus]);
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        ref={inputRef}
-        style={[
-          styles.input,
-          {
-            backgroundColor: activeColors.surface,
-            color: activeColors.textPrimary,
-            borderColor: activeColors.border,
-          },
-        ]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={activeColors.textTertiary}
-        multiline
-        textAlignVertical="top"
-        editable={editable}
-        autoFocus={autoFocus}
-        autoCapitalize="sentences"
-        autoCorrect
-        spellCheck
-        selectionColor={activeColors.accent}
-        cursorColor={activeColors.accent}
-        accessibilityLabel="Journal entry input"
-        accessibilityHint="Write your three sentences for today"
-      />
-    </View>
+    <TextInput
+      ref={inputRef}
+      style={[
+        styles.input,
+        {
+          backgroundColor: activeColors.paper,
+          color: activeColors.textPrimary,
+        },
+      ]}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={activeColors.textTertiary}
+      multiline
+      textAlignVertical="top"
+      editable={editable}
+      autoFocus={autoFocus}
+      autoCapitalize="sentences"
+      autoCorrect
+      spellCheck
+      selectionColor={activeColors.accent}
+      cursorColor={activeColors.accent}
+      accessibilityLabel="Journal entry input"
+      accessibilityHint="Write your three sentences for today"
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   input: {
     flex: 1,
     padding: spacing[4],
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.primary,
-    lineHeight: typography.fontSize.lg * 1.7,
+    fontSize: 18,
+    fontFamily: 'Newsreader_400Regular',
+    lineHeight: 28,
     borderRadius: 12,
-    borderWidth: 1,
     minHeight: 200,
     ...Platform.select({
       ios: {
