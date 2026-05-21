@@ -1,13 +1,3 @@
-/**
- * Three™ - Loading Screen
- *
- * A refined brand moment on every launch.
- * Three acts: logo surfaces → name rises → tagline settles.
- *
- * All animations use only opacity, translateY, scale, scaleX —
- * properties fully supported by the native driver.
- */
-
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -15,64 +5,56 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
+  withSequence,
   Easing,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
 import { colors } from '@/theme/colors';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-const EASE_OUT = Easing.out(Easing.cubic);
-const t = (ms: number) => ({ duration: ms, easing: EASE_OUT });
+const BRAND = Easing.bezier(0.16, 1, 0.3, 1);
+const JUGGLE = Easing.bezier(0.34, 1.5, 0.64, 1);
 
-export function LoadingScreen() {
-  const c = colors.dark;
-
-  // Act 1 – logo mark
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.84);
-
-  // Act 2 – word mark
-  const wordOpacity = useSharedValue(0);
-  const wordY = useSharedValue(16);
-
-  // Act 3 – separator line
-  const lineOpacity = useSharedValue(0);
-  const lineScaleX = useSharedValue(0);
-
-  // Act 4 – tagline
-  const tagOpacity = useSharedValue(0);
-  const tagY = useSharedValue(10);
+function JuggleDot({ delay, arcHeight }: { delay: number; arcHeight: number }) {
+  const reduced = useReducedMotion();
+  const y = useSharedValue(0);
 
   useEffect(() => {
-    // Logo fades in and settles (0ms)
-    logoOpacity.value = withTiming(1, t(700));
-    logoScale.value = withTiming(1, t(1000));
+    if (reduced) return;
+    y.value = withDelay(
+      delay,
+      withSequence(
+        withTiming(-arcHeight, { duration: 420, easing: JUGGLE }),
+        withTiming(arcHeight * 0.2, { duration: 350, easing: JUGGLE }),
+        withTiming(0, { duration: 430, easing: JUGGLE }),
+      ),
+    );
+  }, [reduced]);
 
-    // Word mark rises from below (320ms)
-    wordOpacity.value = withDelay(320, withTiming(1, t(600)));
-    wordY.value = withDelay(320, withTiming(0, t(700)));
-
-    // Hairline extends outward (680ms)
-    lineOpacity.value = withDelay(680, withTiming(1, t(250)));
-    lineScaleX.value = withDelay(680, withTiming(1, t(550)));
-
-    // Tagline settles (980ms)
-    tagOpacity.value = withDelay(980, withTiming(1, t(650)));
-    tagY.value = withDelay(980, withTiming(0, t(650)));
-  }, []);
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: y.value }],
   }));
+
+  return <Animated.View style={[styles.dot, style]} />;
+}
+
+export function LoadingScreen() {
+  const reduced = useReducedMotion();
+  const wordOpacity = useSharedValue(reduced ? 1 : 0);
+  const wordY = useSharedValue(reduced ? 0 : 12);
+  const tagOpacity = useSharedValue(reduced ? 1 : 0);
+  const tagY = useSharedValue(reduced ? 0 : 12);
+
+  useEffect(() => {
+    if (reduced) return;
+    wordOpacity.value = withDelay(950, withTiming(1, { duration: 800, easing: BRAND }));
+    wordY.value = withDelay(950, withTiming(0, { duration: 800, easing: BRAND }));
+    tagOpacity.value = withDelay(1350, withTiming(1, { duration: 700, easing: BRAND }));
+    tagY.value = withDelay(1350, withTiming(0, { duration: 700, easing: BRAND }));
+  }, [reduced]);
 
   const wordStyle = useAnimatedStyle(() => ({
     opacity: wordOpacity.value,
     transform: [{ translateY: wordY.value }],
-  }));
-
-  const lineStyle = useAnimatedStyle(() => ({
-    opacity: lineOpacity.value,
-    transform: [{ scaleX: lineScaleX.value }],
   }));
 
   const tagStyle = useAnimatedStyle(() => ({
@@ -81,50 +63,20 @@ export function LoadingScreen() {
   }));
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.dark.background }]}>
+      <View style={styles.dotsRow}>
+        <JuggleDot delay={0}   arcHeight={40} />
+        <JuggleDot delay={140} arcHeight={48} />
+        <JuggleDot delay={280} arcHeight={40} />
+      </View>
 
-      {/* Act 1: Logo mark */}
-      <Animated.View style={[styles.logoWrapper, logoStyle]}>
-        <Svg width={38} height={38} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M12 2L20 6.5L12 11L4 6.5L12 2Z"
-            stroke={c.textPrimary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <Path
-            d="M13 12L21 7.5V16.5L13 21V12Z"
-            stroke={c.textPrimary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <Path
-            d="M11 12L3 7.5V16.5L11 21V12Z"
-            stroke={c.textPrimary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
-      </Animated.View>
-
-      {/* Act 2: Word mark */}
-      <Animated.Text style={[styles.wordMark, { color: c.textPrimary }, wordStyle]}>
-        THREE
+      <Animated.Text style={[styles.wordMark, { color: colors.dark.textPrimary }, wordStyle]}>
+        Three Sentences
       </Animated.Text>
 
-      {/* Act 3: Hairline separator */}
-      <Animated.View
-        style={[styles.separator, { backgroundColor: c.border }, lineStyle]}
-      />
-
-      {/* Act 4: Tagline */}
-      <Animated.Text style={[styles.tagline, { color: c.textSecondary }, tagStyle]}>
-        be better, do better
+      <Animated.Text style={[styles.tagline, { color: colors.dark.textSecondary }, tagStyle]}>
+        BE BETTER. DO BETTER.
       </Animated.Text>
-
     </View>
   );
 }
@@ -135,27 +87,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoWrapper: {
-    marginBottom: 26,
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 36,
+    marginBottom: 32,
+  },
+  dot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFF0',
   },
   wordMark: {
-    fontSize: 26,
-    fontWeight: '700',
-    letterSpacing: 10,
-    // Compensate for trailing letter-spacing so text appears optically centred
-    paddingLeft: 10,
-  },
-  separator: {
-    marginTop: 22,
-    width: 44,
-    height: 1,
+    fontSize: 22,
+    fontWeight: '500',
+    letterSpacing: 1,
+    marginBottom: 12,
   },
   tagline: {
-    marginTop: 16,
     fontSize: 10,
-    fontWeight: '400',
-    letterSpacing: 2.5,
+    fontWeight: '500',
+    letterSpacing: 3,
     textTransform: 'uppercase',
-    paddingLeft: 2.5,
   },
 });
