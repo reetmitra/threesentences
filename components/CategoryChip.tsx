@@ -78,7 +78,6 @@ export function CategoryChip({
   index = 0,
 }: CategoryChipProps) {
   const activeColors = colors.dark;
-  const scale = useSharedValue(1);
   const selection = useSharedValue(selected ? 1 : 0);
   const entrance = useSharedValue(0);
 
@@ -97,16 +96,8 @@ export function CategoryChip({
 
   // Update selection animation when selected prop changes
   React.useEffect(() => {
-    selection.value = withSpring(selected ? 1 : 0, SPRING_CONFIG);
+    selection.value = withTiming(selected ? 1 : 0, { duration: 120, easing: Easing.ease });
   }, [selected, selection]);
-
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.92, SPRING_CONFIG);
-  }, [scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, SPRING_CONFIG);
-  }, [scale]);
 
   const handlePress = useCallback(() => {
     Haptics.impactAsync(
@@ -132,7 +123,6 @@ export function CategoryChip({
 
     return {
       transform: [
-        { scale: scale.value },
         { translateY: interpolate(entrance.value, [0, 1], [20, 0]) },
       ],
       opacity: entrance.value,
@@ -153,14 +143,7 @@ export function CategoryChip({
 
   const animatedIconStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        {
-          scale: withTiming(selected ? 1.1 : 1, {
-            duration: 200,
-            easing: Easing.out(Easing.cubic),
-          }),
-        },
-      ],
+      transform: [],
     };
   });
 
@@ -170,8 +153,6 @@ export function CategoryChip({
   return (
     <AnimatedPressable
       style={[styles.container, animatedContainerStyle]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       onPress={handlePress}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
@@ -198,7 +179,6 @@ interface HobbyChipProps {
 
 export function HobbyChip({ label, onRemove, index = 0 }: HobbyChipProps) {
   const activeColors = colors.dark;
-  const scale = useSharedValue(1);
   const entrance = useSharedValue(0);
 
   React.useEffect(() => {
@@ -213,16 +193,6 @@ export function HobbyChip({ label, onRemove, index = 0 }: HobbyChipProps) {
     return () => clearTimeout(timeout);
   }, [entrance, index]);
 
-  const handlePressIn = useCallback(() => {
-    if (onRemove) {
-      scale.value = withSpring(0.9, SPRING_CONFIG);
-    }
-  }, [onRemove, scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, SPRING_CONFIG);
-  }, [scale]);
-
   const handleRemove = useCallback(() => {
     if (onRemove) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -232,7 +202,6 @@ export function HobbyChip({ label, onRemove, index = 0 }: HobbyChipProps) {
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: scale.value },
       { translateY: interpolate(entrance.value, [0, 1], [10, 0]) },
     ],
     opacity: entrance.value,
@@ -245,8 +214,6 @@ export function HobbyChip({ label, onRemove, index = 0 }: HobbyChipProps) {
         { backgroundColor: activeColors.accentSubtle, borderColor: activeColors.border },
         animatedStyle,
       ]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       onPress={handleRemove}
       disabled={!onRemove}
       accessibilityRole={onRemove ? 'button' : 'text'}
