@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,27 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleClose = () => {
+    onOpenChange(false);
+    setTimeout(() => {
+      setIsSuccess(false);
+      setName("");
+      setEmail("");
+      setError(null);
+    }, 300);
+  };
+
+  // Escape key closes modal
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        handleClose();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,32 +77,26 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
     }
   };
 
-  const handleClose = () => {
-    onOpenChange(false);
-    setTimeout(() => {
-      setIsSuccess(false);
-      setName("");
-      setEmail("");
-      setError(null);
-    }, 300);
-  };
-
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
           className="fixed inset-0 z-50"
+          // No exit on the outer wrapper — only backdrop fades
         >
-          {/* Backdrop */}
+          {/* Backdrop — fades in/out, blur, dark overlay */}
           <motion.div
-            className="absolute inset-0 bg-black"
+            className="absolute inset-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              backgroundColor: "rgba(0,0,0,0.6)",
+            }}
+            onClick={handleClose}
           />
 
           {/* Dotted Surface Background */}
@@ -93,22 +108,26 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
             className="absolute top-6 right-6 z-50 p-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
             transition={{ delay: 0.1 }}
           >
             <X className="h-5 w-5 text-white/70" />
           </motion.button>
 
-          {/* Content */}
-          <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6">
+          {/* Modal box — lp-modal-in entrance, no exit */}
+          <motion.div
+            className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Success / Form cross-fade */}
             <AnimatePresence mode="wait">
               {isSuccess ? (
                 <motion.div
                   key="success"
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
                   className="flex flex-col items-center justify-center text-center"
                 >
                   <motion.div
@@ -138,10 +157,8 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
               ) : (
                 <motion.div
                   key="form"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                   className="max-w-md w-full mx-auto"
                 >
                   {/* Header */}
@@ -248,7 +265,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
