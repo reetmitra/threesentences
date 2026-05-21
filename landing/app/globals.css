@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  --background: #0e0e10;
+  --foreground: #ebe7dc;
+  --paper: #0e0e10;
+  --surface: #15151a;
+  --frame: #1e1e22;
+  --ink-fade: #36363a;
+  --ink-dim: #75726a;
+  --ink: #ebe7dc;
+  --ink-bright: #ffffff;
+  --warn: #f6c177;
 }
 
 html {
@@ -15,7 +23,7 @@ html {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @layer base {

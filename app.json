@@ -11,26 +11,26 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#06141B"
+      "backgroundColor": "#0e0e10"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.threesixtythree.threesentences",
-      "backgroundColor": "#06141B",
+      "backgroundColor": "#0e0e10",
       "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#06141B"
+        "backgroundColor": "#0e0e10"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.threesixtythree.threesentences"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/svg/logo/favicon.svg",
       "bundler": "metro",
-      "backgroundColor": "#06141B"
+      "backgroundColor": "#0e0e10"
     },
     "plugins": [
       "expo-router",

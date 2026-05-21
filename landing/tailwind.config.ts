@@ -10,29 +10,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#000000",
-        foreground: "#ffffff",
-        border: "#2a2a2a",
-        input: "#2a2a2a",
-        ring: "#ffffff",
+        background: "#0e0e10",
+        foreground: "#ebe7dc",
+        border: "#1e1e22",
+        input: "#1e1e22",
+        ring: "#ebe7dc",
         primary: {
           DEFAULT: "#ffffff",
-          foreground: "#000000",
+          foreground: "#0e0e10",
         },
         secondary: {
-          DEFAULT: "#121212",
-          foreground: "#ffffff",
+          DEFAULT: "#15151a",
+          foreground: "#ebe7dc",
         },
         muted: {
-          DEFAULT: "#121212",
-          foreground: "#a0a0a0",
+          DEFAULT: "#15151a",
+          foreground: "#75726a",
         },
         accent: {
-          DEFAULT: "#1e1e1e",
-          foreground: "#ffffff",
+          DEFAULT: "#1e1e22",
+          foreground: "#ebe7dc",
         },
+        warn: "#f6c177",
       },
       fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
       keyframes: {

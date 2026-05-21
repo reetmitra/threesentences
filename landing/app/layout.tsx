@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Newsreader, Schibsted_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const newsreader = Newsreader({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-serif" });
+const schibsted = Schibsted_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-sans" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Three by 363™",
   description: "Three sentences. Every day. That's it. A journaling practice built on constraint.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.svg",
   },
 };
 
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} ${mono.variable} antialiased`}>
+      <body className={`${newsreader.variable} ${schibsted.variable} ${mono.variable} antialiased`}>
         {children}
       </body>
     </html>
