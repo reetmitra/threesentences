@@ -1,22 +1,39 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Typewriter } from "@/components/ui/typewriter";
 import { fadeUp, tiltUp, staggerContainer, defaultTransition } from "@/lib/animations";
 
-const reflectionText =
-  "You\u2019ve been writing about momentum a lot this month. There\u2019s a shift happening \u2014 you\u2019re moving from planning to executing. The entries where you mention shipping feel different. More alive. Trust that.";
+type Range = "7d" | "30d" | "90d";
+
+const RANGES: { label: string; value: Range; period: string; entries: number }[] = [
+  { label: "1 week", value: "7d", period: "7-day analysis", entries: 7 },
+  { label: "1 month", value: "30d", period: "30-day analysis", entries: 28 },
+  { label: "3 months", value: "90d", period: "90-day analysis", entries: 81 },
+];
+
+const REFLECTIONS: Record<Range, string> = {
+  "7d":
+    "This week you kept it short and honest. Three sentences, no filler. You mentioned shipping twice — that's new. Something clicked.",
+  "30d":
+    "You've been writing about momentum a lot this month. There's a shift happening — you're moving from planning to executing. The entries where you mention shipping feel different. More alive. Trust that.",
+  "90d":
+    "Three months in, a clear pattern: you write best on Tuesdays and after workouts. Your language has grown quieter and more certain. The self-doubt entries peaked in month two and have been falling ever since.",
+};
 
 export function AIReflectionSection() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const [showTypewriter, setShowTypewriter] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<Range>("30d");
 
   // Delay typewriter start slightly after section enters view
   if (isInView && !showTypewriter) {
     setTimeout(() => setShowTypewriter(true), 600);
   }
+
+  const activeRange = RANGES.find((r) => r.value === selectedRange)!;
 
   return (
     <section ref={ref} className="py-24 sm:py-32 px-6">
@@ -76,31 +93,81 @@ export function AIReflectionSection() {
                   AI Reflection
                 </span>
               </div>
-              <p className="text-[10px] text-white/15 mb-4">30-day analysis</p>
+
+              {/* Range chips */}
+              <div className="flex gap-1.5 mt-2 mb-3">
+                {RANGES.map((r) => (
+                  <button
+                    key={r.value}
+                    onClick={() => setSelectedRange(r.value)}
+                    className={[
+                      "text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition-colors duration-200",
+                      selectedRange === r.value
+                        ? "border-white/30 text-white/60 bg-white/[0.06]"
+                        : "border-white/[0.08] text-white/20 bg-transparent hover:border-white/20 hover:text-white/40",
+                    ].join(" ")}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* AnimatePresence: period label */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={`period-${selectedRange}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-[10px] text-white/15 mb-4"
+                >
+                  {activeRange.period}
+                </motion.p>
+              </AnimatePresence>
 
               <div className="h-px bg-white/[0.06] mb-4" />
 
-              {/* Reflection content */}
+              {/* Reflection content — AnimatePresence chip swap */}
               <div className="min-h-[120px]">
-                {showTypewriter ? (
-                  <Typewriter
-                    text={reflectionText}
-                    speed={25}
-                    showCursor={true}
-                    loop={false}
-                    hideCursorOnType={true}
-                    className="text-xs text-white/35 leading-relaxed"
-                    cursorClassName="ml-0.5 text-white/30"
-                  />
-                ) : (
-                  <div className="text-xs text-white/10">...</div>
-                )}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectedRange}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {showTypewriter ? (
+                      <Typewriter
+                        text={REFLECTIONS[selectedRange]}
+                        speed={25}
+                        showCursor={true}
+                        loop={false}
+                        hideCursorOnType={true}
+                        className="text-xs text-white/35 leading-relaxed"
+                        cursorClassName="ml-0.5 text-white/30"
+                      />
+                    ) : (
+                      <div className="text-xs text-white/10">...</div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               {/* Card footer */}
-              <p className="text-[10px] text-white/10 mt-4">
-                Based on 28 entries
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={`footer-${selectedRange}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-[10px] text-white/10 mt-4"
+                >
+                  Based on {activeRange.entries} entries
+                </motion.p>
+              </AnimatePresence>
             </div>
           </motion.div>
         </motion.div>

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { slideFromLeft, slideFromRight, defaultTransition } from "@/lib/animations";
+import { Reveal } from "@/components/ui/Reveal";
 
 const principles = [
   { num: "01", title: "Three Sentences", subtitle: "The Constraint", tagline: "Say only what matters." },
@@ -27,40 +28,30 @@ export function PrinciplesSection() {
         </motion.p>
 
         {/* Principles list */}
-        <motion.div
-          className="divide-y divide-white/[0.06]"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={{
-            hidden: {},
-            visible: {
-              transition: { staggerChildren: 0.12, delayChildren: 0.1 },
-            },
-          }}
-        >
+        <div className="divide-y divide-white/[0.06]">
           {principles.map((p, i) => (
-            <motion.div
-              key={p.num}
-              variants={i % 2 === 0 ? slideFromLeft : slideFromRight}
-              transition={defaultTransition}
-              className="flex items-baseline gap-6 sm:gap-8 py-7 sm:py-8"
-            >
-              <span className="text-xs text-white/15 w-8 shrink-0">
-                {p.num}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-                  <h3 className="text-lg sm:text-xl font-medium text-white/80">
-                    {p.title}
-                  </h3>
-                  <span className="text-sm text-white/25">{p.subtitle}</span>
+            <Reveal key={p.num} delay={i * 0.08}>
+              <motion.div
+                variants={i % 2 === 0 ? slideFromLeft : slideFromRight}
+                transition={defaultTransition}
+                className="flex items-baseline gap-6 sm:gap-8 py-7 sm:py-8"
+              >
+                <span className="text-xs text-white/15 w-8 shrink-0">
+                  {p.num}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+                    <h3 className="text-lg sm:text-xl font-medium text-white/80">
+                      {p.title}
+                    </h3>
+                    <span className="text-sm text-white/25">{p.subtitle}</span>
+                  </div>
+                  <p className="text-sm text-white/20 mt-1">{p.tagline}</p>
                 </div>
-                <p className="text-sm text-white/20 mt-1">{p.tagline}</p>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Reveal>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );
