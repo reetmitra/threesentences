@@ -39,17 +39,17 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: activeColors.surface }]}
+      style={[styles.container, { backgroundColor: activeColors.surface, borderColor: activeColors.frame }]}
       accessible
       accessibilityLabel={`AI reflection from ${formatDate()}`}
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="sm" color="secondary">
+        <Text variant="sm" family="mono" color="secondary">
           {formatDate()}
         </Text>
-        <View style={[styles.badge, { backgroundColor: activeColors.surfaceHover }]}>
-          <Text variant="xs" color="secondary">
+        <View style={[styles.badge, { backgroundColor: activeColors.surfaceHi }]}>
+          <Text variant="xs" family="mono" color="secondary">
             {getTimeRangeLabel()}
           </Text>
         </View>
@@ -58,19 +58,20 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
       {/* Reflection content */}
       <Text
         variant="base"
-        style={[styles.content, { color: activeColors.textPrimary }]}
+        serif
+        style={[styles.content, { color: activeColors.textSecondary }]}
       >
         {reflection.content}
       </Text>
 
       {/* Entries analyzed */}
-      <Text variant="xs" color="tertiary" style={styles.meta}>
+      <Text variant="xs" family="mono" color="tertiary" style={styles.meta}>
         Based on {reflection.entriesAnalyzed} {reflection.entriesAnalyzed === 1 ? 'entry' : 'entries'}
       </Text>
 
       {/* Mandatory disclaimer */}
-      <View style={[styles.disclaimer, { borderTopColor: activeColors.border }]}>
-        <Text variant="xs" color="tertiary" style={styles.disclaimerText}>
+      <View style={[styles.disclaimer, { borderTopColor: activeColors.frame }]}>
+        <Text variant="xs" family="mono" color="tertiary" style={styles.disclaimerText}>
           {REFLECTION_DISCLAIMER}
         </Text>
       </View>
@@ -81,6 +82,7 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     padding: spacing[5],
   },
   header: {

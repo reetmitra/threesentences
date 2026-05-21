@@ -45,7 +45,7 @@ export function DailyRules() {
         >
             <View style={styles.dividerContainer}>
                 <View style={styles.line} />
-                <Text variant="sm" weight="bold" style={styles.header}>
+                <Text variant="sm" family="sansSemibold" style={styles.header}>
                     THE 363 PHILOSOPHY
                 </Text>
                 <View style={styles.line} />
@@ -55,7 +55,7 @@ export function DailyRules() {
                 {rules.map((rule, index) => (
                     <View key={index} style={styles.item}>
                         <rule.icon size={20} color={colors.dark.textSecondary} style={styles.icon} />
-                        <Text variant="xs" weight="medium" color="secondary" style={styles.ruleText}>
+                        <Text variant="xs" family="serif" color="secondary" style={styles.ruleText}>
                             {rule.text}
                         </Text>
                     </View>
@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
     line: {
         flex: 1,
         height: 1,
-        backgroundColor: colors.dark.border,
+        backgroundColor: colors.dark.frame,
     },
     header: {
         marginHorizontal: spacing[4],
         letterSpacing: 2,
         textTransform: 'uppercase',
-        color: colors.dark.textSecondary,
+        color: colors.dark.textPrimary,
     },
     grid: {
         flexDirection: 'row',

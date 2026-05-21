@@ -51,7 +51,7 @@ export function Skeleton({
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: colors.dark.surfaceHover,
+          backgroundColor: colors.dark.surfaceHi,
         },
         animatedStyle,
         style,
