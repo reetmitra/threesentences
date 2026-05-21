@@ -1,7 +1,8 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Easing } from 'react-native';
 import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
-import { Edit3, Calendar, MessageCircle, Flame, Settings } from 'lucide-react-native';
+import { Calendar, Settings } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 
 const c = colors.dark;
 
@@ -23,13 +24,22 @@ export default function TabLayout() {
           tabBarActiveTintColor: c.textBright,
           tabBarInactiveTintColor: c.textSecondary,
           tabBarShowLabel: false,
+          // pt-screen-in: opacity 0→1, 280ms ease-out (spec §1.6)
+          animation: 'fade',
+          transitionSpec: {
+            animation: 'timing',
+            config: {
+              duration: 280,
+              easing: Easing.out(Easing.ease),
+            },
+          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: 'Today',
-            tabBarIcon: ({ color }) => <Edit3 color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color }) => <Icon name="edit" color={color} size={24} strokeWidth={1.5} />,
             tabBarAccessibilityLabel: 'Today — write your entry',
           }}
         />
@@ -45,7 +55,7 @@ export default function TabLayout() {
           name="social"
           options={{
             title: 'The Circle',
-            tabBarIcon: ({ color }) => <MessageCircle color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color }) => <Icon name="chat" color={color} size={24} strokeWidth={1.5} />,
             tabBarAccessibilityLabel: 'The Circle — friends',
           }}
         />
@@ -53,7 +63,7 @@ export default function TabLayout() {
           name="guide"
           options={{
             title: 'Insights',
-            tabBarIcon: ({ color }) => <Flame color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color }) => <Icon name="flame" color={color} size={24} strokeWidth={1.5} />,
             tabBarAccessibilityLabel: 'Insights — streaks and progress',
           }}
         />
