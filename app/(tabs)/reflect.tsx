@@ -4,7 +4,7 @@
  * AI-powered reflection on journal entries.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { Sparkles, Brain } from 'lucide-react-native';
+import { Brain } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/hooks/useAuth';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
@@ -54,10 +55,31 @@ export default function ReflectScreen() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
   const [selectedRange, setSelectedRange] = useState<ReflectionTimeRange>(7);
   const [latestReflection, setLatestReflection] = useState<Reflection | null>(null);
   const [showCrisisResources, setShowCrisisResources] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const swapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up swap timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (swapTimeoutRef.current) {
+        clearTimeout(swapTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleRangeChange = useCallback((range: ReflectionTimeRange) => {
+    if (range === selectedRange) return;
+    setSelectedRange(range);
+    setIsSwapping(true);
+    if (swapTimeoutRef.current) {
+      clearTimeout(swapTimeoutRef.current);
+    }
+    swapTimeoutRef.current = setTimeout(() => setIsSwapping(false), 800);
+  }, [selectedRange]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -117,7 +139,7 @@ export default function ReflectScreen() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isSwapping) {
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: activeColors.background }]}
@@ -135,7 +157,7 @@ export default function ReflectScreen() {
         edges={['top']}
       >
         <View style={styles.disabledContainer}>
-          <Sparkles size={48} color={activeColors.textTertiary} />
+          <Icon name="spark" size={48} color={activeColors.textTertiary} />
           <Text variant="xl" family="sansSemibold" centered style={styles.disabledTitle}>
             AI Reflection
           </Text>
@@ -198,7 +220,7 @@ export default function ReflectScreen() {
                   key={range.value}
                   title={range.label}
                   variant={selectedRange === range.value ? 'primary' : 'outline'}
-                  onPress={() => setSelectedRange(range.value)}
+                  onPress={() => handleRangeChange(range.value)}
                   style={styles.rangeButton}
                 />
               ))}
