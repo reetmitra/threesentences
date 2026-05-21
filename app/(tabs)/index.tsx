@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Check } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/hooks/useAuth';
 import { Text } from '@/components/ui/Text';
 import { EntryInput } from '@/components/EntryInput';
@@ -86,7 +86,7 @@ function SubmitButton({
           {status === 'submitting'
             ? <ActivityIndicator color={c.paper} size="small" />
             : status === 'success'
-            ? <Animated.View style={{ transform: [{ rotate: spin }] }}><Check color={c.paper} size={22} /></Animated.View>
+            ? <Animated.View style={{ transform: [{ rotate: spin }] }}><Icon name="check" color={c.paper} size={22} /></Animated.View>
             : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: c.paper }}>Done</Text></Animated.View>
           }
         </TouchableOpacity>
@@ -166,16 +166,22 @@ export default function TodayScreen() {
       setSubmissionStatus('success');
       const stats = await getEntryStats(userId);
       const streak = stats.currentStreak;
-      showToast('success', 'STREAK +1 · LOCKED');
-      setTimeout(() => {
-        setTodayEntry(entry);
-        setContent('');
-        setSubmissionStatus('idle');
-        if (isMilestone(streak)) {
+      if (isMilestone(streak)) {
+        setTimeout(() => {
+          setTodayEntry(entry);
+          setContent('');
+          setSubmissionStatus('idle');
           setMilestoneStreak(streak);
           setShowMilestone(true);
-        }
-      }, 1500);
+        }, 1500);
+      } else {
+        showToast('success', `STREAK +${streak} · LOCKED`);
+        setTimeout(() => {
+          setTodayEntry(entry);
+          setContent('');
+          setSubmissionStatus('idle');
+        }, 1500);
+      }
     } catch {
       showToast('error', 'Save failed — try again');
       setSubmissionStatus('idle');
