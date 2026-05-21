@@ -137,7 +137,6 @@ export default function TodayScreen() {
     }
   }, [userId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
   const onRefresh = useCallback(async () => {
@@ -217,7 +216,7 @@ export default function TodayScreen() {
           </View>
           <EntryCard entry={todayEntry} />
           <View style={styles.submittedMessage}>
-            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1 }}>
+            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1.5 }}>
               Locked · See you tomorrow
             </Text>
             <TouchableOpacity

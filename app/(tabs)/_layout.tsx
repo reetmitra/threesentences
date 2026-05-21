@@ -3,8 +3,9 @@ import { Tabs } from 'expo-router';
 import { colors } from '@/theme/colors';
 import { Edit3, Calendar, MessageCircle, Flame, Settings } from 'lucide-react-native';
 
+const c = colors.dark;
+
 export default function TabLayout() {
-  const c = colors.dark;
 
   return (
     <View style={styles.container}>
@@ -75,5 +76,5 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#060608' },
+  container: { flex: 1, backgroundColor: c.background },
 });
