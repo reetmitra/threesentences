@@ -12,6 +12,7 @@ export function The363Section() {
   useEffect(() => {
     const el = countRef.current;
     if (!el) return;
+    let rafId: number;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !triggered.current) {
@@ -21,15 +22,20 @@ export function The363Section() {
           const step = () => {
             current = Math.min(current + 3, 363);
             setCount(current);
-            if (current < 363) requestAnimationFrame(step);
+            if (current < 363) {
+              rafId = requestAnimationFrame(step);
+            }
           };
-          requestAnimationFrame(step);
+          rafId = requestAnimationFrame(step);
         }
       },
       { threshold: 0.3 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (
