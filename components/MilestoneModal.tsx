@@ -2,11 +2,10 @@
  * Three™ - Milestone Modal
  *
  * Celebrates streak milestones with animated count-up and themed messages.
- * Uses BottomSheet for consistent presentation.
  */
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,12 +15,10 @@ import Animated, {
   withTiming,
   FadeIn,
 } from 'react-native-reanimated';
-import { Flame, Trophy, Star, Zap } from 'lucide-react-native';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
-import { BottomSheet } from '@/components/ui/BottomSheet';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, componentRadius } from '@/theme/spacing';
 
 const MILESTONES: Record<number, { icon: 'flame' | 'star' | 'trophy' | 'zap'; message: string; subtitle: string }> = {
   3: { icon: 'flame', message: 'Three days strong!', subtitle: 'You\'re building momentum.' },
@@ -46,42 +43,22 @@ interface MilestoneModalProps {
   onClose: () => void;
 }
 
-const IconMap = {
-  flame: Flame,
-  star: Star,
-  trophy: Trophy,
-  zap: Zap,
-};
-
 export function MilestoneModal({ visible, streak, onClose }: MilestoneModalProps) {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const milestone = MILESTONES[streak];
 
-  const iconScale = useSharedValue(0);
   const numberScale = useSharedValue(0);
 
   useEffect(() => {
     if (visible && milestone) {
-      iconScale.value = withDelay(
-        200,
-        withSequence(
-          withSpring(1.3, { damping: 8, stiffness: 200 }),
-          withSpring(1, { damping: 12, stiffness: 200 })
-        )
-      );
       numberScale.value = withDelay(
         500,
         withSpring(1, { damping: 10, stiffness: 180 })
       );
     } else {
-      iconScale.value = 0;
       numberScale.value = 0;
     }
   }, [visible]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScale.value }],
-  }));
 
   const numberStyle = useAnimatedStyle(() => ({
     transform: [{ scale: numberScale.value }],
@@ -89,65 +66,62 @@ export function MilestoneModal({ visible, streak, onClose }: MilestoneModalProps
 
   if (!milestone) return null;
 
-  const Icon = IconMap[milestone.icon];
-
   return (
-    <BottomSheet visible={visible} onClose={onClose} maxHeight={0.5}>
-      <View style={styles.content}>
-        {/* Animated icon */}
-        <Animated.View style={[styles.iconContainer, iconStyle]}>
-          <Icon size={48} color={activeColors.accent} strokeWidth={1.5} />
-        </Animated.View>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+        <View
+          style={[styles.sheet, { backgroundColor: c.surface, borderColor: c.frame }]}
+          onStartShouldSetResponder={() => true}
+        >
+          {/* Animated streak number */}
+          <Animated.View style={numberStyle}>
+            <Text
+              family="serifSemiboldItalic"
+              fixedSize
+              style={{ fontSize: 80, color: c.textPrimary, marginBottom: spacing[2] }}
+            >
+              {streak}
+            </Text>
+          </Animated.View>
 
-        {/* Animated streak number */}
-        <Animated.View style={numberStyle}>
-          <Text variant="3xl" weight="bold" centered style={styles.streakNumber}>
-            Day {streak}
-          </Text>
-        </Animated.View>
+          {/* Message */}
+          <Animated.View entering={FadeIn.delay(700).duration(400)}>
+            <Text family="sansSemibold" variant="xl" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
+              {milestone.message}
+            </Text>
+            <Text serif variant="base" style={{ color: c.textSecondary, lineHeight: 26, marginBottom: spacing[6] }}>
+              {milestone.subtitle}
+            </Text>
+          </Animated.View>
 
-        {/* Message */}
-        <Animated.View entering={FadeIn.delay(700).duration(400)}>
-          <Text variant="xl" weight="semibold" centered style={styles.message}>
-            {milestone.message}
-          </Text>
-          <Text variant="base" color="secondary" centered style={styles.subtitle}>
-            {milestone.subtitle}
-          </Text>
-        </Animated.View>
-
-        {/* Dismiss */}
-        <Animated.View entering={FadeIn.delay(1000).duration(300)}>
-          <Button
-            title="Keep Going"
-            onPress={onClose}
-            style={styles.button}
-          />
-        </Animated.View>
-      </View>
-    </BottomSheet>
+          {/* Dismiss */}
+          <Animated.View entering={FadeIn.delay(1000).duration(300)}>
+            <Button title="Continue" onPress={onClose} />
+          </Animated.View>
+        </View>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    alignItems: 'center',
-    paddingVertical: spacing[4],
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(6,6,8,0.85)',
+    justifyContent: 'flex-end',
   },
-  iconContainer: {
-    marginBottom: spacing[4],
-  },
-  streakNumber: {
-    marginBottom: spacing[2],
-  },
-  message: {
-    marginBottom: spacing[1],
-  },
-  subtitle: {
-    marginBottom: spacing[6],
-    lineHeight: 22,
-  },
-  button: {
-    minWidth: 160,
+  sheet: {
+    borderTopLeftRadius: componentRadius.bottomSheet,
+    borderTopRightRadius: componentRadius.bottomSheet,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    padding: spacing[6],
+    paddingBottom: spacing[8],
   },
 });
