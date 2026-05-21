@@ -37,7 +37,7 @@ import { AIOptInModal } from '@/components/AIOptInModal';
 import { SkeletonStatsCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, edgePadding } from '@/theme/spacing';
 import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/store/entries';
 import {
   clearAllData,
@@ -72,28 +72,28 @@ function SettingsRow({
   showChevron = true,
   rightElement,
 }: SettingsRowProps) {
-  const activeColors = colors.dark;
+  const c = colors.dark;
 
   const content = (
     <>
       <View style={styles.rowIcon}>{icon}</View>
       <View style={styles.rowContent}>
         <Text
+          family="sansSemibold"
           variant="base"
-          weight="medium"
-          style={destructive ? { color: activeColors.error } : undefined}
+          style={{ color: destructive ? c.warn : c.textPrimary }}
         >
           {title}
         </Text>
         {subtitle && (
-          <Text variant="sm" color="secondary" style={styles.rowSubtitle}>
+          <Text family="sans" variant="sm" style={[styles.rowSubtitle, { color: c.textSecondary }]}>
             {subtitle}
           </Text>
         )}
       </View>
       {rightElement}
       {showChevron && !rightElement && (
-        <ChevronRight size={20} color={activeColors.textTertiary} />
+        <ChevronRight size={20} color={c.textTertiary} />
       )}
     </>
   );
@@ -101,7 +101,7 @@ function SettingsRow({
   if (onPress) {
     return (
       <Pressable
-        style={[styles.row, { backgroundColor: activeColors.surface }]}
+        style={[styles.row, { backgroundColor: c.surface }]}
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={title}
@@ -112,14 +112,14 @@ function SettingsRow({
   }
 
   return (
-    <View style={[styles.row, { backgroundColor: activeColors.surface }]}>
+    <View style={[styles.row, { backgroundColor: c.surface }]}>
       {content}
     </View>
   );
 }
 
 export default function SettingsScreen() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const { showToast } = useToast();
   const { signOut, userId, user } = useAuth();
 
@@ -319,7 +319,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
+      style={[styles.container, { backgroundColor: c.background }]}
       edges={['top']}
     >
       <ScrollView
@@ -329,7 +329,7 @@ export default function SettingsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text variant="2xl" weight="bold">
+          <Text family="sansBold" variant="2xl" style={{ color: c.textPrimary }}>
             Settings
           </Text>
         </View>
@@ -341,39 +341,37 @@ export default function SettingsScreen() {
           </View>
         ) : (
           <Pressable
-            style={[styles.profileCard, { backgroundColor: activeColors.surface }]}
+            style={[styles.profileCard, { backgroundColor: c.surface }]}
             onPress={() => router.push('/(tabs)/profile')}
           >
-            <View style={[styles.avatar, { backgroundColor: activeColors.surfaceHover }]}>
-              <Text variant="xl" weight="bold">{initials}</Text>
+            <View style={[styles.avatar, { backgroundColor: c.surfaceHi }]}>
+              <Text family="sansBold" variant="xl" style={{ color: c.textPrimary }}>{initials}</Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text variant="lg" weight="semibold">{displayName}</Text>
+              <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary }}>{displayName}</Text>
               {displayEmail && (
-                <Text variant="sm" color="secondary">{displayEmail}</Text>
+                <Text family="sans" variant="sm" style={{ color: c.textSecondary }}>{displayEmail}</Text>
               )}
               <View style={styles.profileStats}>
-                <Flame size={14} color={activeColors.accent} />
-                <Text variant="sm" color="secondary" style={{ marginLeft: 4 }}>
+                <Flame size={14} color={c.textBright} />
+                <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginLeft: 4 }}>
                   {currentStreak} day streak
                 </Text>
-                <Text variant="sm" color="tertiary" style={{ marginLeft: spacing[3] }}>
+                <Text family="sans" variant="sm" style={{ color: c.textTertiary, marginLeft: spacing[3] }}>
                   {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
                 </Text>
               </View>
             </View>
-            <ChevronRight size={20} color={activeColors.textTertiary} />
+            <ChevronRight size={20} color={c.textTertiary} />
           </Pressable>
         )}
 
         {/* Preferences Section */}
         <View style={styles.section}>
-          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            PREFERENCES
-          </Text>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Preferences</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Sparkles size={22} color={activeColors.textPrimary} />}
+              icon={<Sparkles size={22} color={c.textPrimary} />}
               title="AI Reflection"
               subtitle={aiEnabled ? 'Enabled' : 'Disabled'}
               showChevron={false}
@@ -382,15 +380,15 @@ export default function SettingsScreen() {
                   value={aiEnabled}
                   onValueChange={handleAIToggle}
                   trackColor={{
-                    false: activeColors.surfaceHover,
-                    true: activeColors.accent,
+                    false: c.surfaceHi,
+                    true: c.textBright,
                   }}
-                  thumbColor={activeColors.textPrimary}
+                  thumbColor={c.textPrimary}
                 />
               }
             />
             <SettingsRow
-              icon={<Vibrate size={22} color={activeColors.textPrimary} />}
+              icon={<Vibrate size={22} color={c.textPrimary} />}
               title="Haptic Feedback"
               subtitle={hapticsEnabled ? 'Enabled' : 'Disabled'}
               showChevron={false}
@@ -399,15 +397,15 @@ export default function SettingsScreen() {
                   value={hapticsEnabled}
                   onValueChange={handleHapticsToggle}
                   trackColor={{
-                    false: activeColors.surfaceHover,
-                    true: activeColors.accent,
+                    false: c.surfaceHi,
+                    true: c.textBright,
                   }}
-                  thumbColor={activeColors.textPrimary}
+                  thumbColor={c.textPrimary}
                 />
               }
             />
             <SettingsRow
-              icon={<Lightbulb size={22} color={activeColors.textPrimary} />}
+              icon={<Lightbulb size={22} color={c.textPrimary} />}
               title="Daily Writing Prompt"
               subtitle={promptEnabled ? 'Shown on Insights tab' : 'Disabled'}
               showChevron={false}
@@ -416,15 +414,15 @@ export default function SettingsScreen() {
                   value={promptEnabled}
                   onValueChange={handlePromptToggle}
                   trackColor={{
-                    false: activeColors.surfaceHover,
-                    true: activeColors.accent,
+                    false: c.surfaceHi,
+                    true: c.textBright,
                   }}
-                  thumbColor={activeColors.textPrimary}
+                  thumbColor={c.textPrimary}
                 />
               }
             />
             <SettingsRow
-              icon={<Bell size={22} color={activeColors.textPrimary} />}
+              icon={<Bell size={22} color={c.textPrimary} />}
               title="Daily Reminder"
               subtitle={notificationsEnabled ? `Reminder at ${reminderHour}:00` : 'Disabled'}
               showChevron={false}
@@ -433,10 +431,10 @@ export default function SettingsScreen() {
                   value={notificationsEnabled}
                   onValueChange={handleNotificationsToggle}
                   trackColor={{
-                    false: activeColors.surfaceHover,
-                    true: activeColors.accent,
+                    false: c.surfaceHi,
+                    true: c.textBright,
                   }}
-                  thumbColor={activeColors.textPrimary}
+                  thumbColor={c.textPrimary}
                 />
               }
             />
@@ -445,25 +443,23 @@ export default function SettingsScreen() {
 
         {/* Your Data Section */}
         <View style={styles.section}>
-          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            YOUR DATA
-          </Text>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Your Data</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Download size={22} color={activeColors.textPrimary} />}
+              icon={<Download size={22} color={c.textPrimary} />}
               title="Export Entries"
               subtitle="Download as text or JSON"
               onPress={showExportOptions}
             />
             <SettingsRow
-              icon={<Lock size={22} color={activeColors.textSecondary} />}
+              icon={<Lock size={22} color={c.textSecondary} />}
               title="Encryption"
               subtitle="Entries encrypted at rest"
               showChevron={false}
             />
             {aiEnabled && reflectionCount > 0 && (
               <SettingsRow
-                icon={<Trash2 size={22} color={activeColors.error} />}
+                icon={<Trash2 size={22} color={c.warn} />}
                 title="Delete All Reflections"
                 subtitle={`${reflectionCount} reflection${reflectionCount !== 1 ? 's' : ''}`}
                 onPress={handleDeleteReflections}
@@ -476,17 +472,15 @@ export default function SettingsScreen() {
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            ACCOUNT
-          </Text>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Account</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Edit3 size={22} color={activeColors.textPrimary} />}
+              icon={<Edit3 size={22} color={c.textPrimary} />}
               title="Edit Profile"
               onPress={() => router.push('/(tabs)/profile')}
             />
             <SettingsRow
-              icon={<LogOut size={22} color={activeColors.error} />}
+              icon={<LogOut size={22} color={c.warn} />}
               title="Sign Out"
               onPress={handleSignOut}
               destructive
@@ -497,12 +491,10 @@ export default function SettingsScreen() {
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-            DANGER ZONE
-          </Text>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Danger Zone</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Trash2 size={22} color={activeColors.error} />}
+              icon={<Trash2 size={22} color={c.warn} />}
               title="Delete All Data"
               subtitle="Permanently remove everything"
               onPress={handleDeleteData}
@@ -520,12 +512,8 @@ export default function SettingsScreen() {
             [{ text: 'OK' }]
           );
         }}>
-          <Text variant="xs" color="tertiary" centered>
-            ThreeSixtyThree™ v1.0.0
-          </Text>
-          <Text variant="xs" color="tertiary" centered style={styles.footerTagline}>
-            Show up. Do the work. Let go of perfection.
-          </Text>
+          <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5 }}>Three Sentences · v1.0.0</Text>
+          <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5, marginTop: spacing[1] }}>Show up. Do the work. Let go of perfection.</Text>
         </Pressable>
       </ScrollView>
 
@@ -546,7 +534,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing[4],
+    paddingHorizontal: edgePadding.content,
+    paddingTop: spacing[4],
     paddingBottom: spacing[8],
   },
   header: {
@@ -588,7 +577,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   sectionContent: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   row: {
@@ -614,9 +603,5 @@ const styles = StyleSheet.create({
     marginTop: spacing[6],
     paddingTop: spacing[4],
     paddingBottom: spacing[4],
-  },
-  footerTagline: {
-    marginTop: spacing[1],
-    fontStyle: 'italic',
   },
 });
