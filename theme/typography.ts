@@ -14,7 +14,7 @@ export const typography = {
     sans: 'SchibstedGrotesk_400Regular',
     sansSemibold: 'SchibstedGrotesk_600SemiBold',
     sansBold: 'SchibstedGrotesk_700Bold',
-    primary: Platform.select({ ios: 'Helvetica Neue', android: 'sans-serif', default: 'System' }),
+    primary: Platform.select({ ios: 'Helvetica Neue', android: 'sans-serif', default: 'System' }) as string,
     serif: 'Newsreader_400Regular',
     serifItalic: 'Newsreader_400Regular_Italic',
     serifSemiboldItalic: 'Newsreader_600SemiBold_Italic',
@@ -31,7 +31,7 @@ export const typography = {
     '3xl': 30,
     display: 40,
     hero: 64,
-  },
+  } as const,
   fontWeight: {
     regular: '400',
     medium: '500',
@@ -42,15 +42,15 @@ export const typography = {
     tight: 1.25,
     normal: 1.5,
     relaxed: 1.75,
-  },
+  } as const,
   letterSpacing: {
     mono: 0.5,
     wide: 1,
     wider: 2,
-  },
+  } as const,
 };
 
-export function getScaledFontSizes() {
+export function getScaledFontSizes(): { xs: number; sm: number; base: number; lg: number; xl: number; '2xl': number; '3xl': number; display: number; hero: number } {
   return {
     xs: scaleFontSize(typography.fontSize.xs),
     sm: scaleFontSize(typography.fontSize.sm),
