@@ -431,7 +431,7 @@ export default function ProfileScreen() {
           >
             <ArrowLeft size={24} color={activeColors.textPrimary} />
           </Pressable>
-          <Text variant="lg" weight="semibold">
+          <Text variant="lg" family="sansSemibold">
             Profile
           </Text>
           <Pressable
@@ -469,7 +469,7 @@ export default function ProfileScreen() {
               ) : (
                 <Text
                   variant="3xl"
-                  weight="bold"
+                  family="sansBold"
                   style={{ color: activeColors.accent }}
                 >
                   {name.charAt(0).toUpperCase() || '?'}
@@ -479,7 +479,7 @@ export default function ProfileScreen() {
               <View
                 style={[styles.avatarOverlay, { backgroundColor: 'rgba(0,0,0,0.4)' }]}
               >
-                <Camera size={20} color="#FFFFFF" strokeWidth={2} />
+                <Camera size={20} color={activeColors.textBright} strokeWidth={2} />
               </View>
             </Pressable>
             <Text variant="xs" color="tertiary" centered style={styles.avatarHint}>
@@ -497,7 +497,7 @@ export default function ProfileScreen() {
               <Text
                 variant="sm"
                 color="secondary"
-                weight="medium"
+               
                 style={styles.sectionTitle}
               >
                 NAME
@@ -511,7 +511,7 @@ export default function ProfileScreen() {
                 autoCapitalize="words"
               />
             ) : (
-              <Text variant="lg" weight="medium">
+              <Text variant="lg">
                 {profile?.name || 'Not set'}
               </Text>
             )}
@@ -527,7 +527,7 @@ export default function ProfileScreen() {
               <Text
                 variant="sm"
                 color="secondary"
-                weight="medium"
+               
                 style={styles.sectionTitle}
               >
                 USERNAME
@@ -562,7 +562,7 @@ export default function ProfileScreen() {
                 )}
               </View>
             ) : (
-              <Text variant="lg" weight="medium">
+              <Text variant="lg">
                 @{profile?.username || 'not_set'}
               </Text>
             )}
@@ -578,7 +578,7 @@ export default function ProfileScreen() {
               <Text
                 variant="sm"
                 color="secondary"
-                weight="medium"
+               
                 style={styles.sectionTitle}
               >
                 AGE
@@ -604,7 +604,7 @@ export default function ProfileScreen() {
                 )}
               </View>
             ) : (
-              <Text variant="lg" weight="medium">
+              <Text variant="lg">
                 {profile?.age || 'Not specified'}
               </Text>
             )}
@@ -620,7 +620,7 @@ export default function ProfileScreen() {
               <Text
                 variant="sm"
                 color="secondary"
-                weight="medium"
+               
                 style={styles.sectionTitle}
               >
                 INTERESTS
@@ -650,7 +650,7 @@ export default function ProfileScreen() {
                           ]}
                         >
                           <View style={styles.groupHeaderLeft}>
-                            <Text variant="sm" weight="medium">
+                            <Text variant="sm">
                               {group.label}
                             </Text>
                             {selectedCount > 0 && (
@@ -662,7 +662,7 @@ export default function ProfileScreen() {
                               >
                                 <Text
                                   variant="xs"
-                                  weight="semibold"
+                                  family="sansSemibold"
                                   style={{ color: '#000' }}
                                 >
                                   {selectedCount}
@@ -699,7 +699,7 @@ export default function ProfileScreen() {
                                 >
                                   <Text
                                     variant="sm"
-                                    weight={isSelected ? 'semibold' : 'regular'}
+                                    family={isSelected ? 'sansSemibold' : 'sans'}
                                     style={{
                                       color: isSelected ? '#000' : activeColors.textPrimary,
                                     }}
@@ -768,7 +768,7 @@ export default function ProfileScreen() {
           onPress={() => setShowImageOptions(false)}
         >
           <View style={[styles.modalContent, { backgroundColor: activeColors.surface }]}>
-            <Text variant="lg" weight="semibold" style={styles.modalTitle}>
+            <Text variant="lg" family="sansSemibold" style={styles.modalTitle}>
               Change Profile Photo
             </Text>
 
@@ -811,7 +811,7 @@ export default function ProfileScreen() {
               style={styles.modalCancel}
               onPress={() => setShowImageOptions(false)}
             >
-              <Text variant="base" weight="medium" color="secondary">
+              <Text variant="base" color="secondary">
                 Cancel
               </Text>
             </Pressable>

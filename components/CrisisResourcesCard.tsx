@@ -47,7 +47,7 @@ export function CrisisResourcesCard({ onDismiss }: CrisisResourcesCardProps) {
   return (
     <View style={[styles.container, { backgroundColor: activeColors.surface }]}>
       {/* Header */}
-      <Text variant="xl" weight="bold" style={styles.title}>
+      <Text variant="xl" family="sansBold" style={styles.title}>
         {CRISIS_RESOURCES.title}
       </Text>
 
@@ -69,7 +69,7 @@ export function CrisisResourcesCard({ onDismiss }: CrisisResourcesCardProps) {
               {getIcon(resource.type)}
             </View>
             <View style={styles.resourceContent}>
-              <Text variant="base" weight="medium">
+              <Text variant="base">
                 {resource.name}
               </Text>
               <Text variant="sm" color="secondary">

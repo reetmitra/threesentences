@@ -136,7 +136,7 @@ export default function ReflectScreen() {
       >
         <View style={styles.disabledContainer}>
           <Sparkles size={48} color={activeColors.textTertiary} />
-          <Text variant="xl" weight="semibold" centered style={styles.disabledTitle}>
+          <Text variant="xl" family="sansSemibold" centered style={styles.disabledTitle}>
             AI Reflection
           </Text>
           <Text variant="base" color="secondary" centered style={styles.disabledText}>
@@ -166,7 +166,7 @@ export default function ReflectScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text variant="2xl" weight="bold">
+          <Text variant="2xl" family="sansBold">
             Reflect
           </Text>
           <Text variant="sm" color="secondary" style={styles.subtitle}>
@@ -184,7 +184,7 @@ export default function ReflectScreen() {
         {/* Generate new reflection */}
         {!showCrisisResources && (
           <View style={[styles.generateSection, { backgroundColor: activeColors.surface }]}>
-            <Text variant="base" weight="medium" style={styles.generateTitle}>
+            <Text variant="base" style={styles.generateTitle}>
               Generate Reflection
             </Text>
             <Text variant="sm" color="secondary" style={styles.generateDescription}>
@@ -224,7 +224,7 @@ export default function ReflectScreen() {
         {/* Latest reflection */}
         {latestReflection && !showCrisisResources && (
           <View style={styles.section}>
-            <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
+            <Text variant="sm" color="secondary" style={styles.sectionTitle}>
               LATEST REFLECTION
             </Text>
             <ReflectionCard reflection={latestReflection} />

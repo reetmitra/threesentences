@@ -29,7 +29,7 @@ export function AIOptInModal({
   return (
     <BottomSheet visible={visible} onClose={onCancel} maxHeight={0.8}>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        <Text variant="xl" weight="bold" style={styles.title}>
+        <Text variant="xl" family="sansBold" style={styles.title}>
           Enable AI Reflection?
         </Text>
 
@@ -39,7 +39,7 @@ export function AIOptInModal({
 
         {/* Data usage explanation */}
         <View style={styles.section}>
-          <Text variant="base" weight="semibold" style={styles.sectionTitle}>
+          <Text variant="base" family="sansSemibold" style={styles.sectionTitle}>
             What happens to your entries
           </Text>
           <Text variant="sm" color="secondary" style={styles.sectionText}>
@@ -50,7 +50,7 @@ export function AIOptInModal({
         </View>
 
         <View style={styles.section}>
-          <Text variant="base" weight="semibold" style={styles.sectionTitle}>
+          <Text variant="base" family="sansSemibold" style={styles.sectionTitle}>
             Your privacy
           </Text>
           <Text variant="sm" color="secondary" style={styles.sectionText}>
@@ -63,7 +63,7 @@ export function AIOptInModal({
         </View>
 
         <View style={styles.section}>
-          <Text variant="base" weight="semibold" style={styles.sectionTitle}>
+          <Text variant="base" family="sansSemibold" style={styles.sectionTitle}>
             What AI Reflection is NOT
           </Text>
           <Text variant="sm" color="secondary" style={styles.sectionText}>

@@ -202,7 +202,7 @@ export function FriendCard({
           {user.profileImage ? (
             <Image source={{ uri: user.profileImage }} style={styles.avatarImage} />
           ) : (
-            <Text variant="lg" weight="bold" style={{ color: activeColors.accent }}>
+            <Text variant="lg" family="sansBold" style={{ color: activeColors.accent }}>
               {getInitials(user.name)}
             </Text>
           )}
@@ -210,7 +210,7 @@ export function FriendCard({
 
         {/* Content */}
         <View style={styles.content}>
-          <Text variant="base" weight="semibold" numberOfLines={1}>
+          <Text variant="base" family="sansSemibold" numberOfLines={1}>
             {user.name}
           </Text>
           <Text variant="sm" color="secondary" numberOfLines={1}>
@@ -258,14 +258,14 @@ export function FriendRequestCard({
         {user.profileImage ? (
           <Image source={{ uri: user.profileImage }} style={styles.requestAvatarImage} />
         ) : (
-          <Text variant="base" weight="bold" style={{ color: activeColors.accent }}>
+          <Text variant="base" family="sansBold" style={{ color: activeColors.accent }}>
             {getInitials(user.name)}
           </Text>
         )}
       </View>
 
       <View style={styles.requestContent}>
-        <Text variant="sm" weight="semibold" numberOfLines={1}>
+        <Text variant="sm" family="sansSemibold" numberOfLines={1}>
           {user.name}
         </Text>
         <Text variant="xs" color="secondary">
@@ -281,7 +281,7 @@ export function FriendRequestCard({
           }}
           style={[styles.requestButton, { backgroundColor: activeColors.accent }]}
         >
-          <Text variant="xs" weight="bold" style={{ color: activeColors.background }}>
+          <Text variant="xs" family="sansBold" style={{ color: activeColors.background }}>
             Accept
           </Text>
         </Pressable>
@@ -292,7 +292,7 @@ export function FriendRequestCard({
           }}
           style={[styles.requestButton, { backgroundColor: activeColors.surfaceHover }]}
         >
-          <Text variant="xs" weight="medium" color="secondary">
+          <Text variant="xs" color="secondary">
             Decline
           </Text>
         </Pressable>

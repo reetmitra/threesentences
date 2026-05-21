@@ -45,7 +45,7 @@ export function StreakBadge({ currentStreak, compact = false }: StreakBadgeProps
         style={styles.compactContainer}
       >
         <Flame size={14} color={colors.dark.warning} strokeWidth={2} />
-        <Text variant="sm" weight="semibold" style={{ color: colors.dark.warning }}>
+        <Text variant="sm" family="sansSemibold" style={{ color: colors.dark.warning }}>
           {currentStreak}
         </Text>
       </Animated.View>
@@ -55,7 +55,7 @@ export function StreakBadge({ currentStreak, compact = false }: StreakBadgeProps
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <Flame size={32} color={activeColors.warning} strokeWidth={2} />
-      <Text variant="3xl" weight="bold" style={{ color: activeColors.textPrimary }}>
+      <Text variant="3xl" family="sansBold" style={{ color: activeColors.textPrimary }}>
         {currentStreak}
       </Text>
       <Text variant="sm" color="secondary">

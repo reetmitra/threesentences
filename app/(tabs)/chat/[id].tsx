@@ -181,12 +181,12 @@ export default function ChatScreen() {
                     {otherUser && (
                         <>
                             <View style={[styles.avatar, { backgroundColor: activeColors.accentSubtle }]}>
-                                <Text variant="base" weight="bold" style={{ color: activeColors.accent }}>
+                                <Text variant="base" family="sansBold" style={{ color: activeColors.accent }}>
                                     {getInitials(otherUser.name)}
                                 </Text>
                             </View>
                             <View style={styles.headerText}>
-                                <Text variant="base" weight="semibold" numberOfLines={1}>
+                                <Text variant="base" family="sansSemibold" numberOfLines={1}>
                                     {otherUser.name}
                                 </Text>
                                 {conversation?.isTyping && (

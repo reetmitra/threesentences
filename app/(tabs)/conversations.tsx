@@ -106,7 +106,7 @@ export default function ConversationsScreen() {
                 >
                     <ChevronLeft size={28} color={activeColors.textPrimary} strokeWidth={2} />
                 </Pressable>
-                <Text variant="xl" weight="bold" style={styles.headerTitle}>
+                <Text variant="xl" family="sansBold" style={styles.headerTitle}>
                     Messages
                 </Text>
                 <Pressable
@@ -142,7 +142,7 @@ export default function ConversationsScreen() {
                             color={activeColors.textTertiary}
                             strokeWidth={1.5}
                         />
-                        <Text variant="lg" weight="medium" style={styles.emptyTitle}>
+                        <Text variant="lg" style={styles.emptyTitle}>
                             No conversations yet
                         </Text>
                         <Text variant="base" color="secondary" centered style={styles.emptySubtitle}>
@@ -152,7 +152,7 @@ export default function ConversationsScreen() {
                             onPress={() => router.push('/(tabs)/social')}
                             style={[styles.emptyButton, { backgroundColor: activeColors.accent }]}
                         >
-                            <Text variant="base" weight="semibold" style={{ color: activeColors.background }}>
+                            <Text variant="base" family="sansSemibold" style={{ color: activeColors.background }}>
                                 Find Friends
                             </Text>
                         </Pressable>

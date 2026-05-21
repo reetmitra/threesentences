@@ -107,7 +107,7 @@ export function ConversationCard({
         {otherUser.profileImage ? (
           <Image source={{ uri: otherUser.profileImage }} style={styles.avatarImage} />
         ) : (
-          <Text variant="lg" weight="bold" style={{ color: activeColors.accent }}>
+          <Text variant="lg" family="sansBold" style={{ color: activeColors.accent }}>
             {getInitials(otherUser.name)}
           </Text>
         )}
@@ -121,7 +121,7 @@ export function ConversationCard({
         <View style={styles.topRow}>
           <Text
             variant="base"
-            weight={hasUnread ? 'bold' : 'medium'}
+            family={hasUnread ? 'sansBold' : 'sans'}
             numberOfLines={1}
             style={styles.name}
           >
@@ -141,7 +141,6 @@ export function ConversationCard({
             <Text
               variant="sm"
               color={hasUnread ? 'primary' : 'secondary'}
-              weight={hasUnread ? 'medium' : 'regular'}
               numberOfLines={1}
               style={styles.preview}
             >
@@ -153,7 +152,7 @@ export function ConversationCard({
             <View style={[styles.badge, { backgroundColor: activeColors.accent }]}>
               <Text
                 variant="xs"
-                weight="bold"
+                family="sansBold"
                 style={{ color: activeColors.background }}
               >
                 {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
