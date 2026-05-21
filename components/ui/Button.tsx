@@ -1,21 +1,8 @@
-/**
- * ThreeSixtyThree™ Three Sentences - Button Component
- * 
- * White accent styling for the dark UI.
- */
-
 import React from 'react';
-import {
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-  useColorScheme,
-  ViewStyle,
-  View,
-} from 'react-native';
+import { TouchableOpacity, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { colors } from '@/theme/colors';
-import { spacing, componentRadius } from '@/theme/spacing';
+import { componentRadius, spacing } from '@/theme/spacing';
 import * as Haptics from 'expo-haptics';
 
 interface ButtonProps {
@@ -27,15 +14,8 @@ interface ButtonProps {
   style?: ViewStyle;
 }
 
-export function Button({
-  title,
-  onPress,
-  variant = 'primary',
-  disabled,
-  loading,
-  style,
-}: ButtonProps) {
-  const activeColors = colors.dark; // Always dark mode
+export function Button({ title, onPress, variant = 'primary', disabled, loading, style }: ButtonProps) {
+  const c = colors.dark;
 
   const handlePress = () => {
     if (disabled || loading) return;
@@ -43,70 +23,46 @@ export function Button({
     onPress();
   };
 
-  const getBackgroundColor = () => {
-    if (variant === 'ghost') return 'transparent';
-    if (variant === 'outline') return 'transparent';
-    if (disabled) return activeColors.surfaceHover;
-    return activeColors.accent; // White
-  };
+  const bg = variant === 'primary'
+    ? (disabled ? c.frame : c.textBright)
+    : 'transparent';
 
-  const getTextColor = () => {
-    if (disabled) return activeColors.textTertiary;
-    if (variant === 'primary') return activeColors.background; // Dark text on white button
-    if (variant === 'outline') return activeColors.textPrimary;
-    return activeColors.textSecondary; // Ghost
-  };
+  const textColor = variant === 'primary'
+    ? (disabled ? c.textTertiary : c.paper)
+    : (disabled ? c.textTertiary : c.textPrimary);
 
-  const getBorderColor = () => {
-    if (variant === 'outline') {
-      return disabled ? activeColors.textTertiary : activeColors.textPrimary;
-    }
-    return 'transparent';
-  };
+  const borderColor = variant === 'outline' ? (disabled ? c.textTertiary : c.textPrimary) : 'transparent';
 
   return (
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.75}
       style={[
-        styles.container,
+        styles.base,
         {
-          backgroundColor: getBackgroundColor(),
-          borderColor: getBorderColor(),
-          borderWidth: variant === 'outline' ? 1.5 : 0,
-          opacity: disabled ? 0.6 : 1,
+          backgroundColor: bg,
+          borderColor,
+          borderWidth: variant === 'outline' ? 1 : 0,
+          opacity: disabled ? 0.5 : 1,
         },
         style,
       ]}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? activeColors.background : activeColors.textPrimary}
-          size="small"
-        />
-      ) : (
-        <Text
-          variant="base"
-          weight="semibold"
-          style={{ color: getTextColor(), letterSpacing: 0.5 }}
-        >
-          {title}
-        </Text>
-      )}
+      {loading
+        ? <ActivityIndicator color={textColor} size="small" />
+        : <Text family="sansSemibold" variant="base" style={{ color: textColor }}>{title}</Text>
+      }
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: spacing[3],
-    paddingHorizontal: spacing[5],
+  base: {
+    height: 52,
     borderRadius: componentRadius.button,
+    paddingHorizontal: spacing[6],
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
   },
 });
