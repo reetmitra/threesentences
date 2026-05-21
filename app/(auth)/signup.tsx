@@ -1,183 +1,100 @@
-/**
- * Three™ - Signup Screen
- */
-
 import React, { useState, useCallback } from 'react';
 import {
-    View,
-    StyleSheet,
-    TouchableOpacity,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
+  View, StyleSheet, TouchableOpacity, Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { spacing, edgePadding } from '@/theme/spacing';
 import { supabase } from '@/config/supabase';
 
 export default function SignupScreen() {
-    const [name, setName] = useState('');
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+  const c = colors.dark;
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSignup = useCallback(async () => {
-        if (!email || !password || !name || !username) {
-            Alert.alert('Error', 'Please fill in all fields');
-            return;
-        }
+  const handleSignup = useCallback(async () => {
+    if (!email || !password || !name || !username) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name, username } },
+      });
+      if (error) throw error;
+      if (data.session) {
+        router.replace('/');
+      } else {
+        Alert.alert(
+          'Check your email',
+          `Confirmation link sent to ${email}. Click it then sign in.`,
+          [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        );
+      }
+    } catch (error: any) {
+      Alert.alert('Sign up failed', error.message || 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [email, password, name, username]);
 
-        try {
-            setLoading(true);
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kav}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.logoSection}>
+            <Logo size={52} />
+            <Text family="serifItalic" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[4] }}>
+              Three Sentences
+            </Text>
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>
+              Create account
+            </Text>
+          </View>
 
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { name, username },
-                },
-            });
+          <View style={styles.form}>
+            <Input label="Name" placeholder="Your name" value={name} onChangeText={setName} autoCapitalize="words" />
+            <View style={{ height: spacing[4] }} />
+            <Input label="Username" placeholder="@handle" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
+            <View style={{ height: spacing[4] }} />
+            <Input label="Email" placeholder="you@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <View style={{ height: spacing[4] }} />
+            <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
+            <View style={{ height: spacing[6] }} />
+            <Button title="Create account" onPress={handleSignup} loading={loading} />
+          </View>
 
-            if (error) throw error;
-
-            if (data.session) {
-                // No email confirmation required — let index.tsx handle routing
-                router.replace('/');
-            } else {
-                // Email confirmation required
-                Alert.alert(
-                    'Check your email',
-                    'We sent a confirmation link to ' + email + '. Click it to activate your account, then sign in.',
-                    [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
-                );
-            }
-        } catch (error: any) {
-            Alert.alert('Signup Failed', error.message || 'An error occurred');
-        } finally {
-            setLoading(false);
-        }
-    }, [email, password, name, username]);
-
-    return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
-        >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <Logo size={60} animated={false} />
-                    <Text variant="2xl" weight="bold" style={styles.title}>
-                        Create Account
-                    </Text>
-                    <Text variant="base" color="secondary" style={styles.subtitle}>
-                        Join the Three elite network
-                    </Text>
-                </View>
-
-                <View style={styles.form}>
-                    <Input
-                        label="Name"
-                        placeholder="Bruce Wayne"
-                        value={name}
-                        onChangeText={setName}
-                        autoCapitalize="words"
-                    />
-                    <View style={styles.spacer} />
-                    <Input
-                        label="Username"
-                        placeholder="brucewayne"
-                        value={username}
-                        onChangeText={(text) => setUsername(text.toLowerCase())}
-                        autoCapitalize="none"
-                    />
-                    <View style={styles.spacer} />
-                    <Input
-                        label="Email"
-                        placeholder="enter@email.com"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoComplete="email"
-                    />
-                    <View style={styles.spacer} />
-                    <Input
-                        label="Password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        autoComplete="new-password"
-                    />
-
-                    <View style={styles.divider} />
-
-                    <Button
-                        title="Sign Up"
-                        onPress={handleSignup}
-                        loading={loading}
-                        style={styles.button}
-                    />
-
-                    <View style={styles.footer}>
-                        <Text variant="sm" color="secondary">
-                            Already have an account?{' '}
-                        </Text>
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <Text variant="sm" weight="bold" color="primary">
-                                Sign In
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <Text family="mono" variant="xs" centered style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
+                Already have an account?{' '}
+                <Text family="mono" variant="xs" style={{ color: c.textBright }}>Sign in</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.dark.background,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        padding: spacing[6],
-        justifyContent: 'center',
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: spacing[8],
-    },
-    title: {
-        marginTop: spacing[6],
-        marginBottom: spacing[2],
-    },
-    subtitle: {
-        textAlign: 'center',
-    },
-    form: {
-        width: '100%',
-    },
-    spacer: {
-        height: spacing[4],
-    },
-    divider: {
-        height: spacing[8],
-    },
-    button: {
-        marginTop: spacing[2],
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: spacing[6],
-    },
+  container: { flex: 1 },
+  kav: { flex: 1 },
+  scrollContent: { paddingHorizontal: edgePadding.content, paddingTop: spacing[10], paddingBottom: spacing[8] },
+  logoSection: { alignItems: 'center', marginBottom: spacing[8] },
+  form: {},
+  footer: { marginTop: spacing[8] },
 });

@@ -4,8 +4,9 @@
  * Styled text input for dark UI.
  */
 
-import React, { forwardRef } from 'react';
-import { TextInput, TextInputProps, StyleSheet, ViewStyle, View, Text } from 'react-native';
+import React, { forwardRef, useState } from 'react';
+import { TextInput, TextInputProps, StyleSheet, ViewStyle, View } from 'react-native';
+import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
 import { spacing, componentRadius } from '@/theme/spacing';
@@ -17,19 +18,20 @@ interface InputProps extends TextInputProps {
 }
 
 export const Input = forwardRef<TextInput, InputProps>(function Input(
-  { style, label, error, containerStyle, ...props },
+  { style, label, error, containerStyle, onFocus, onBlur, ...props },
   ref
 ) {
-  const activeColors = colors.dark; // Always dark mode
+  const c = colors.dark;
+  const [focused, setFocused] = useState(false);
 
   return (
     <View style={containerStyle}>
       {label && (
         <Text
-          style={[
-            styles.label,
-            { color: activeColors.textSecondary }
-          ]}
+          family="mono"
+          variant="xs"
+          uppercase
+          style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: spacing[2] }}
         >
           {label}
         </Text>
@@ -39,16 +41,25 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         style={[
           styles.input,
           {
-            backgroundColor: activeColors.surface,
-            color: activeColors.textPrimary,
-            borderColor: error ? activeColors.error : activeColors.border,
+            backgroundColor: c.surface,
+            color: c.textPrimary,
+            borderColor: error ? (c as any).error ?? c.textBright : focused ? c.textBright : c.frame,
+            borderWidth: focused ? 1 : StyleSheet.hairlineWidth,
             borderRadius: componentRadius.input,
           },
           style,
         ]}
-        placeholderTextColor={activeColors.textTertiary}
-        selectionColor={activeColors.accent}
-        cursorColor={activeColors.accent}
+        placeholderTextColor={c.textTertiary}
+        selectionColor={(c as any).accent ?? c.textBright}
+        cursorColor={(c as any).accent ?? c.textBright}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
         {...props}
       />
     </View>
@@ -58,18 +69,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
 
 const styles = StyleSheet.create({
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.primary,
-    marginBottom: spacing[2],
-    fontWeight: '500',
-  },
   input: {
     paddingHorizontal: spacing[3],
     height: 50,
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.primary,
-    borderWidth: 1,
-    justifyContent: 'center', // Flex property for container
+    justifyContent: 'center',
   },
 });
