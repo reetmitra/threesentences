@@ -30,7 +30,6 @@ import {
   Search,
   Users,
   MessageCircle,
-  UserPlus,
   Bell,
   X,
 } from 'lucide-react-native';
@@ -39,8 +38,7 @@ import { FriendCard, FriendRequestCard } from '@/components/social';
 import { SkeletonFriendsList } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { typography } from '@/theme/typography';
+import { spacing, edgePadding } from '@/theme/spacing';
 import {
   Friend,
   FriendRequest,
@@ -63,7 +61,7 @@ import { getProfile } from '@/store/profile';
 type TabType = 'friends' | 'requests';
 
 export default function SocialScreen() {
-  const activeColors = colors.dark;
+  const c = colors.dark;
   const { showToast } = useToast();
   const { userId, user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('friends');
@@ -217,7 +215,7 @@ export default function SocialScreen() {
 
   const searchAnimatedStyle = useAnimatedStyle(() => ({
     borderColor: withTiming(
-      isSearchFocused ? activeColors.accent : activeColors.border,
+      isSearchFocused ? c.textBright : c.frame,
       { duration: 200 }
     ),
   }));
@@ -231,11 +229,11 @@ export default function SocialScreen() {
 
   const renderSearchResults = () => (
     <Animated.View entering={FadeIn.duration(200)} style={styles.searchResults}>
-      <Text variant="sm" color="secondary" weight="medium" style={styles.sectionTitle}>
-        SEARCH RESULTS
+      <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1 }]}>
+        Search Results
       </Text>
       {searchResults.length === 0 ? (
-        <Text variant="base" color="tertiary" centered style={styles.emptyText}>
+        <Text family="sans" variant="base" centered style={[styles.emptyText, { color: c.textTertiary }]}>
           No users found
         </Text>
       ) : (
@@ -260,11 +258,11 @@ export default function SocialScreen() {
         <SkeletonFriendsList />
       ) : friends.length === 0 ? (
         <View style={styles.emptyState}>
-          <Users size={48} color={activeColors.textTertiary} strokeWidth={1.5} />
-          <Text variant="lg" weight="medium" style={styles.emptyTitle}>
+          <Users size={48} color={c.textTertiary} strokeWidth={1.5} />
+          <Text family="sansSemibold" variant="lg" style={[styles.emptyTitle, { color: c.textPrimary }]}>
             No friends yet
           </Text>
-          <Text variant="base" color="secondary" centered>
+          <Text family="sans" variant="base" centered style={{ color: c.textSecondary }}>
             Search for people to connect with
           </Text>
         </View>
@@ -283,12 +281,12 @@ export default function SocialScreen() {
       {suggestedFriends.length > 0 && friends.length < 5 && (
         <Animated.View entering={FadeInDown.delay(200).duration(300)}>
           <Text
-            variant="sm"
-            color="secondary"
-            weight="medium"
-            style={[styles.sectionTitle, { marginTop: spacing[6] }]}
+            family="mono"
+            variant="xs"
+            uppercase
+            style={[styles.sectionTitle, { marginTop: spacing[6], color: c.textSecondary, letterSpacing: 1 }]}
           >
-            SUGGESTED FRIENDS
+            Suggested Friends
           </Text>
           {suggestedFriends.map((result, index) => (
             <FriendCard
@@ -309,11 +307,11 @@ export default function SocialScreen() {
     <View style={styles.section}>
       {pendingRequests.length === 0 ? (
         <View style={styles.emptyState}>
-          <Bell size={48} color={activeColors.textTertiary} strokeWidth={1.5} />
-          <Text variant="lg" weight="medium" style={styles.emptyTitle}>
+          <Bell size={48} color={c.textTertiary} strokeWidth={1.5} />
+          <Text family="sansSemibold" variant="lg" style={[styles.emptyTitle, { color: c.textPrimary }]}>
             No pending requests
           </Text>
-          <Text variant="base" color="secondary" centered>
+          <Text family="sans" variant="base" centered style={{ color: c.textSecondary }}>
             Friend requests will appear here
           </Text>
         </View>
@@ -333,19 +331,20 @@ export default function SocialScreen() {
 
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: activeColors.background }]}
+      style={[styles.container, { backgroundColor: c.background }]}
       edges={['top']}
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="2xl" weight="bold">
-          Connect
-        </Text>
+        <View>
+          <Text family="sansBold" variant="2xl" style={{ color: c.textPrimary }}>The Circle</Text>
+          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: 4 }}>Friends · Requests</Text>
+        </View>
         <Pressable
           onPress={() => router.push('/(tabs)/conversations')}
           style={styles.messagesButton}
         >
-          <MessageCircle size={24} color={activeColors.textPrimary} strokeWidth={1.5} />
+          <MessageCircle size={24} color={c.textPrimary} strokeWidth={1.5} />
         </Pressable>
       </View>
 
@@ -353,15 +352,15 @@ export default function SocialScreen() {
       <Animated.View
         style={[
           styles.searchContainer,
-          { backgroundColor: activeColors.surface },
+          { backgroundColor: c.surface },
           searchAnimatedStyle,
         ]}
       >
-        <Search size={20} color={activeColors.textTertiary} strokeWidth={2} />
+        <Search size={20} color={c.textTertiary} strokeWidth={2} />
         <TextInput
-          style={[styles.searchInput, { color: activeColors.textPrimary }]}
+          style={[styles.searchInput, { color: c.textPrimary }]}
           placeholder="Search people..."
-          placeholderTextColor={activeColors.textTertiary}
+          placeholderTextColor={c.textTertiary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           onFocus={() => setIsSearchFocused(true)}
@@ -369,7 +368,7 @@ export default function SocialScreen() {
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => setSearchQuery('')}>
-            <X size={18} color={activeColors.textTertiary} />
+            <X size={18} color={c.textTertiary} />
           </Pressable>
         )}
       </Animated.View>
@@ -392,15 +391,15 @@ export default function SocialScreen() {
               style={styles.tab}
             >
               <Text
+                family={activeTab === 'friends' ? 'sansSemibold' : 'sans'}
                 variant="base"
-                weight={activeTab === 'friends' ? 'semibold' : 'regular'}
-                color={activeTab === 'friends' ? 'primary' : 'secondary'}
+                style={{ color: activeTab === 'friends' ? c.textPrimary : c.textSecondary }}
               >
                 Friends
               </Text>
               {friends.length > 0 && (
-                <View style={[styles.tabBadge, { backgroundColor: activeColors.accentSubtle }]}>
-                  <Text variant="xs" weight="medium">
+                <View style={[styles.tabBadge, { backgroundColor: c.surfaceHi }]}>
+                  <Text family="monoMedium" variant="xs" style={{ color: c.background }}>
                     {friends.length}
                   </Text>
                 </View>
@@ -412,15 +411,15 @@ export default function SocialScreen() {
               style={styles.tab}
             >
               <Text
+                family={activeTab === 'requests' ? 'sansSemibold' : 'sans'}
                 variant="base"
-                weight={activeTab === 'requests' ? 'semibold' : 'regular'}
-                color={activeTab === 'requests' ? 'primary' : 'secondary'}
+                style={{ color: activeTab === 'requests' ? c.textPrimary : c.textSecondary }}
               >
                 Requests
               </Text>
               {pendingRequests.length > 0 && (
-                <View style={[styles.tabBadge, { backgroundColor: activeColors.accent }]}>
-                  <Text variant="xs" weight="bold" style={{ color: activeColors.background }}>
+                <View style={[styles.tabBadge, { backgroundColor: c.textBright }]}>
+                  <Text family="monoMedium" variant="xs" style={{ color: c.background }}>
                     {pendingRequests.length}
                   </Text>
                 </View>
@@ -430,7 +429,7 @@ export default function SocialScreen() {
             <Animated.View
               style={[
                 styles.tabIndicator,
-                { backgroundColor: activeColors.accent },
+                { backgroundColor: c.textBright },
                 tabIndicatorStyle,
               ]}
             />
@@ -445,7 +444,7 @@ export default function SocialScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={activeColors.accent}
+                tintColor={c.textBright}
               />
             }
           >
@@ -484,8 +483,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.primary,
+    fontSize: 16,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -522,6 +520,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing[8],
+    paddingHorizontal: edgePadding.content,
   },
   section: {
     flex: 1,
