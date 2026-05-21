@@ -18,6 +18,26 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleForgotPassword = useCallback(async () => {
+    if (!email) {
+      Alert.alert('Enter your email', 'Type your email address above, then tap "Forgot password?"');
+      return;
+    }
+    try {
+      setResetLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'threesentences://reset-password',
+      });
+      if (error) throw error;
+      Alert.alert('Check your email', 'A password reset link has been sent to ' + email);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Could not send reset email');
+    } finally {
+      setResetLoading(false);
+    }
+  }, [email]);
 
   const handleLogin = useCallback(async () => {
     if (!email || !password) {
@@ -71,6 +91,11 @@ export default function LoginScreen() {
             />
             <View style={{ height: spacing[6] }} />
             <Button title="Sign in" onPress={handleLogin} loading={loading} />
+            <TouchableOpacity onPress={handleForgotPassword} disabled={resetLoading} style={{ marginTop: spacing[4], alignItems: 'center' }}>
+              <Text family="mono" variant="xs" style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
+                {resetLoading ? 'Sending…' : 'Forgot password?'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>

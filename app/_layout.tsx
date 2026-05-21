@@ -24,6 +24,8 @@ import {
 import { colors } from '@/theme/colors';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { configureNotificationHandler } from '@/services/notifications';
+import { supabase } from '@/config/supabase';
+import { router } from 'expo-router';
 
 export default function RootLayout() {
   const activeColors = colors.dark;
@@ -41,6 +43,13 @@ export default function RootLayout() {
 
   useEffect(() => {
     configureNotificationHandler();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        router.replace('/(auth)/reset-password');
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   if (!fontsLoaded) return null;
