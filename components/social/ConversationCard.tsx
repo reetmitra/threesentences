@@ -50,7 +50,6 @@ export function ConversationCard({
   const otherUser = getOtherParticipant(conversation, currentUserId);
 
   // Animation values
-  const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateX = useSharedValue(20);
 
@@ -62,14 +61,6 @@ export function ConversationCard({
     }, delay);
   }, [index, opacity, translateX]);
 
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.98, { damping: 20 });
-  }, [scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, SPRING_CONFIG);
-  }, [scale]);
-
   const handlePress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress(conversation);
@@ -77,7 +68,6 @@ export function ConversationCard({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: scale.value },
       { translateX: translateX.value },
     ],
     opacity: opacity.value,
@@ -94,8 +84,6 @@ export function ConversationCard({
   return (
     <AnimatedPressable
       onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       style={[
         styles.container,
         { backgroundColor: activeColors.surface },

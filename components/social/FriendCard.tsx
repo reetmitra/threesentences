@@ -69,7 +69,6 @@ export function FriendCard({
   const activeColors = colors.dark;
 
   // Animation values
-  const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(10);
 
@@ -81,16 +80,6 @@ export function FriendCard({
     }, delay);
   }, [index, opacity, translateY]);
 
-  const handlePressIn = useCallback(() => {
-    if (onPress) {
-      scale.value = withSpring(0.98, { damping: 20 });
-    }
-  }, [onPress, scale]);
-
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, SPRING_CONFIG);
-  }, [scale]);
-
   const handlePress = useCallback(() => {
     if (onPress) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -100,7 +89,6 @@ export function FriendCard({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: scale.value },
       { translateY: translateY.value },
     ],
     opacity: opacity.value,
@@ -193,8 +181,6 @@ export function FriendCard({
     >
       <AnimatedPressable
         onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
         disabled={!onPress}
         style={[styles.container, { backgroundColor: activeColors.surface }]}
       >
