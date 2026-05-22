@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { PenLine, Lock, Calendar, Heart } from 'lucide-react-native';
+import { Calendar, Heart } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -26,11 +27,11 @@ export function DailyRules() {
         ]).start();
     }, [fadeAnim, slideAnim]);
 
-    const rules = [
-        { icon: PenLine, text: '3 SENTENCES' },
-        { icon: Calendar, text: 'EVERY DAY' },
-        { icon: Heart, text: 'GRACE (363/365)' },
-        { icon: Lock, text: 'STAY MINDFUL' },
+    const rules: { renderIcon: () => React.ReactNode; text: string }[] = [
+        { renderIcon: () => <Icon name="edit" size={20} color={colors.dark.textSecondary} />, text: '3 SENTENCES' },
+        { renderIcon: () => <Calendar size={20} color={colors.dark.textSecondary} />, text: 'EVERY DAY' },
+        { renderIcon: () => <Heart size={20} color={colors.dark.textSecondary} />, text: 'GRACE (363/365)' },
+        { renderIcon: () => <Icon name="lock" size={20} color={colors.dark.textSecondary} />, text: 'STAY MINDFUL' },
     ];
 
     return (
@@ -54,7 +55,7 @@ export function DailyRules() {
             <View style={styles.grid}>
                 {rules.map((rule, index) => (
                     <View key={index} style={styles.item}>
-                        <rule.icon size={20} color={colors.dark.textSecondary} style={styles.icon} />
+                        <View style={styles.icon}>{rule.renderIcon()}</View>
                         <Text variant="xs" family="serif" color="secondary" style={styles.ruleText}>
                             {rule.text}
                         </Text>

@@ -18,19 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  Download,
-  Trash2,
-  ChevronRight,
-  Sparkles,
-  Lock,
-  LogOut,
-  Edit3,
-  Flame,
-  Lightbulb,
-  Vibrate,
-  Bell,
-} from 'lucide-react-native';
+import { Download, Trash2, LogOut, Lightbulb, Vibrate } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
 import { AIOptInModal } from '@/components/AIOptInModal';
@@ -93,7 +82,7 @@ function SettingsRow({
       </View>
       {rightElement}
       {showChevron && !rightElement && (
-        <ChevronRight size={20} color={c.textTertiary} />
+        <Icon name="caret" size={20} color={c.textTertiary} />
       )}
     </>
   );
@@ -353,7 +342,7 @@ export default function SettingsScreen() {
                 <Text family="sans" variant="sm" style={{ color: c.textSecondary }}>{displayEmail}</Text>
               )}
               <View style={styles.profileStats}>
-                <Flame size={14} color={c.textBright} />
+                <Icon name="flame" size={14} color={c.textBright} />
                 <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginLeft: 4 }}>
                   {currentStreak} day streak
                 </Text>
@@ -362,7 +351,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-            <ChevronRight size={20} color={c.textTertiary} />
+            <Icon name="caret" size={20} color={c.textTertiary} />
           </Pressable>
         )}
 
@@ -371,7 +360,7 @@ export default function SettingsScreen() {
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Preferences</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Sparkles size={22} color={c.textPrimary} />}
+              icon={<Icon name="spark" size={22} color={c.textPrimary} />}
               title="AI Reflection"
               subtitle={aiEnabled ? 'Enabled' : 'Disabled'}
               showChevron={false}
@@ -422,7 +411,7 @@ export default function SettingsScreen() {
               }
             />
             <SettingsRow
-              icon={<Bell size={22} color={c.textPrimary} />}
+              icon={<Icon name="bell" size={22} color={c.textPrimary} />}
               title="Daily Reminder"
               subtitle={notificationsEnabled ? `Reminder at ${reminderHour}:00` : 'Disabled'}
               showChevron={false}
@@ -452,7 +441,7 @@ export default function SettingsScreen() {
               onPress={showExportOptions}
             />
             <SettingsRow
-              icon={<Lock size={22} color={c.textSecondary} />}
+              icon={<Icon name="lock" size={22} color={c.textSecondary} />}
               title="Encryption"
               subtitle="Entries encrypted at rest"
               showChevron={false}
@@ -475,7 +464,7 @@ export default function SettingsScreen() {
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Account</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
-              icon={<Edit3 size={22} color={c.textPrimary} />}
+              icon={<Icon name="edit" size={22} color={c.textPrimary} />}
               title="Edit Profile"
               onPress={() => router.push('/(tabs)/profile')}
             />

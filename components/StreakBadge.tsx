@@ -13,7 +13,7 @@ import Animated, {
   withDelay,
   FadeIn,
 } from 'react-native-reanimated';
-import { Flame } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -44,7 +44,7 @@ export function StreakBadge({ currentStreak, compact = false }: StreakBadgeProps
         entering={FadeIn.duration(300)}
         style={styles.compactContainer}
       >
-        <Flame size={14} color={colors.dark.warning} strokeWidth={2} />
+        <Icon name="flame" size={14} color={colors.dark.warning} strokeWidth={2} />
         <Text variant="sm" family="sansSemibold" style={{ color: colors.dark.warning }}>
           {currentStreak}
         </Text>
@@ -54,7 +54,7 @@ export function StreakBadge({ currentStreak, compact = false }: StreakBadgeProps
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <Flame size={32} color={activeColors.warning} strokeWidth={2} />
+      <Icon name="flame" size={32} color={activeColors.warning} strokeWidth={2} />
       <Text variant="3xl" family="sansBold" style={{ color: activeColors.textPrimary }}>
         {currentStreak}
       </Text>

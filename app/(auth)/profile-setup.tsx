@@ -29,7 +29,7 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Check } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -217,7 +217,7 @@ export default function ProfileSetupScreen() {
                 </Text>
                 <Animated.View style={checkAnimatedStyle}>
                   {usernameValid && (
-                    <Check size={16} color={c.textBright} strokeWidth={3} />
+                    <Icon name="check" color={c.textBright} size={16} strokeWidth={3} />
                   )}
                 </Animated.View>
               </View>

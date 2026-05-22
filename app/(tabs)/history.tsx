@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { useAuth } from '@/hooks/useAuth';
 import { Text } from '@/components/ui/Text';
 import { Calendar } from '@/components/Calendar';
@@ -118,7 +118,7 @@ export default function HistoryScreen() {
                 style={[styles.navButton, { backgroundColor: c.surface, borderColor: c.frame, borderWidth: StyleSheet.hairlineWidth }]}
                 accessibilityLabel="Previous month"
               >
-                <ChevronLeft size={20} color={c.textPrimary} />
+                <Icon name="arrowL" size={20} color={c.textPrimary} />
               </Pressable>
 
               <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary }}>
@@ -135,7 +135,7 @@ export default function HistoryScreen() {
                 disabled={!canGoNext()}
                 accessibilityLabel="Next month"
               >
-                <ChevronRight size={20} color={canGoNext() ? c.textPrimary : c.textTertiary} />
+                <Icon name="caret" size={20} color={canGoNext() ? c.textPrimary : c.textTertiary} />
               </Pressable>
             </View>
 

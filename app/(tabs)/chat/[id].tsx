@@ -25,7 +25,7 @@ import Animated, {
     SlideInDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { ChevronLeft } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { MessageBubble, ChatInput } from '@/components/social';
 import { colors } from '@/theme/colors';
@@ -174,7 +174,7 @@ export default function ChatScreen() {
                     style={styles.backButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <ChevronLeft size={28} color={activeColors.textPrimary} strokeWidth={2} />
+                    <Icon name="arrowL" size={28} color={activeColors.textPrimary} strokeWidth={2} />
                 </Pressable>
 
                 <View style={styles.headerContent}>

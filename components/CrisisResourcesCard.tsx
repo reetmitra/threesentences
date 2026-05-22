@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { CRISIS_RESOURCES } from '@/services/aiReflection';
-import { Phone, MessageCircle, Globe } from 'lucide-react-native';
+import { Phone, Globe } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 
 interface CrisisResourcesCardProps {
   onDismiss: () => void;
@@ -38,7 +39,7 @@ export function CrisisResourcesCard({ onDismiss }: CrisisResourcesCardProps) {
   const getIcon = (type: string) => {
     switch (type) {
       case 'call': return <Phone size={20} color={activeColors.textPrimary} />;
-      case 'text': return <MessageCircle size={20} color={activeColors.textPrimary} />;
+      case 'text': return <Icon name="chat" size={20} color={activeColors.textPrimary} />;
       case 'website': return <Globe size={20} color={activeColors.textPrimary} />;
       default: return null;
     }

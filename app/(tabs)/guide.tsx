@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Sparkles, Edit3, ArrowRight } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { StreakCounter } from '@/components/StreakCounter';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -102,7 +103,7 @@ export default function InsightsScreen() {
               onPress={() => router.push('/(tabs)/')}
             >
               <View style={styles.cardHeader}>
-                <Edit3 size={18} color={c.textSecondary} strokeWidth={1.5} />
+                <Icon name="edit" size={18} color={c.textSecondary} strokeWidth={1.5} />
                 <Text family="mono" variant="xs" uppercase style={[styles.cardEyebrow, { color: c.textSecondary }]}>
                   {promptEnabled ? "Today's prompt" : 'Today'}
                 </Text>
@@ -131,7 +132,7 @@ export default function InsightsScreen() {
               onPress={() => router.push('/(tabs)/reflect')}
             >
               <View style={styles.cardHeader}>
-                <Sparkles size={18} color={c.textSecondary} strokeWidth={1.5} />
+                <Icon name="spark" size={18} color={c.textSecondary} strokeWidth={1.5} />
                 <Text family="mono" variant="xs" uppercase style={[styles.cardEyebrow, { color: c.textSecondary }]}>
                   AI Reflection
                 </Text>

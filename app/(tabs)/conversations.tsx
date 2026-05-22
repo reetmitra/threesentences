@@ -22,7 +22,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { ChevronLeft, MessageCircle, PenLine } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { ConversationCard } from '@/components/social';
 import { SkeletonConversations } from '@/components/ui/Skeleton';
@@ -104,7 +104,7 @@ export default function ConversationsScreen() {
                     style={styles.backButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <ChevronLeft size={28} color={activeColors.textPrimary} strokeWidth={2} />
+                    <Icon name="arrowL" size={28} color={activeColors.textPrimary} strokeWidth={2} />
                 </Pressable>
                 <Text variant="xl" family="sansBold" style={styles.headerTitle}>
                     Messages
@@ -113,7 +113,7 @@ export default function ConversationsScreen() {
                     onPress={() => router.push('/(tabs)/social')}
                     style={styles.newChatButton}
                 >
-                    <PenLine size={22} color={activeColors.textPrimary} strokeWidth={2} />
+                    <Icon name="edit" size={22} color={activeColors.textPrimary} strokeWidth={2} />
                 </Pressable>
             </Animated.View>
 
@@ -137,11 +137,7 @@ export default function ConversationsScreen() {
                         entering={FadeInDown.delay(200).duration(300)}
                         style={styles.emptyState}
                     >
-                        <MessageCircle
-                            size={64}
-                            color={activeColors.textTertiary}
-                            strokeWidth={1.5}
-                        />
+                        <Icon name="chat" size={64} color={activeColors.textTertiary} strokeWidth={1.5} />
                         <Text variant="lg" style={styles.emptyTitle}>
                             No conversations yet
                         </Text>

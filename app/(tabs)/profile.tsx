@@ -30,19 +30,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import {
-  ArrowLeft,
-  Edit3,
-  User,
-  Hash,
-  Calendar,
-  Sparkles,
-  Camera,
-  ImageIcon,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react-native';
+import { User, Hash, Calendar, Camera, ImageIcon, Trash2, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -429,7 +418,7 @@ export default function ProfileScreen() {
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <ArrowLeft size={24} color={activeColors.textPrimary} />
+            <Icon name="arrowL" size={24} color={activeColors.textPrimary} />
           </Pressable>
           <Text variant="lg" family="sansSemibold">
             Profile
@@ -440,10 +429,7 @@ export default function ProfileScreen() {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Animated.View style={editButtonAnimatedStyle}>
-              <Edit3
-                size={20}
-                color={isEditing ? activeColors.accent : activeColors.textSecondary}
-              />
+              <Icon name="edit" size={20} color={isEditing ? activeColors.accent : activeColors.textSecondary} />
             </Animated.View>
           </Pressable>
         </View>
@@ -616,7 +602,7 @@ export default function ProfileScreen() {
             style={styles.section}
           >
             <View style={styles.sectionHeader}>
-              <Sparkles size={16} color={activeColors.textSecondary} />
+              <Icon name="spark" size={16} color={activeColors.textSecondary} />
               <Text
                 variant="sm"
                 color="secondary"
