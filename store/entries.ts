@@ -16,7 +16,6 @@ import {
   getCurrentTimezone,
   generateId,
 } from '@/types/entry';
-import { encryptContent, decryptContent } from '@/utils/encryption';
 
 const LOCAL_STORAGE_KEYS = {
   DRAFT: '@three/draft',
@@ -39,32 +38,14 @@ interface DbEntry {
 /**
  * Convert database entry to app Entry type (with decryption)
  */
-async function mapToEntry(dbEntry: DbEntry): Promise<Entry> {
-  try {
-    const content = await decryptContent(dbEntry.encrypted_content);
-    return {
-      id: dbEntry.id,
-      date: dbEntry.date,
-      content,
-      submittedAt: dbEntry.created_at,
-      timezone: dbEntry.timezone,
-    };
-  } catch (error) {
-    console.error('Failed to decrypt entry:', dbEntry.id, error);
-    // REINSTALL WARNING: If the user reinstalls the app, SecureStore is cleared and the
-    // encryption key is permanently lost. Any entries encrypted with that key will always
-    // land here and show as '[Unable to decrypt entry]' with no recovery path.
-    // Before shipping a recovery story, consider: (a) a pre-reinstall export/backup flow,
-    // (b) iCloud/Google Drive key escrow, or (c) a user-visible warning in Settings that
-    // "Reinstalling the app will permanently erase all journal entries."
-    return {
-      id: dbEntry.id,
-      date: dbEntry.date,
-      content: '[Unable to decrypt entry]',
-      submittedAt: dbEntry.created_at,
-      timezone: dbEntry.timezone,
-    };
-  }
+function mapToEntry(dbEntry: DbEntry): Entry {
+  return {
+    id: dbEntry.id,
+    date: dbEntry.date,
+    content: dbEntry.encrypted_content,
+    submittedAt: dbEntry.created_at,
+    timezone: dbEntry.timezone,
+  };
 }
 
 /**
@@ -83,12 +64,7 @@ export async function getAllEntries(userId: string): Promise<Entry[]> {
       return [];
     }
 
-    // Decrypt all entries
-    const entries = await Promise.all(
-      (data as DbEntry[]).map(mapToEntry)
-    );
-
-    return entries;
+    return (data as DbEntry[]).map(mapToEntry);
   } catch (error) {
     console.error('Failed to load entries:', error);
     return [];
@@ -140,14 +116,10 @@ export async function hasEntryForToday(userId: string): Promise<boolean> {
 /**
  * Save a new entry (encrypted before saving)
  * @param content - The three sentences
- * @returns The saved entry (with decrypted content for display)
  */
 export async function saveEntry(userId: string, content: string): Promise<Entry> {
   const today = getTodayDateString();
   const timezone = getCurrentTimezone();
-
-  // Encrypt the content before saving
-  const encryptedContent = await encryptContent(content);
 
   // Check if entry exists for today
   const { data: existing } = await supabase
@@ -165,7 +137,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
     const { data, error } = await supabase
       .from('entries')
       .update({
-        encrypted_content: encryptedContent,
+        encrypted_content: content,
         timezone,
       })
       .eq('user_id', userId)
@@ -187,7 +159,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
       .insert({
         user_id: userId,
         date: today,
-        encrypted_content: encryptedContent,
+        encrypted_content: content,
         timezone,
       })
       .select()
@@ -243,7 +215,7 @@ export async function getEntriesForMonth(
       return [];
     }
 
-    return Promise.all((data as DbEntry[]).map(mapToEntry));
+    return (data as DbEntry[]).map(mapToEntry);
   } catch (error) {
     console.error('Failed to get entries for month:', error);
     return [];
@@ -443,17 +415,10 @@ export async function migrateLocalEntries(userId: string): Promise<number> {
       if (entry.content) {
         content = entry.content;
       } else if (entry.encryptedContent) {
-        try {
-          content = await decryptContent(entry.encryptedContent);
-        } catch {
-          content = entry.encryptedContent; // Use as-is if can't decrypt
-        }
+        content = entry.encryptedContent;
       } else {
         continue;
       }
-
-      // Encrypt for Supabase
-      const encryptedContent = await encryptContent(content);
 
       // Check if already exists in Supabase
       const { data: existing } = await supabase
@@ -470,7 +435,7 @@ export async function migrateLocalEntries(userId: string): Promise<number> {
           .insert({
             user_id: userId,
             date: entry.date,
-            encrypted_content: encryptedContent,
+            encrypted_content: content,
             timezone: entry.timezone || 'UTC',
           });
 
@@ -545,7 +510,7 @@ export async function getEntriesForReflection(
       return [];
     }
 
-    return Promise.all((data as DbEntry[]).map(mapToEntry));
+    return (data as DbEntry[]).map(mapToEntry);
   } catch (error) {
     console.error('Failed to get entries for reflection:', error);
     return [];

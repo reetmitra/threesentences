@@ -1,7 +1,7 @@
 /**
  * Three™ - Encryption Utilities
  *
- * AES-256-GCM via Hermes Web Crypto API (crypto.subtle) — no native module needed.
+ * AES-256-GCM via @noble/ciphers — pure JS, works in Expo Go, TestFlight, and prod.
  * v2 format: AES-256-GCM (current)
  * v1 format: legacy XOR (read-only, backward compat)
  */
@@ -9,6 +9,7 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ExpoCrypto from 'expo-crypto';
+import { gcm } from '@noble/ciphers/aes';
 
 const SECURE_KEY_ALIAS = 'threesentences_encryption_key';
 const LEGACY_ASYNC_KEY = '@threesentences/encryption_key';
@@ -67,34 +68,17 @@ async function getRawKeyBytes(): Promise<Uint8Array> {
   return hexToBytes(hexKey);
 }
 
-async function getCryptoKey(usage: KeyUsage): Promise<CryptoKey> {
-  const rawKey = await getRawKeyBytes();
-  // Cast .buffer to ArrayBuffer: TS 5.x infers Uint8Array<ArrayBufferLike> but
-  // crypto.subtle.importKey expects BufferSource which requires ArrayBuffer.
-  return crypto.subtle.importKey(
-    'raw',
-    rawKey.buffer as ArrayBuffer,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    [usage]
-  );
-}
-
-// ─── v2: AES-256-GCM ─────────────────────────────────────────────────────────
+// ─── v2: AES-256-GCM via @noble/ciphers ──────────────────────────────────────
 
 async function encryptV2(plaintext: string): Promise<string> {
-  const key = await getCryptoKey('encrypt');
+  const key = await getRawKeyBytes();
   const iv = await ExpoCrypto.getRandomBytesAsync(IV_LENGTH);
   const encoded = new TextEncoder().encode(plaintext);
 
-  const cipherBuffer = await crypto.subtle.encrypt(
-    // iv.buffer cast: TS 5.x widens Uint8Array to ArrayBufferLike; AES-GCM iv needs ArrayBuffer.
-    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: 128 },
-    key,
-    encoded
-  );
+  const aes = gcm(key, iv);
+  const cipherBytes = aes.encrypt(encoded);
 
-  return `v2:${bytesToHex(iv)}:${bytesToHex(new Uint8Array(cipherBuffer))}`;
+  return `v2:${bytesToHex(iv)}:${bytesToHex(cipherBytes)}`;
 }
 
 async function decryptV2(encryptedStr: string): Promise<string> {
@@ -102,16 +86,11 @@ async function decryptV2(encryptedStr: string): Promise<string> {
   const iv = hexToBytes(parts[1]);
   const cipherBytes = hexToBytes(parts[2]);
 
-  const key = await getCryptoKey('decrypt');
-  const plainBuffer = await crypto.subtle.decrypt(
-    // iv.buffer cast: same ArrayBufferLike → ArrayBuffer narrowing as encryptV2.
-    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: 128 },
-    key,
-    // cipherBytes.buffer cast: same TS 5.x ArrayBufferLike narrowing needed for data arg.
-    cipherBytes.buffer as ArrayBuffer
-  );
+  const key = await getRawKeyBytes();
+  const aes = gcm(key, iv);
+  const plainBytes = aes.decrypt(cipherBytes);
 
-  return new TextDecoder().decode(plainBuffer);
+  return new TextDecoder().decode(plainBytes);
 }
 
 // ─── v1: Legacy XOR (read-only) ───────────────────────────────────────────────

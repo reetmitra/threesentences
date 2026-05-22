@@ -190,7 +190,8 @@ export default function TodayScreen() {
           setSubmissionStatus('idle');
         }, 1500);
       }
-    } catch {
+    } catch (err) {
+      console.error('Failed to save entry:', err);
       showToast('error', 'Failed to save entry — please try again');
       setSubmissionStatus('idle');
     }
