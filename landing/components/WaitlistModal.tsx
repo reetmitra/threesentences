@@ -1,13 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DottedSurface } from "@/components/ui/dotted-surface";
+import {
+  LP_INK,
+  LP_INK_DIM,
+  LP_INK_FADE,
+  LP_PAPER_2,
+  LP_SURFACE,
+  LP_FRAME,
+  LP_SANS,
+  LP_MONO,
+  H3,
+  Lead,
+  Eyebrow,
+  P,
+  CTA,
+  Mark,
+} from "@/components/lp";
 import { supabase } from "@/lib/supabase";
-import { CheckCircle, Loader2, X } from "lucide-react";
 
 interface WaitlistModalProps {
   open: boolean;
@@ -15,267 +25,186 @@ interface WaitlistModalProps {
 }
 
 export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClose = () => {
-    onOpenChange(false);
-    setTimeout(() => {
-      setIsSuccess(false);
-      setName("");
-      setEmail("");
-      setError(null);
-    }, 300);
-  };
+  const onClose = () => onOpenChange(false);
+  const valid = /\S+@\S+\.\S+/.test(email);
 
-  // Escape key closes modal
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
-        handleClose();
-      }
+      if (e.key === 'Escape' && open) onClose();
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      const t = setTimeout(() => {
+        setSubmitted(false);
+        setEmail('');
+        setError(null);
+        setLoading(false);
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
+
+  const handleSubmit = async () => {
+    if (!valid || loading) return;
+    setLoading(true);
     setError(null);
 
-    try {
-      const { error: supabaseError } = await supabase
-        .from("waitlist")
-        .insert([{ name: name.trim(), email: email.trim().toLowerCase() }]);
+    const { error: supabaseError } = await supabase
+      .from('waitlist')
+      .insert([{ email: email.trim().toLowerCase() }]);
 
-      if (supabaseError) {
-        if (supabaseError.code === "23505") {
-          setError("This email is already on the waitlist.");
-        } else {
-          setError("Something went wrong. Please try again.");
-        }
-        return;
+    if (supabaseError) {
+      if (supabaseError.code === '23505') {
+        setError('This email is already on the waitlist.');
+      } else {
+        setError('Something went wrong. Please try again.');
       }
-
-      setIsSuccess(true);
-      setTimeout(() => {
-        onOpenChange(false);
-        setTimeout(() => {
-          setIsSuccess(false);
-          setName("");
-          setEmail("");
-        }, 300);
-      }, 2500);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
+      return;
     }
+
+    setLoading(false);
+    setSubmitted(true);
   };
 
+  if (!open) return null;
+
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50"
-          // No exit on the outer wrapper — only backdrop fades
-        >
-          {/* Backdrop — fades in/out, blur, dark overlay */}
-          <motion.div
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              backgroundColor: "rgba(0,0,0,0.6)",
-            }}
-            onClick={handleClose}
-          />
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        animation: 'lp-fade-in 200ms ease-out',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: 520,
+          background: LP_PAPER_2,
+          borderRadius: 28,
+          border: `1px solid ${LP_FRAME}`,
+          padding: '52px 48px 44px',
+          boxShadow: '0 40px 80px -20px rgba(0,0,0,0.8)',
+          position: 'relative',
+          animation: 'lp-modal-in 300ms cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 24,
+            right: 24,
+            background: 'transparent',
+            border: `1px solid ${LP_FRAME}`,
+            color: LP_INK_DIM,
+            cursor: 'pointer',
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+          }}
+        >×</button>
 
-          {/* Dotted Surface Background */}
-          <DottedSurface className="opacity-50" />
-
-          {/* Close Button */}
-          <motion.button
-            onClick={handleClose}
-            className="absolute top-6 right-6 z-50 p-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <X className="h-5 w-5 text-white/70" />
-          </motion.button>
-
-          {/* Modal box — lp-modal-in entrance, no exit */}
-          <motion.div
-            className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6"
-            initial={{ opacity: 0, y: 16, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Success / Form cross-fade */}
-            <AnimatePresence mode="wait">
-              {isSuccess ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  className="flex flex-col items-center justify-center text-center"
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-                  >
-                    <CheckCircle className="h-20 w-20 text-white mb-6" strokeWidth={1} />
-                  </motion.div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-3xl md:text-4xl font-light text-white mb-3"
-                  >
-                    You&apos;re on the list
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-white/50 text-sm tracking-wide"
-                  >
-                    We&apos;ll notify you when 3hree launches.
-                  </motion.p>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 3, color: '#75726a', marginTop: 24 }}
-                  >
-                    Be better. Do better.
-                  </motion.p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="form"
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-md w-full mx-auto"
-                >
-                  {/* Header */}
-                  <div className="text-center mb-10">
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-xs font-medium tracking-[0.3em] uppercase text-white/40 mb-4"
-                    >
-                      by 363™
-                    </motion.p>
-                    <motion.h1
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 }}
-                      className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4"
-                    >
-                      Request early access.
-                    </motion.h1>
-                    <motion.p
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-white/50 text-sm max-w-sm mx-auto leading-relaxed"
-                    >
-                      Be the first to experience Three when we launch in Q4 2026.
-                      Three sentences. Every day. That&apos;s it.
-                    </motion.p>
-                  </div>
-
-                  {/* Form */}
-                  <motion.form
-                    onSubmit={handleSubmit}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="space-y-4"
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white/60 text-xs tracking-wider uppercase">
-                        Name
-                      </Label>
-                      <Input
-                        id="name"
-                        placeholder="Your name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        className="bg-white/5 border-white/10 focus:border-white/30 text-white placeholder:text-white/30"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-white/60 text-xs tracking-wider uppercase">
-                        Email
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        className="bg-white/5 border-white/10 focus:border-white/30 text-white placeholder:text-white/30"
-                      />
-                    </div>
-
-                    {error && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-red-400 text-sm text-center"
-                      >
-                        {error}
-                      </motion.p>
-                    )}
-
-                    <Button
-                      type="submit"
-                      className="w-full mt-6"
-                      size="lg"
-                      disabled={isLoading || !name.trim() || !/\S+@\S+\.\S+/.test(email)}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Join waitlist"
-                      )}
-                    </Button>
-                  </motion.form>
-
-                  {/* Footer */}
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.35 }}
-                    className="text-center text-white/30 text-xs mt-8 tracking-wide"
-                  >
-                    No spam. No marketing. Just a single note when your spot opens.
-                  </motion.p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        {submitted ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <Mark size={44} />
+            <div style={{ height: 28 }} />
+            <H3 style={{ fontSize: 28 }}>You're on the list.</H3>
+            <div style={{ height: 16 }} />
+            <Lead style={{ fontSize: 15, textAlign: 'center', maxWidth: '100%' }}>
+              We'll send you in when there's room — no rush, no spam. Just a quiet note when your wave opens.
+            </Lead>
+            <div style={{ height: 32 }} />
+            <Eyebrow>Be better. Do better.</Eyebrow>
+          </div>
+        ) : (
+          <>
+            <Mark size={36} />
+            <div style={{ height: 24 }} />
+            <H3 style={{ fontSize: 30 }}>Request early access.</H3>
+            <div style={{ height: 12 }} />
+            <Lead style={{ fontSize: 15, maxWidth: '100%' }}>
+              Invite-only. We open in small waves. Enter your email and we'll find you when there's room.
+            </Lead>
+            <div style={{ height: 32 }} />
+            <div style={{
+              height: 54,
+              borderRadius: 12,
+              border: `1px solid ${LP_FRAME}`,
+              background: LP_SURFACE,
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 18px',
+            }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && valid) handleSubmit(); }}
+                placeholder="your@email.com"
+                autoFocus
+                style={{
+                  flex: 1,
+                  fontSize: 16,
+                  color: LP_INK,
+                  background: 'transparent',
+                  fontFamily: LP_SANS,
+                  outline: 'none',
+                  border: 'none',
+                }}
+              />
+            </div>
+            {error && (
+              <div style={{
+                marginTop: 10,
+                fontFamily: LP_SANS,
+                fontSize: 13,
+                color: '#e05c5c',
+                lineHeight: 1.4,
+              }}>{error}</div>
+            )}
+            <div style={{ height: error ? 10 : 14 }} />
+            <CTA
+              fill
+              size="lg"
+              style={{ width: '100%' }}
+              onClick={() => valid && handleSubmit()}
+              disabled={!valid || loading}
+            >
+              {loading ? 'Joining…' : 'Join the waitlist'}
+            </CTA>
+            <div style={{ height: 18 }} />
+            <P style={{ textAlign: 'center', fontSize: 11, letterSpacing: 0.3, color: LP_INK_FADE }}>
+              No spam. No marketing. Just a single note when your spot opens.
+            </P>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

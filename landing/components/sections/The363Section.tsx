@@ -1,103 +1,109 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Reveal } from "@/components/ui/Reveal";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import React, { useState, useEffect } from "react";
+import {
+  LP_INK,
+  LP_INK_DIM,
+  LP_PAPER,
+  LP_SERIF,
+  useInView,
+  Eyebrow,
+  H2,
+  Lead,
+} from "@/components/lp";
 
 export function The363Section() {
+  const [ref, inView] = useInView({ threshold: 0.2 });
   const [count, setCount] = useState(0);
-  const countRef = useRef<HTMLDivElement>(null);
-  const triggered = useRef(false);
-  const reduced = useReducedMotion();
 
   useEffect(() => {
-    const el = countRef.current;
-    if (!el) return;
-    let rafId: number;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !triggered.current) {
-          triggered.current = true;
-          observer.disconnect();
-          if (reduced) {
-            setCount(363); // instant snap
-          } else {
-            let current = 0;
-            const step = () => {
-              current = Math.min(current + 3, 363);
-              setCount(current);
-              if (current < 363) {
-                rafId = requestAnimationFrame(step);
-              }
-            };
-            rafId = requestAnimationFrame(step);
-          }
-        }
-      },
-      { threshold: 0.2 }
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(rafId);
+    if (!inView) return;
+    let start = 0;
+    const end = 363;
+    const step = () => {
+      start += 3;
+      if (start <= end) {
+        setCount(start);
+        requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
     };
-  }, [reduced]);
+    setTimeout(() => requestAnimationFrame(step), 200);
+  }, [inView]);
 
   return (
-    <section className="relative py-32 px-6 overflow-hidden text-center">
-      {/* Giant watermark "363" behind all content */}
-      <motion.div
-        aria-hidden
-        className="absolute inset-0 flex items-center justify-center select-none pointer-events-none font-serif italic"
-        initial={{ opacity: reduced ? 0.03 : 0, scale: reduced ? 1 : 0.9 }}
-        whileInView={reduced ? undefined : { opacity: 0.03, scale: 1 }}
-        viewport={{ once: true, margin: "0px 0px -20% 0px" }}
-        transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          fontSize: "clamp(220px, 32vw, 520px)",
-          color: "#FFFFF0",
-          fontWeight: 700,
-          lineHeight: 1,
-          letterSpacing: "-12px",
-        }}
-      >
-        363
-      </motion.div>
-
-      {/* Foreground content */}
-      <div className="relative z-10 max-w-2xl mx-auto">
-        {/* Count-up number */}
-        <div ref={countRef}>
+    <section style={{ background: LP_PAPER, padding: "200px 0" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
+        <div ref={ref} style={{ textAlign: "center", position: "relative" }}>
+          {/* Giant watermark */}
           <div
-            className="tabular-nums font-mono font-bold"
             style={{
-              fontSize: "clamp(80px, 12vw, 130px)",
-              color: "#FFFFF0",
-              lineHeight: 1,
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: LP_SERIF,
+              fontStyle: "italic",
+              fontSize: "clamp(220px, 32vw, 520px)",
+              color: LP_INK,
+              opacity: 0.03,
+              letterSpacing: -12,
+              pointerEvents: "none",
+              lineHeight: 0.9,
             }}
           >
-            {String(count).padStart(3, '0')}
+            363
           </div>
-          <p className="mt-3 text-sm uppercase tracking-widest text-white/40">
-            daily reflections captured
-          </p>
+
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <Eyebrow>Not 365.</Eyebrow>
+            <div style={{ height: 32 }} />
+            <div
+              style={{
+                fontFamily: LP_SERIF,
+                fontStyle: "italic",
+                fontSize: "clamp(100px, 18vw, 280px)",
+                letterSpacing: -8,
+                lineHeight: 0.95,
+                color: LP_INK,
+              }}
+            >
+              {String(count).padStart(3, "0")}
+            </div>
+            <div style={{ height: 40 }} />
+            <div
+              style={{
+                display: "flex",
+                gap: 0,
+                justifyContent: "center",
+                alignItems: "flex-start",
+                maxWidth: 800,
+                margin: "0 auto",
+              }}
+            >
+              <H2 style={{ color: LP_INK_DIM, fontSize: "clamp(28px, 3.5vw, 48px)" }}>
+                You cannot be perfect.&nbsp;
+              </H2>
+              <H2 style={{ fontSize: "clamp(28px, 3.5vw, 48px)" }}>
+                But you can be relentless.
+              </H2>
+            </div>
+            <div style={{ height: 48 }} />
+            <Lead
+              style={{
+                margin: "0 auto",
+                color: LP_INK_DIM,
+                textAlign: "center",
+                maxWidth: 560,
+              }}
+            >
+              Two days of grace, built in. Miss a day, return without shame.
+              Empty days are not failures — they are days.
+            </Lead>
+          </div>
         </div>
-
-        {/* Two-color headline */}
-        <Reveal delay={0.2}>
-          <h2 style={{ fontSize: 'clamp(28px, 3vw, 48px)', lineHeight: 1.1, fontFamily: 'var(--font-serif)', fontStyle: 'italic' }} className="mt-10">
-            <span style={{ color: '#8a877e' }}>You cannot be perfect. </span>
-            <span style={{ color: '#ebe7dc' }}>But you can be relentless.</span>
-          </h2>
-        </Reveal>
-
-        {/* Supporting copy */}
-        <Reveal delay={0.35}>
-          <p className="mt-5 text-base sm:text-lg text-white/50 max-w-md mx-auto leading-relaxed">
-            The constraint that changes everything.
-          </p>
-        </Reveal>
       </div>
     </section>
   );

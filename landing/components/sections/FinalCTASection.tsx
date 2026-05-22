@@ -1,64 +1,76 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Reveal } from "@/components/ui/Reveal";
+import {
+  LP_INK_DIM,
+  LP_MONO,
+  Reveal,
+  H1,
+  Lead,
+  CTA,
+  Mark,
+  DotGrid,
+} from "@/components/lp";
 
-interface FinalCTASectionProps {
-  onCTAClick: () => void;
-}
-
-export function FinalCTASection({ onCTAClick }: FinalCTASectionProps) {
+export function FinalCTASection({ onCTAClick }: { onCTAClick: () => void }) {
   return (
-    <section className="py-32 px-6 text-center">
-      {/* Floating mark — three ivory dots with staggered infinite y animation */}
-      <div className="flex justify-center gap-3 mb-8">
-        {[0, 0.15, 0.3].map((delay, i) => (
-          <motion.div
-            key={i}
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 4.5, ease: "easeInOut", repeat: Infinity, delay }}
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: "#FFFFF0" }}
-          />
-        ))}
+    <section style={{
+      background: '#0e0e10',
+      padding: '200px 0',
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <DotGrid opacity={0.035} size={32} />
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(circle at 50% 60%, rgba(255,255,255,0.04), transparent 55%)',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 900, margin: '0 auto', padding: '0 64px' }}>
+        <Reveal>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+            <Mark size={52} />
+          </div>
+        </Reveal>
+        <Reveal delay={100}>
+          <H1 style={{ fontSize: 'clamp(60px, 10vw, 140px)' }}>
+            Start with<br />today.
+          </H1>
+        </Reveal>
+        <Reveal delay={250}>
+          <Lead style={{ margin: '40px auto 0', maxWidth: 520, textAlign: 'center' }}>
+            Three Sentences is invite-only. We're opening early access in small waves to people who are serious about the practice.
+          </Lead>
+        </Reveal>
+        <Reveal delay={400}>
+          <div style={{ marginTop: 52, display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <CTA fill size="lg" onClick={onCTAClick}>
+              Request access <span style={{ fontSize: 18 }}>→</span>
+            </CTA>
+          </div>
+        </Reveal>
+        <Reveal delay={550}>
+          <div style={{
+            marginTop: 48,
+            display: 'flex',
+            gap: 32,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            fontFamily: LP_MONO,
+            fontSize: 11,
+            color: LP_INK_DIM,
+            letterSpacing: 2.4,
+            textTransform: 'uppercase',
+          }}>
+            <span>Invite only</span>
+            <span style={{ opacity: 0.3 }}>·</span>
+            <span>iOS · Q4 2026</span>
+            <span style={{ opacity: 0.3 }}>·</span>
+            <span>No spam, ever</span>
+          </div>
+        </Reveal>
       </div>
-
-      {/* Blur-in headline */}
-      <motion.h2
-        initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
-        whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-        className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-2xl mx-auto leading-tight"
-      >
-        Start with
-        <br />
-        today.
-      </motion.h2>
-
-      {/* Supporting copy */}
-      <Reveal delay={0.2}>
-        <p className="text-sm sm:text-base text-white/30 font-light max-w-md mx-auto mb-10">
-          Three sentences. Every day. That&apos;s all it takes to change your life.
-        </p>
-      </Reveal>
-
-      {/* CTA button */}
-      <Reveal delay={0.35}>
-        <button
-          onClick={onCTAClick}
-          className="bg-[#FFFFF0] text-black font-mono text-xs tracking-[2px] uppercase px-10 py-4 rounded-full hover:-translate-y-px transition-transform duration-200"
-        >
-          Request access →
-        </button>
-      </Reveal>
-
-      {/* Bottom trust strip */}
-      <Reveal delay={0.45}>
-        <p style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 2.4, color: '#75726a', marginTop: 32 }}>
-          Invite only · iOS · Q4 2026 · No spam, ever
-        </p>
-      </Reveal>
     </section>
   );
 }

@@ -1,44 +1,78 @@
 "use client";
 
-import { Reveal } from "@/components/ui/Reveal";
+import {
+  LP_INK,
+  LP_INK_DIM,
+  LP_FRAME,
+  LP_SERIF,
+  Reveal,
+  Eyebrow,
+  H2,
+  P,
+  Hairline,
+} from "@/components/lp";
 
 const quotes = [
   {
-    quote: "I've tried every journaling app. This is the first one I've used every day for six months.",
-    attribution: "Early beta tester, London",
+    text: 'Three sentences made me realize I was writing about the same problem for six straight weeks. I had not noticed until I saw it in a grid.',
+    who: 'Early beta tester, London',
   },
   {
-    quote: "Three sentences sounds like nothing. It turns out it's everything.",
-    attribution: "Designer, New York",
+    text: 'I have tried every journaling app. This is the only one I still use. The constraint removes all the friction.',
+    who: 'Designer, New York',
   },
   {
-    quote: "The constraint removed my last excuse. I just write.",
-    attribution: "Founder, Singapore",
+    text: "The permanence is uncomfortable at first. Then it becomes the point. You can't hide from what you actually wrote.",
+    who: 'Founder, Singapore',
   },
 ];
 
 export function TrustSection() {
   return (
-    <section className="py-20 sm:py-24 px-6">
-      <div className="max-w-5xl mx-auto">
+    <section style={{ background: '#0e0e10', padding: '160px 0' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+        <Reveal>
+          <div style={{ textAlign: 'center', marginBottom: 72 }}>
+            <Eyebrow>From the beta</Eyebrow>
+            <div style={{ height: 24 }} />
+            <H2>What people say<br />after a hundred days.</H2>
+          </div>
+        </Reveal>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
           {quotes.map((q, i) => (
-            <Reveal key={i} delay={i * 120}>
-              <div style={{ display: 'flex', flexDirection: 'column', padding: '32px 28px', background: '#15151a', border: '1px solid #1e1e22', borderRadius: 16 }}>
-                {/* Decorative open-quote glyph */}
-                <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 72, lineHeight: 0.6, color: '#ebe7dc', opacity: 0.12, marginBottom: -24, userSelect: 'none' }}>
-                  &ldquo;
+            <Reveal key={i} delay={i * 100}>
+              <div style={{
+                padding: '40px 36px',
+                borderRadius: 20,
+                border: `1px solid ${LP_FRAME}`,
+                background: 'rgba(255,255,255,0.012)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 20,
+                height: '100%',
+              }}>
+                <div style={{
+                  fontFamily: LP_SERIF,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(60px,8vw,80px)',
+                  color: LP_INK,
+                  opacity: 0.12,
+                  lineHeight: 0.6,
+                  letterSpacing: -2,
+                }}>&ldquo;</div>
+                <div style={{
+                  fontFamily: LP_SERIF,
+                  fontStyle: 'italic',
+                  fontSize: 20,
+                  color: LP_INK,
+                  lineHeight: 1.55,
+                  marginTop: -32,
+                }}>
+                  {q.text}
                 </div>
-                {/* Quote body */}
-                <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 20, color: '#ebe7dc', lineHeight: 1.55, flex: 1, marginTop: 32 }}>
-                  {q.quote}
-                </p>
-                {/* Attribution */}
-                <div style={{ marginTop: 'auto', paddingTop: 24 }}>
-                  <div style={{ width: 32, height: 1, background: '#1e1e22', marginBottom: 12 }} />
-                  <p style={{ fontSize: 12, color: '#8a877e', fontFamily: 'var(--font-sans)' }}>
-                    {q.attribution}
-                  </p>
+                <div style={{ marginTop: 'auto' }}>
+                  <Hairline width="32px" style={{ margin: '0 0 14px' }} />
+                  <P style={{ fontSize: 12, letterSpacing: 0.3 }}>{q.who}</P>
                 </div>
               </div>
             </Reveal>

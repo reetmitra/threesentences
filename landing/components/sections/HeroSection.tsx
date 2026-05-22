@@ -1,212 +1,160 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useScrollY } from "@/hooks/useScrollY";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { Logo3hree } from "@/components/Logo3hree";
+import {
+  LP_INK,
+  LP_INK_DIM,
+  LP_INK_FADE,
+  LP_FRAME,
+  LP_MONO,
+  LP_SERIF,
+  Mark,
+  DotGrid,
+  Reveal,
+  H1,
+  Lead,
+  CTA,
+  useScrollY,
+} from "@/components/lp";
 
-interface HeroSectionProps {
-  onCTAClick: () => void;
-}
-
-const lpFloat = {
-  animate: {
-    y: [0, -10, 0],
-    transition: { duration: 4.5, ease: "easeInOut" as const, repeat: Infinity },
-  },
-};
-
-function FloatingMark({ reduced }: { reduced: boolean }) {
+function Nav({ onCTA }: { onCTA: () => void }) {
+  const y = useScrollY();
+  const elevated = y > 40;
   return (
-    <motion.div
-      className="flex gap-[14px] items-center mb-10"
-      animate={reduced ? undefined : "animate"}
-      variants={lpFloat}
-    >
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="w-[10px] h-[10px] rounded-full"
-          style={{ backgroundColor: "#FFFFF0" }}
-        />
-      ))}
-    </motion.div>
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: elevated ? '14px 48px' : '24px 48px',
+      background: elevated ? 'rgba(6,6,8,0.78)' : 'transparent',
+      backdropFilter: elevated ? 'blur(16px) saturate(140%)' : 'none',
+      WebkitBackdropFilter: elevated ? 'blur(16px) saturate(140%)' : 'none',
+      borderBottom: elevated ? `1px solid ${LP_FRAME}` : '1px solid transparent',
+      transition: 'all 240ms ease',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <Mark size={28} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <span style={{ fontFamily: LP_SERIF, fontStyle: 'italic', fontSize: 18, color: LP_INK, letterSpacing: -0.3 }}>Three Sentences</span>
+          <span style={{ fontFamily: LP_MONO, fontSize: 9, color: LP_INK_DIM, letterSpacing: 2.2, textTransform: 'uppercase' }}>by 363™</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+        {[['why', '#problem'], ['how', '#rule'], ['inside', '#features'], ['faq', '#faq']].map(([l, h]) => (
+          <a key={h} href={h} style={{
+            fontFamily: LP_MONO, fontSize: 11, color: LP_INK_DIM,
+            letterSpacing: 2.4, textTransform: 'uppercase',
+            textDecoration: 'none', transition: 'color 200ms',
+          }} onMouseEnter={(e) => e.currentTarget.style.color = LP_INK} onMouseLeave={(e) => e.currentTarget.style.color = LP_INK_DIM}>{l}</a>
+        ))}
+        <CTA size="sm" ghost onClick={onCTA}>Join the waitlist</CTA>
+      </div>
+    </nav>
   );
 }
 
-export function HeroSection({ onCTAClick }: HeroSectionProps) {
-  const scrollY = useScrollY();
-  const reduced = useReducedMotion();
-  const elevated = scrollY > 40;
-
-  const heroOpacity = reduced ? 1 : Math.max(0, 1 - scrollY / 600);
-  const heroY = reduced ? 0 : Math.min(scrollY * 0.3, 200);
-  const glowY = reduced ? 0 : scrollY * 0.15;
-
-  const heroStyle = reduced
-    ? {}
-    : {
-        opacity: heroOpacity,
-        transform: `translateY(${heroY}px)`,
-      };
-
-  const glowStyle = reduced
-    ? {
-        background:
-          "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
-      }
-    : {
-        background:
-          "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)",
-        transform: `translateY(${glowY}px)`,
-        opacity: heroOpacity,
-      };
+function Hero({ onCTA }: { onCTA: () => void }) {
+  const y = useScrollY();
+  const parallax = Math.min(y * 0.3, 200);
+  const fade = Math.max(0, 1 - y / 600);
 
   return (
-    <section className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Nav */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-50"
-        style={{
-          padding: elevated ? "14px 64px" : "24px 64px",
-          background: elevated ? "rgba(6,6,8,0.78)" : "transparent",
-          backdropFilter: elevated ? "blur(16px)" : "none",
-          WebkitBackdropFilter: elevated ? "blur(16px)" : "none",
-          borderBottom: `1px solid ${elevated ? "rgba(255,255,255,0.06)" : "transparent"}`,
-          transition: "all 240ms ease",
-        }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo3hree size="sm" />
-            <span className="font-mono text-xs tracking-[3px] uppercase text-white/60">
-              Three Sentences
-            </span>
-            <span className="font-mono text-[9px] tracking-[2px] uppercase text-white/20">
-              by 363™
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            {(['why', 'how', 'inside', 'faq'] as const).map(link => (
-              <a
-                key={link}
-                href={`#${link}`}
-                className="hidden md:block text-[11px] tracking-[2.4px] uppercase font-mono text-white/50 hover:text-white transition-colors duration-200"
-              >
-                {link.toUpperCase()}
-              </a>
-            ))}
-            <button
-              onClick={onCTAClick}
-              className="font-mono text-[11px] tracking-[2px] uppercase text-white/50 border border-white/10 px-4 py-2 rounded-full hover:text-white hover:border-white/30 transition-colors duration-200"
-            >
-              Join the waitlist
-            </button>
-          </div>
+    <section id="hero" style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden',
+      padding: '120px 32px 80px',
+    }}>
+      <DotGrid />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(circle at 50% 38%, rgba(255,255,255,0.05), transparent 50%)',
+        pointerEvents: 'none', zIndex: 0,
+        transform: `translateY(${parallax * 0.5}px)`,
+        opacity: fade,
+      }} />
+
+      <div style={{
+        position: 'relative', zIndex: 1, textAlign: 'center',
+        maxWidth: 1100, margin: '0 auto',
+        transform: `translateY(${parallax}px)`,
+        opacity: fade,
+        transition: 'opacity 200ms ease',
+      }}>
+        {/* Floating mark */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', marginBottom: 36,
+          animation: 'lp-float 4500ms ease-in-out infinite',
+        }}>
+          <Mark size={56} />
         </div>
-      </nav>
 
-      {/* Background glow */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={glowStyle}
-      />
-
-      {/* Dot grid backdrop */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(rgba(235,231,220,0.025) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Hero content */}
-      <main
-        className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 pt-24"
-        style={heroStyle}
-      >
-        <div className="text-center max-w-3xl mx-auto">
-          <FloatingMark reduced={reduced} />
-
-          <motion.h1
-            className="text-7xl sm:text-8xl font-serif italic tracking-[-0.375rem] text-white leading-none mb-6"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={
-              reduced
-                ? { duration: 0 }
-                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }
-            }
-          >
+        <Reveal y={32}>
+          <H1 style={{ fontSize: 'clamp(72px, 12vw, 180px)', letterSpacing: -6 }}>
             Three<br />Sentences.
-          </motion.h1>
+          </H1>
+        </Reveal>
 
-          <motion.p
-            className="font-mono text-[10px] tracking-[3px] uppercase text-white/30 mb-4"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={
-              reduced
-                ? { duration: 0 }
-                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }
-            }
-          >
-            BE BETTER. DO BETTER.
-          </motion.p>
+        <Reveal delay={250} y={20}>
+          <div style={{
+            fontFamily: LP_MONO, fontSize: 14, color: LP_INK,
+            letterSpacing: 4.8, textTransform: 'uppercase',
+            marginTop: 36, fontWeight: 500,
+          }}>
+            Be&nbsp;better. Do&nbsp;better.
+          </div>
+        </Reveal>
 
-          <motion.p
-            className="text-white/40 text-base max-w-lg mx-auto mb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={reduced ? { duration: 0 } : { duration: 0.8, delay: 0.5 }}
-          >
-            A daily journaling practice built on one unbreakable constraint.
-          </motion.p>
+        <Reveal delay={500}>
+          <Lead style={{
+            fontSize: 'clamp(17px, 1.4vw, 20px)', color: LP_INK_DIM,
+            margin: '40px auto 0', maxWidth: 560,
+          }}>
+            A quiet daily journaling practice on a single truth: you cannot be perfect, but you can be relentless.
+          </Lead>
+        </Reveal>
 
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={
-              reduced
-                ? { duration: 0 }
-                : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.7 }
-            }
-          >
-            <button
-              onClick={onCTAClick}
-              className="bg-white text-black font-mono text-xs tracking-[2px] uppercase px-8 py-3 rounded-full hover:-translate-y-px transition-transform duration-200"
-            >
-              Request access →
-            </button>
-            <a
-              href="#constraint"
-              className="font-mono text-xs tracking-[2px] uppercase px-8 py-3 rounded-full border border-white/20 text-white/60 hover:text-white hover:border-white/40 transition-colors duration-200"
-            >
-              See how it works
-            </a>
-          </motion.div>
-        </div>
-      </main>
+        <Reveal delay={700}>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 44, flexWrap: 'wrap' }}>
+            <CTA fill size="lg" onClick={onCTA}>Request access <span style={{ fontSize: 18 }}>→</span></CTA>
+            <CTA ghost size="lg" onClick={() => document.getElementById('rule')?.scrollIntoView({ behavior: 'smooth' })}>See how it works</CTA>
+          </div>
+        </Reveal>
 
-      {/* Scroll cue */}
-      <div
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 pointer-events-none"
-        style={reduced ? {} : { opacity: heroOpacity }}
-      >
-        <span className="font-mono text-[9px] tracking-[3px] uppercase text-white/25">
-          Scroll
-        </span>
-        <div
-          className="w-px h-14"
-          style={{
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.25), transparent)",
-          }}
-        />
+        <Reveal delay={900}>
+          <div style={{
+            display: 'flex', gap: 24, justifyContent: 'center', alignItems: 'center',
+            marginTop: 56, fontFamily: LP_MONO, fontSize: 10,
+            color: LP_INK_DIM, letterSpacing: 2.4, textTransform: 'uppercase',
+          }}>
+            <span>Invite only</span>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: LP_INK_FADE }} />
+            <span>Launching Q4 2026</span>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: LP_INK_FADE }} />
+            <span>iOS first</span>
+          </div>
+        </Reveal>
+      </div>
+
+      {/* scroll cue */}
+      <div style={{
+        position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+        opacity: fade * 0.6,
+      }}>
+        <div style={{
+          fontFamily: LP_MONO, fontSize: 10, color: LP_INK_DIM,
+          letterSpacing: 2.4, textTransform: 'uppercase',
+        }}>Scroll</div>
+        <div style={{ width: 1, height: 40, background: `linear-gradient(${LP_INK_DIM}, transparent)` }} />
       </div>
     </section>
+  );
+}
+
+export function HeroSection({ onCTAClick }: { onCTAClick: () => void }) {
+  return (
+    <>
+      <Nav onCTA={onCTAClick} />
+      <Hero onCTA={onCTAClick} />
+    </>
   );
 }

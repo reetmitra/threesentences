@@ -1,200 +1,166 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Typewriter } from "@/components/ui/typewriter";
-import { fadeUp, tiltUp, staggerContainer, defaultTransition } from "@/lib/animations";
+import React, { useState } from "react";
+import {
+  LP_INK,
+  LP_INK_BRIGHT,
+  LP_INK_DIM,
+  LP_PAPER,
+  LP_SURFACE,
+  LP_FRAME,
+  LP_SERIF,
+  LP_MONO,
+  Reveal,
+  Eyebrow,
+  H2,
+  Lead,
+  P,
+} from "@/components/lp";
 
-type Range = "7d" | "30d" | "90d";
-
-const RANGES: { label: string; value: Range; period: string; entries: number }[] = [
-  { label: "7 days", value: "7d", period: "7-day analysis", entries: 7 },
-  { label: "30 days", value: "30d", period: "30-day analysis", entries: 28 },
-  { label: "90 days", value: "90d", period: "90-day analysis", entries: 81 },
-];
-
-const REFLECTIONS: Record<Range, string> = {
-  "7d":
-    "This week you kept it short and honest. Three sentences, no filler. You mentioned shipping twice — that's new. Something clicked.",
-  "30d":
-    "You've been writing about momentum a lot this month. There's a shift happening — you're moving from planning to executing. The entries where you mention shipping feel different. More alive. Trust that.",
-  "90d":
-    "Three months in, a clear pattern: you write best on Tuesdays and after workouts. Your language has grown quieter and more certain. The self-doubt entries peaked in month two and have been falling ever since.",
+const reads: Record<string, { theme: string; obs: string; q: string }> = {
+  "7d": {
+    theme: "Letting go, on your own terms.",
+    obs: "Across seven entries you returned twice to a kettle and once to a sunrise. Three quiet moments where you stopped before reaching for your phone. Each was a small refusal — small, but a refusal.",
+    q: "What did the kettle give you that the inbox could not?",
+  },
+  "30d": {
+    theme: "A month of returning to slowness.",
+    obs: "You wrote about walking eleven times. The word \"quiet\" appears seven times across thirty entries. Most of your best days began with you closing the laptop first.",
+    q: "When was the last time silence felt like a friend?",
+  },
+  "90d": {
+    theme: "Building a quieter shape to your days.",
+    obs: "Over three months the meetings have receded and the walks have grown. Something is forming that you have not named yet.",
+    q: "If you had to name it, what would you call it?",
+  },
 };
 
 export function AIReflectionSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
-  const [showTypewriter, setShowTypewriter] = useState(false);
-  const [selectedRange, setSelectedRange] = useState<Range>("30d");
-
-  // Delay typewriter start slightly after section enters view
-  if (isInView && !showTypewriter) {
-    setTimeout(() => setShowTypewriter(true), 600);
-  }
-
-  const activeRange = RANGES.find((r) => r.value === selectedRange)!;
+  const [range, setRange] = useState("7d");
+  const r = reads[range];
 
   return (
-    <section ref={ref} className="py-24 sm:py-32 px-6">
-      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-12 md:gap-16">
-        {/* Left: Text */}
-        <motion.div
-          className="flex-1 text-center md:text-left"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
+    <section style={{ background: LP_PAPER, padding: "180px 0" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 80,
+            alignItems: "center",
+          }}
         >
-          <motion.p
-            variants={fadeUp}
-            transition={defaultTransition}
-            className="text-xs uppercase tracking-[0.3em] text-white/30 mb-4"
-          >
-            OPTIONAL · ALWAYS OPT-IN
-          </motion.p>
-          <motion.h2
-            variants={fadeUp}
-            transition={defaultTransition}
-            className="text-3xl sm:text-4xl font-light text-white/80 leading-tight"
-          >
-            AI that finds patterns
-            <br />
-            without rewriting you.
-          </motion.h2>
-          <motion.p
-            variants={fadeUp}
-            transition={defaultTransition}
-            className="text-sm text-white/25 leading-relaxed mt-6 max-w-sm mx-auto md:mx-0"
-          >
-            Three uses AI to surface patterns across 7, 30, and 90 days
-            of your entries. Not advice. Not therapy. Just a mirror.
-          </motion.p>
-        </motion.div>
-
-        {/* Right: Mockup card with 3D tilt entrance */}
-        <motion.div
-          className="flex-1 w-full max-w-sm"
-          style={{ perspective: 800 }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          <motion.div
-            variants={tiltUp}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-            style={{ transformOrigin: "center bottom" }}
-          >
-            <div className="border border-white/[0.08] rounded-2xl p-6 bg-white/[0.02]">
-              {/* Card header */}
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-white/20" />
-                <span className="text-[10px] text-white/30 uppercase tracking-wider">
-                  AI Reflection
-                </span>
-              </div>
-
-              {/* Range chips */}
-              <div className="flex gap-1.5 mt-2 mb-3">
-                {RANGES.map((r) => (
-                  <button
-                    key={r.value}
-                    onClick={() => setSelectedRange(r.value)}
-                    className={[
-                      "text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border transition-colors duration-200",
-                      selectedRange === r.value
-                        ? "border-white/30 text-white/60 bg-white/[0.06]"
-                        : "border-white/[0.08] text-white/20 bg-transparent hover:border-white/20 hover:text-white/40",
-                    ].join(" ")}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* AnimatePresence: period label */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`period-${selectedRange}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="text-[10px] text-white/15 mb-4"
+          <Reveal>
+            <Eyebrow>Optional · always opt-in</Eyebrow>
+            <div style={{ height: 28 }} />
+            <H2>
+              AI that finds patterns
+              <br />
+              without rewriting you.
+            </H2>
+            <div style={{ height: 28 }} />
+            <Lead style={{ maxWidth: 440 }}>
+              Once a week, an optional AI reads across your entries and surfaces
+              a theme, an observation, and a single question to sit with. Your
+              words aren&apos;t changed — they&apos;re listened to.
+            </Lead>
+            <div style={{ height: 32 }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              {(
+                [
+                  ["7d", "7 days"],
+                  ["30d", "30 days"],
+                  ["90d", "90 days"],
+                ] as const
+              ).map(([k, l]) => (
+                <button
+                  key={k}
+                  onClick={() => setRange(k)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    border: `1px solid ${range === k ? LP_INK : LP_FRAME}`,
+                    background: range === k ? LP_INK : "transparent",
+                    color: range === k ? "#0a0a0a" : LP_INK_DIM,
+                    fontFamily: LP_MONO,
+                    fontSize: 11,
+                    letterSpacing: 1.4,
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    transition: "all 180ms ease",
+                  }}
                 >
-                  {activeRange.period}
-                </motion.p>
-              </AnimatePresence>
-
-              <div className="h-px bg-white/[0.06] mb-4" />
-
-              {/* Reflection content — AnimatePresence chip swap */}
-              <div className="min-h-[120px]">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedRange}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {showTypewriter ? (
-                      <Typewriter
-                        text={REFLECTIONS[selectedRange]}
-                        speed={25}
-                        showCursor={true}
-                        loop={false}
-                        hideCursorOnType={true}
-                        className="text-xs text-white/35 leading-relaxed"
-                        cursorClassName="ml-0.5 text-white/30"
-                      />
-                    ) : (
-                      <div className="text-xs text-white/10">...</div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* 3 content cards: Theme, Observation, Question */}
-              <div className="flex flex-col gap-2 mt-4">
-                {/* Theme card */}
-                <div style={{ background: '#15151a', border: '1px solid #1e1e22', borderRadius: 12, padding: 18 }}>
-                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Theme</p>
-                  <p className="text-xs text-white/40 leading-relaxed">Momentum & execution</p>
-                </div>
-                {/* Observation card */}
-                <div style={{ background: '#15151a', border: '1px solid #1e1e22', borderRadius: 12, padding: 18 }}>
-                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Observation</p>
-                  <p className="text-xs text-white/40 leading-relaxed">Your tone has grown quieter and more certain.</p>
-                </div>
-                {/* Question card */}
-                <div style={{ background: '#15151a', borderRadius: 12, padding: 20, borderLeft: '2px solid #ffffff', borderTop: 'none', borderRight: 'none', borderBottom: 'none' }}>
-                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Question</p>
-                  <p className="text-xs text-white/40 leading-relaxed">What would it mean to trust that shift?</p>
-                </div>
-              </div>
-
-              {/* Card footer */}
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={`footer-${selectedRange}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="text-[10px] text-white/10 mt-4"
-                >
-                  Based on {activeRange.entries} entries
-                </motion.p>
-              </AnimatePresence>
-
-              {/* Footer disclaimer */}
-              <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1.4, color: '#75726a', lineHeight: 1.6, borderTop: '1px solid #1e1e22', paddingTop: 14, marginTop: 16 }}>
-                AI patterns may be wrong. Use with care. Crisis resources always available.
-              </p>
+                  {l}
+                </button>
+              ))}
             </div>
-          </motion.div>
-        </motion.div>
+          </Reveal>
+
+          <Reveal delay={200}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div
+                style={{
+                  padding: "20px 22px",
+                  background: LP_SURFACE,
+                  borderRadius: 14,
+                  border: `1px solid ${LP_FRAME}`,
+                }}
+              >
+                <Eyebrow style={{ marginBottom: 10 }}>Theme</Eyebrow>
+                <div
+                  style={{
+                    fontFamily: LP_SERIF,
+                    fontStyle: "italic",
+                    fontSize: 24,
+                    color: LP_INK,
+                    letterSpacing: -0.4,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {r.theme}
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "20px 22px",
+                  background: LP_SURFACE,
+                  borderRadius: 14,
+                  border: `1px solid ${LP_FRAME}`,
+                }}
+              >
+                <Eyebrow style={{ marginBottom: 10 }}>Observation</Eyebrow>
+                <P>{r.obs}</P>
+              </div>
+              <div
+                style={{
+                  padding: "22px 22px",
+                  background: LP_SURFACE,
+                  borderRadius: 14,
+                  borderLeft: `2px solid ${LP_INK_BRIGHT}`,
+                }}
+              >
+                <Eyebrow color={LP_INK_BRIGHT} style={{ marginBottom: 10 }}>
+                  A question to sit with
+                </Eyebrow>
+                <div
+                  style={{
+                    fontFamily: LP_SERIF,
+                    fontStyle: "italic",
+                    fontSize: 20,
+                    color: LP_INK,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {r.q}
+                </div>
+              </div>
+              <P style={{ textAlign: "center", fontSize: 11, letterSpacing: 0.5 }}>
+                AI patterns may be wrong. Use with care. Crisis resources always
+                available.
+              </P>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );

@@ -35,6 +35,24 @@ body {
   }
 }
 
+/* LP keyframes */
+@keyframes lp-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes lp-cursor {
+  0%,49%   { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+@keyframes lp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lp-modal-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

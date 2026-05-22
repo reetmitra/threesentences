@@ -1,115 +1,116 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Reveal } from "@/components/ui/Reveal";
+import {
+  LP_INK,
+  LP_INK_DIM,
+  LP_FRAME,
+  LP_SERIF,
+  Reveal,
+  Eyebrow,
+  H2,
+  Lead,
+} from "@/components/lp";
 
-const FAQS = [
+const items = [
   {
-    q: "How is Three different from a journal app?",
-    a: "Three enforces a constraint — exactly three sentences per day. The limit is the point. It forces clarity.",
+    q: 'Why exactly three sentences?',
+    a: "Three is the sweet spot between too little and too much. One sentence feels like a tweet. Five starts to feel like homework. Three forces you to choose what actually mattered — and it's short enough that you'll do it even on your worst days.",
   },
   {
-    q: "Is my data private?",
-    a: "Your entries are encrypted end-to-end. Not even we can read them.",
+    q: "Why can't I edit my entries?",
+    a: 'Because the words you write in the moment are true in a way that edited words are not. The slight roughness of an unedited entry is the point. Three Sentences is a record of who you were, not who you wish you had been.',
   },
   {
-    q: "What's the AI reflection?",
-    a: "After you write, our AI reads your three sentences and offers one thoughtful question to deepen your reflection.",
+    q: 'What does "363/365" mean?',
+    a: "Two days of grace, built in. We don't track streaks as shame — we track them as a record of relentlessness. Miss a day. Miss two. Return on the third and keep going. Empty days are not failures.",
   },
   {
-    q: "What is The Circle?",
-    a: "A small, close group — max 5 friends — who share their daily three sentences with each other.",
+    q: 'What is "The Circle"?',
+    a: 'An optional feature — up to eight people you trust with your practice. No feeds, no public profiles, no follower counts. Just encrypted messages between people who actually know each other.',
   },
   {
-    q: "How does the streak work?",
-    a: "Write once per day to keep your streak alive. Miss a day, it resets to zero.",
+    q: 'Is the AI reflection safe?',
+    a: 'The AI reflection is off by default. You opt in, and you can opt out at any time. It reads across your entries to find themes and patterns — it never rewrites your words, never shares them, and never uses them to train anything.',
   },
   {
-    q: "Is there a free tier?",
-    a: "Yes. Write daily, view your history, basic streaks — all free. AI reflections and Circle require Pro.",
+    q: 'When does it launch?',
+    a: "Q4 2026, iOS first. We're opening access in small waves. Request access from the waitlist and we'll send you in when there's room. The waitlist is not a marketing gimmick — we genuinely want to keep the first cohort small.",
   },
   {
-    q: "When does it launch?",
-    a: "Soon. Join the waitlist to get early access.",
+    q: 'How is my journal protected?',
+    a: "End-to-end encrypted. Your entries are yours — not ours. We cannot read them, we cannot sell them, and we will not. The business model is a simple subscription, not your data.",
   },
 ];
 
 export function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const toggle = (index: number) => {
-    setOpenIndex((prev) => (prev === index ? null : index));
-  };
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section className="py-24 px-6">
-      <div className="max-w-2xl mx-auto">
-        {/* Heading */}
-        <Reveal className="text-center mb-14">
-          <p className="font-mono text-[10px] tracking-[3px] uppercase text-white/30 mb-4">
-            FAQ
-          </p>
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-[#FFFFF0]">
-            Questions people ask before they start.
-          </h2>
+    <section id="faq" style={{ background: '#060608', padding: '160px 0' }}>
+      <div style={{ maxWidth: 840, margin: '0 auto', padding: '0 64px' }}>
+        <Reveal>
+          <div style={{ marginBottom: 72 }}>
+            <Eyebrow>Frequently asked</Eyebrow>
+            <div style={{ height: 28 }} />
+            <H2>Questions people ask<br />before they start.</H2>
+          </div>
         </Reveal>
-
-        {/* Accordion */}
-        <div>
-          {FAQS.map((item, index) => {
-            const isOpen = openIndex === index;
-            return (
-              <div
-                key={index}
-                style={{ borderBottom: "1px solid #1E1E2E" }}
+        {items.map((item, i) => (
+          <Reveal key={i} delay={i * 40}>
+            <div style={{ borderTop: `1px solid ${LP_FRAME}` }}>
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                style={{
+                  width: '100%',
+                  padding: '28px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 24,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
               >
-                <button
-                  className="w-full flex items-center justify-between py-5 text-left group"
-                  onClick={() => toggle(index)}
-                  aria-expanded={isOpen}
-                >
-                  <span
-                    className="text-base font-medium pr-6 leading-snug transition-colors duration-200"
-                    style={{ color: isOpen ? "#FFFFF0" : "rgba(255,255,240,0.75)" }}
-                  >
-                    {item.q}
-                  </span>
-                  <span
-                    className="flex-shrink-0 w-5 h-5 flex items-center justify-center font-mono text-lg leading-none"
-                    style={{
-                      color: "#6B6B8A",
-                      transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
-                      transition: "transform 0.22s ease",
-                    }}
-                  >
-                    +
-                  </span>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key="answer"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <p
-                        className="text-sm leading-relaxed pb-5"
-                        style={{ color: "#6B6B8A" }}
-                      >
-                        {item.a}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <div style={{
+                  fontFamily: LP_SERIF,
+                  fontStyle: 'italic',
+                  fontSize: 22,
+                  color: LP_INK,
+                  letterSpacing: -0.3,
+                  lineHeight: 1.2,
+                }}>{item.q}</div>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: `1px solid ${LP_FRAME}`,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: LP_INK_DIM,
+                  fontSize: 20,
+                  lineHeight: 1,
+                  transform: open === i ? 'rotate(45deg)' : 'none',
+                  transition: 'transform 220ms ease',
+                }}>+</div>
+              </button>
+              <div style={{
+                overflow: 'hidden',
+                maxHeight: open === i ? 300 : 0,
+                transition: 'max-height 300ms cubic-bezier(0.16,1,0.3,1)',
+              }}>
+                <div style={{ paddingBottom: 32 }}>
+                  <Lead style={{ fontSize: 16, lineHeight: 1.65, maxWidth: '100%' }}>{item.a}</Lead>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </Reveal>
+        ))}
+        <div style={{ borderTop: `1px solid ${LP_FRAME}` }} />
       </div>
     </section>
   );
