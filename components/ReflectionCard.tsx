@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing[3],
   },
   disclaimerText: {
-    fontStyle: 'italic',
     lineHeight: 18,
   },
 });

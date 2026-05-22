@@ -40,7 +40,7 @@ export function Skeleton({
       return;
     }
     opacity.value = withRepeat(
-      withTiming(0.7, { duration: 700, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.7, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );

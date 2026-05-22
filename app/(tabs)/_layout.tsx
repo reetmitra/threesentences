@@ -14,6 +14,31 @@ import { Text } from '@/components/ui/Text';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
+/** Wraps a tab icon with the icon + 4×4 dot indicator below */
+function TabIconWithDot({
+  children,
+  focused,
+}: {
+  children: React.ReactNode;
+  focused: boolean;
+}) {
+  return (
+    <View style={{ alignItems: 'center', gap: 4 }}>
+      <View style={focused ? { transform: [{ scale: 1.05 }] } : undefined}>
+        {children}
+      </View>
+      <View
+        style={{
+          width: 4,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: focused ? '#ffffff' : 'transparent',
+        }}
+      />
+    </View>
+  );
+}
+
 const c = colors.dark;
 
 function OfflineBanner() {
@@ -41,9 +66,12 @@ function OfflineBanner() {
 
   return (
     <Animated.View style={[styles.offlineBanner, style]} pointerEvents="none">
-      <Text family="monoMedium" variant="xs" uppercase style={{ color: '#F59E0B', letterSpacing: 1 }}>
-        · Offline · drafts saved locally
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#0a0a0a' }} />
+        <Text family="monoMedium" variant="xs" uppercase style={{ color: '#0a0a0a', letterSpacing: 1 }}>
+          Offline · drafts saved locally
+        </Text>
+      </View>
     </Animated.View>
   );
 }
@@ -57,10 +85,11 @@ export default function TabLayout() {
           headerShown: false,
           tabBarStyle: {
             backgroundColor: c.background,
-            borderTopWidth: 0,
+            borderTopWidth: 1,
+            borderTopColor: '#1e1e22',
             elevation: 0,
-            paddingTop: 10,
-            paddingBottom: 10,
+            paddingTop: 14,
+            paddingBottom: 30,
             height: 64,
           },
           tabBarActiveTintColor: c.textBright,
@@ -81,7 +110,11 @@ export default function TabLayout() {
           name="index"
           options={{
             title: 'Today',
-            tabBarIcon: ({ color }) => <Icon name="edit" color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, focused }) => (
+            <TabIconWithDot focused={focused}>
+              <Icon name="edit" color={color} size={22} strokeWidth={1.5} />
+            </TabIconWithDot>
+          ),
             tabBarAccessibilityLabel: 'Today — write your entry',
           }}
         />
@@ -89,7 +122,11 @@ export default function TabLayout() {
           name="history"
           options={{
             title: 'History',
-            tabBarIcon: ({ color }) => <Calendar color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, focused }) => (
+            <TabIconWithDot focused={focused}>
+              <Calendar color={color} size={22} strokeWidth={1.5} />
+            </TabIconWithDot>
+          ),
             tabBarAccessibilityLabel: 'History — past entries',
           }}
         />
@@ -97,7 +134,11 @@ export default function TabLayout() {
           name="social"
           options={{
             title: 'The Circle',
-            tabBarIcon: ({ color }) => <Icon name="chat" color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, focused }) => (
+            <TabIconWithDot focused={focused}>
+              <Icon name="chat" color={color} size={22} strokeWidth={1.5} />
+            </TabIconWithDot>
+          ),
             tabBarAccessibilityLabel: 'The Circle — friends',
           }}
         />
@@ -105,7 +146,11 @@ export default function TabLayout() {
           name="guide"
           options={{
             title: 'Insights',
-            tabBarIcon: ({ color }) => <Icon name="flame" color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, focused }) => (
+            <TabIconWithDot focused={focused}>
+              <Icon name="flame" color={color} size={22} strokeWidth={1.5} />
+            </TabIconWithDot>
+          ),
             tabBarAccessibilityLabel: 'Insights — streaks and progress',
           }}
         />
@@ -113,7 +158,11 @@ export default function TabLayout() {
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({ color }) => <Settings color={color} size={24} strokeWidth={1.5} />,
+            tabBarIcon: ({ color, focused }) => (
+            <TabIconWithDot focused={focused}>
+              <Settings color={color} size={22} strokeWidth={1.5} />
+            </TabIconWithDot>
+          ),
             tabBarAccessibilityLabel: 'Settings — preferences',
           }}
         />
@@ -135,9 +184,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(245,158,11,0.08)',
+    backgroundColor: '#f6c177',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(245,158,11,0.2)',
+    borderBottomColor: 'rgba(0,0,0,0.1)',
     paddingVertical: 6,
     alignItems: 'center',
     zIndex: 100,

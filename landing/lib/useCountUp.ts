@@ -1,25 +1,22 @@
-"use client";
+import { useEffect, useState } from 'react';
 
-import { useEffect, useState } from "react";
-
-export function useCountUp(target: number, duration: number, trigger: boolean): number {
+export function useCountUp(target: number, active: boolean) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!trigger) return;
-
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / (duration * 1000), 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(eased * target));
-      if (progress < 1) requestAnimationFrame(animate);
+    if (!active) return;
+    let n = 0;
+    let rafId: number;
+    const step = () => {
+      n = Math.min(n + 3, target);
+      setCount(n);
+      if (n < target) {
+        rafId = requestAnimationFrame(step);
+      }
     };
-
-    requestAnimationFrame(animate);
-  }, [trigger, target, duration]);
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [active, target]);
 
   return count;
 }

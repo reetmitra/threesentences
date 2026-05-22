@@ -87,7 +87,7 @@ function SubmitButton({
             ? <ActivityIndicator color={c.paper} size="small" />
             : status === 'success'
             ? <Animated.View style={{ transform: [{ rotate: spin }] }}><Icon name="check" color={c.paper} size={22} /></Animated.View>
-            : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: c.paper }}>Done</Text></Animated.View>
+            : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: c.paper }}>Submit</Text></Animated.View>
           }
         </TouchableOpacity>
       </Animated.View>
@@ -217,7 +217,7 @@ export default function TodayScreen() {
               {formatTodayDate()}
             </Text>
             <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary }}>
-              Today's Entry
+              Done.
             </Text>
           </View>
           <EntryCard entry={todayEntry} />
@@ -233,7 +233,7 @@ export default function TodayScreen() {
                 setSubmissionStatus('idle');
               }}
             >
-              <Text family="mono" variant="xs" style={{ color: c.textTertiary, textDecorationLine: 'underline', letterSpacing: 0.5 }}>
+              <Text family="mono" variant="xs" style={{ color: c.textTertiary, textDecorationLine: 'underline', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 edit entry
               </Text>
             </TouchableOpacity>
@@ -256,7 +256,7 @@ export default function TodayScreen() {
               {formatTodayDate()}
             </Text>
             <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary }}>
-              Three Sentences
+              Today
             </Text>
           </View>
 
@@ -265,7 +265,7 @@ export default function TodayScreen() {
               value={content}
               onChangeText={setContent}
               autoFocus={!content}
-              placeholder="What's on your mind today?"
+              placeholder="Three sentences. What happened?"
             />
           </View>
 

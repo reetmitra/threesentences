@@ -174,7 +174,7 @@ export interface ProfileValidation {
 export const USERNAME_CONSTRAINTS = {
   minLength: 3,
   maxLength: 20,
-  pattern: /^[a-zA-Z0-9_]+$/,
+  pattern: /^@?[\w.]{3,}$/,
 } as const;
 
 /**

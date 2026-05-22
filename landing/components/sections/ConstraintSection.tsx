@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { TextScramble } from "@/components/ui/text-scramble";
 import { fadeUp, defaultTransition } from "@/lib/animations";
 
 const SCRIPT =
@@ -107,7 +106,7 @@ function MiniPhone() {
           style={{ color: submitted ? "#FFFFFF" : "rgba(255,255,255,0.3)" }}
         >
           {submitted
-            ? "✓ Locked"
+            ? "LOCKED"
             : `${dotCount} / 3 · ${dotCount === 3 ? "Ready" : "more"}`}
         </span>
         <div
@@ -129,12 +128,8 @@ function MiniPhone() {
 }
 
 export function ConstraintSection() {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, amount: 0.4 });
-
   return (
     <section
-      ref={ref}
       className="min-h-[80vh] flex items-center justify-center px-6 py-32 sm:py-40"
     >
       <div className="max-w-5xl mx-auto w-full">
@@ -150,16 +145,22 @@ export function ConstraintSection() {
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             />
 
+            {/* Eyebrow */}
+            <p className="text-[12px] tracking-[3px] uppercase font-mono text-white/40 mb-4">
+              The only rule
+            </p>
+
             {/* Main statement */}
-            <TextScramble
+            <motion.h2
               className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white"
-              duration={1.2}
-              speed={0.03}
-              trigger={isInView}
-              characterSet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+              variants={fadeUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              transition={{ ...defaultTransition, delay: 0.1 }}
             >
               Three sentences.
-            </TextScramble>
+            </motion.h2>
 
             {/* Sub-statement */}
             <motion.p

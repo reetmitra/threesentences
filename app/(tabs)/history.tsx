@@ -164,7 +164,7 @@ export default function HistoryScreen() {
               </View>
             ) : (
               <View style={styles.selectPrompt}>
-                <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
+                <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   Tap a date to read that entry
                 </Text>
               </View>
@@ -172,7 +172,7 @@ export default function HistoryScreen() {
 
             {entryDates.size > 0 && (
               <View style={[styles.statsSection, { borderTopColor: c.frame }]}>
-                <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
+                <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                   {entryDates.size} {entryDates.size === 1 ? 'entry' : 'entries'} this month
                 </Text>
               </View>

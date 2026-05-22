@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { WaitlistModal } from "@/components/WaitlistModal";
 import { DemoSlides } from "@/components/DemoSlides";
-import { FloatingParticles } from "@/components/FloatingParticles";
 import { GlowOrb } from "@/components/GlowOrb";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { ProblemSection } from "@/components/sections/ProblemSection";
@@ -45,9 +44,6 @@ export default function LandingPage() {
 
   return (
     <div className="bg-black text-white relative">
-      {/* Ambient floating particles */}
-      <FloatingParticles />
-
       {/* Glow orbs positioned between sections */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <GlowOrb className="top-[90vh] left-1/4 -translate-x-1/2" size={500} delay={0} />
@@ -68,14 +64,14 @@ export default function LandingPage() {
         <SectionDivider />
         <FeaturesSection />
         <SectionDivider />
-        <FAQSection />
-        <SectionDivider />
         <The363Section />
         <SectionDivider />
         <PrinciplesSection />
         <SectionDivider />
         <AIReflectionSection />
         <TrustSection />
+        <SectionDivider />
+        <FAQSection />
         <SectionDivider />
         <FinalCTASection onCTAClick={openWaitlist} />
         <FooterSection />

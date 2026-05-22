@@ -34,7 +34,7 @@ export function EntryCard({ entry, showDate = false }: EntryCardProps) {
 
   return (
     <View
-      style={[styles.container, { backgroundColor: c.surface, borderColor: c.frame }]}
+      style={[styles.container, { backgroundColor: c.surface, borderColor: c.frame, borderLeftColor: c.textBright }]}
       accessible
       accessibilityLabel={`Journal entry from ${formatDate()}. ${entry.content}`}
     >
@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: 2,
     padding: spacing[5],
   },
   dateHeader: {

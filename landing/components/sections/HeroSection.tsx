@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useScrollY } from "@/hooks/useScrollY";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { Logo3hree } from "@/components/Logo3hree";
 
 interface HeroSectionProps {
   onCTAClick: () => void;
@@ -77,6 +78,7 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Logo3hree size="sm" />
             <span className="font-mono text-xs tracking-[3px] uppercase text-white/60">
               Three Sentences
             </span>
@@ -84,12 +86,23 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
               by 363™
             </span>
           </div>
-          <button
-            onClick={onCTAClick}
-            className="font-mono text-[11px] tracking-[2px] uppercase text-white/50 border border-white/10 px-4 py-2 rounded-full hover:text-white hover:border-white/30 transition-colors duration-200"
-          >
-            Join the waitlist
-          </button>
+          <div className="flex items-center gap-6">
+            {(['why', 'how', 'inside', 'faq'] as const).map(link => (
+              <a
+                key={link}
+                href={`#${link}`}
+                className="hidden md:block text-[11px] tracking-[2.4px] uppercase font-mono text-white/50 hover:text-white transition-colors duration-200"
+              >
+                {link.toUpperCase()}
+              </a>
+            ))}
+            <button
+              onClick={onCTAClick}
+              className="font-mono text-[11px] tracking-[2px] uppercase text-white/50 border border-white/10 px-4 py-2 rounded-full hover:text-white hover:border-white/30 transition-colors duration-200"
+            >
+              Join the waitlist
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -100,16 +113,26 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
         style={glowStyle}
       />
 
+      {/* Dot grid backdrop */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(rgba(235,231,220,0.025) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
       {/* Hero content */}
       <main
-        className="flex-1 flex flex-col items-center justify-center px-6 relative pt-24"
+        className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 pt-24"
         style={heroStyle}
       >
         <div className="text-center max-w-3xl mx-auto">
           <FloatingMark reduced={reduced} />
 
           <motion.h1
-            className="text-7xl sm:text-8xl font-bold tracking-tight text-white leading-none mb-6"
+            className="text-7xl sm:text-8xl font-serif italic tracking-[-0.375rem] text-white leading-none mb-6"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={
@@ -118,7 +141,7 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
                 : { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }
             }
           >
-            Three Sentences
+            Three<br />Sentences.
           </motion.h1>
 
           <motion.p
@@ -157,8 +180,14 @@ export function HeroSection({ onCTAClick }: HeroSectionProps) {
               onClick={onCTAClick}
               className="bg-white text-black font-mono text-xs tracking-[2px] uppercase px-8 py-3 rounded-full hover:-translate-y-px transition-transform duration-200"
             >
-              Join the waitlist
+              Request access →
             </button>
+            <a
+              href="#constraint"
+              className="font-mono text-xs tracking-[2px] uppercase px-8 py-3 rounded-full border border-white/20 text-white/60 hover:text-white hover:border-white/40 transition-colors duration-200"
+            >
+              See how it works
+            </a>
           </motion.div>
         </div>
       </main>

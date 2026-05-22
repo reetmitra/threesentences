@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Reveal } from "@/components/ui/Reveal";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -49,7 +49,7 @@ function TodayContent() {
         <span className="font-mono text-[10px] text-white/25">1 / 3 · more</span>
         <div
           className="px-3 py-1 rounded-full font-mono text-[10px]"
-          style={{ border: "1px solid #2A2A3A", color: "#6B6B8A" }}
+          style={{ border: "1px solid #1e1e22", color: "#8a877e" }}
         >
           Submit
         </div>
@@ -106,10 +106,18 @@ function HistoryContent() {
 }
 
 function InsightsContent() {
-  const bars = [
-    { label: "Gratitude", pct: 72 },
-    { label: "Work", pct: 48 },
-    { label: "People", pct: 61 },
+  const [active, setActive] = React.useState(0);
+
+  React.useEffect(() => {
+    const id = setInterval(() => setActive(a => (a + 1) % 4), 1800);
+    return () => clearInterval(id);
+  }, []);
+
+  const prompts = [
+    { eyebrow: 'THEME', body: 'Transitions and thresholds' },
+    { eyebrow: 'OBSERVATION', body: 'You write more on Tuesdays' },
+    { eyebrow: 'PATTERN', body: 'Gratitude appears in 6 of 7 entries' },
+    { eyebrow: 'QUESTION', body: 'What are you holding lightly?' },
   ];
 
   return (
@@ -118,41 +126,80 @@ function InsightsContent() {
         Patterns surface over time. What do you return to?
       </p>
       <div
-        className="rounded-2xl p-6 space-y-5"
+        className="rounded-2xl p-6"
         style={{ backgroundColor: "#0d0d10", border: "1px solid #1E1E2E" }}
       >
-        {bars.map((bar) => (
-          <div key={bar.label}>
-            <div className="flex justify-between mb-1.5">
-              <span className="font-mono text-[10px]" style={{ color: "#6B6B8A" }}>
-                {bar.label}
-              </span>
-              <span className="font-mono text-[10px]" style={{ color: "#3A3A5A" }}>
-                {bar.pct}%
-              </span>
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {prompts.map((p, i) => (
             <div
-              className="h-1.5 rounded-full overflow-hidden"
-              style={{ backgroundColor: "#1E1E2E" }}
+              key={i}
+              style={{
+                opacity: active === i ? 1 : 0.55,
+                borderLeft: `2px solid ${active === i ? '#ffffff' : '#3a3a3e'}`,
+                paddingLeft: 12,
+                paddingTop: 8,
+                paddingBottom: 8,
+                transition: 'opacity 400ms ease, border-color 400ms ease',
+              }}
             >
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${bar.pct}%`, backgroundColor: "#FFFFF0" }}
-              />
+              <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.4, color: active === i ? '#ffffff' : '#8a877e', fontFamily: 'var(--font-mono)', marginBottom: 4, transition: 'color 400ms ease' }}>{p.eyebrow}</p>
+              <p style={{ fontSize: active === i ? 13 : 12, color: '#ebe7dc', fontFamily: 'var(--font-sans)', lineHeight: 1.5, transition: 'font-size 400ms ease' }}>{p.body}</p>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 function CircleContent() {
-  const avatars = [
-    { initials: "AM", active: true },
-    { initials: "JK", active: true },
-    { initials: "RP", active: false },
+  const [view, setView] = React.useState(0);
+
+  React.useEffect(() => {
+    const id = setInterval(() => setView(v => (v + 1) % 3), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const views = [
+    // Friend list view
+    <div key="list" style={{ padding: '12px 0' }}>
+      {['Maya R.', 'James K.', 'Priya S.'].map((name, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #1e1e22' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#15151a', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, color: '#ebe7dc', fontFamily: 'var(--font-sans)', margin: 0 }}>{name}</p>
+            <p style={{ fontSize: 10, color: '#8a877e', fontFamily: 'var(--font-sans)', margin: 0 }}>Day {47 + i * 11} streak</p>
+          </div>
+        </div>
+      ))}
+    </div>,
+    // DM view
+    <div key="dm" style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ alignSelf: 'flex-start', background: '#15151a', border: '1px solid #1e1e22', borderRadius: '16px 16px 16px 4px', padding: '8px 12px', maxWidth: '80%' }}>
+        <p style={{ fontSize: 13, color: '#ebe7dc', margin: 0 }}>How are you feeling about the 30-day mark?</p>
+      </div>
+      <div style={{ alignSelf: 'flex-end', background: '#ffffff', borderRadius: '16px 16px 4px 16px', padding: '8px 12px', maxWidth: '80%' }}>
+        <p style={{ fontSize: 13, color: '#0a0a0a', margin: 0 }}>Closer than I've ever been.</p>
+      </div>
+    </div>,
+    // Group view
+    <div key="group" style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.4, color: '#8a877e', fontFamily: 'var(--font-mono)', margin: '0 0 8px' }}>Sunday Circle · 4 members</p>
+      <div style={{ background: '#15151a', border: '1px solid #1e1e22', borderRadius: '16px 16px 16px 4px', padding: '8px 12px' }}>
+        <p style={{ fontSize: 9, color: '#8a877e', margin: '0 0 2px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>Maya</p>
+        <p style={{ fontSize: 13, color: '#ebe7dc', margin: 0 }}>Week 6. Still showing up.</p>
+      </div>
+    </div>,
   ];
+
+  // Pager pill
+  const pager = (
+    <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 12 }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ height: 4, width: view === i ? 14 : 4, borderRadius: 2, background: view === i ? '#ffffff' : '#3a3a3e', transition: 'width 300ms ease, background 300ms ease' }} />
+      ))}
+    </div>
+  );
 
   return (
     <div className="max-w-sm mx-auto">
@@ -160,42 +207,17 @@ function CircleContent() {
         Share with close friends. See their days.
       </p>
       <div
-        className="rounded-2xl p-6 space-y-3"
+        className="rounded-2xl p-6"
         style={{ backgroundColor: "#0d0d10", border: "1px solid #1E1E2E" }}
       >
-        {avatars.map((av) => (
-          <div
-            key={av.initials}
-            className="flex items-center gap-4 p-3 rounded-xl"
-            style={{ backgroundColor: "#141420" }}
-          >
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center font-mono text-[10px] flex-shrink-0"
-              style={{
-                backgroundColor: av.active ? "#1E1E3E" : "#1A1A22",
-                color: av.active ? "#FFFFF0" : "#3A3A5A",
-              }}
-            >
-              {av.initials}
+        <div style={{ position: 'relative', minHeight: 180 }}>
+          {views.map((v, i) => (
+            <div key={i} style={{ position: i === 0 ? 'relative' : 'absolute', top: 0, left: 0, right: 0, opacity: view === i ? 1 : 0, transform: `translateY(${view === i ? 0 : 8}px)`, transition: 'opacity 600ms cubic-bezier(0.16,1,0.3,1), transform 600ms cubic-bezier(0.16,1,0.3,1)', pointerEvents: view === i ? 'auto' : 'none' }}>
+              {v}
             </div>
-            <div className="flex-1 space-y-1.5">
-              <div
-                className="h-2.5 rounded"
-                style={{ backgroundColor: "#2A2A3A", width: "70%" }}
-              />
-              <div
-                className="h-2.5 rounded"
-                style={{ backgroundColor: "#1E1E2E", width: "50%" }}
-              />
-            </div>
-            {av.active && (
-              <div
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: "#FFFFF0" }}
-              />
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
+        {pager}
       </div>
     </div>
   );
@@ -251,7 +273,7 @@ export function FeaturesSection() {
   }, [reduced]);
 
   return (
-    <section className="py-24 px-6">
+    <section className="px-6" style={{ paddingTop: 180, paddingBottom: 180 }}>
       <div className="max-w-3xl mx-auto">
         {/* Heading */}
         <Reveal className="text-center mb-12">
@@ -266,7 +288,7 @@ export function FeaturesSection() {
         {/* Tab bar */}
         <div className="flex justify-center mb-8">
           <div
-            className="flex gap-1 p-1 rounded-full"
+            className="flex gap-2 p-1 rounded-full"
             style={{ backgroundColor: "#0d0d10", border: "1px solid #1E1E2E" }}
           >
             {TABS.map((tab) => {
@@ -277,8 +299,8 @@ export function FeaturesSection() {
                   onClick={() => handleTabClick(tab)}
                   className="relative px-4 py-2 rounded-full font-mono text-xs tracking-[1px] transition-colors duration-200"
                   style={{
-                    color: isActive ? "#FFFFF0" : "#6B6B8A",
-                    backgroundColor: isActive ? "#1E1E2E" : "transparent",
+                    color: isActive ? "#0a0a0a" : "#8a877e",
+                    backgroundColor: isActive ? "#ffffff" : "transparent",
                   }}
                 >
                   {tab}
@@ -296,7 +318,7 @@ export function FeaturesSection() {
               initial={{ opacity: 0, y: reduced ? 0 : 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reduced ? 0 : -8 }}
-              transition={reduced ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
+              transition={reduced ? { duration: 0 } : { duration: 0.4, ease: "easeInOut" }}
             >
               {TAB_CONTENT[activeTab]()}
             </motion.div>

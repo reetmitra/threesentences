@@ -138,7 +138,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   disclaimerText: {
-    fontStyle: 'italic',
     lineHeight: 18,
   },
   dismissButton: {

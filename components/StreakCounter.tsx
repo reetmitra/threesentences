@@ -53,7 +53,7 @@ export function StreakCounter({ currentStreak, longestStreak, totalEntries }: St
             Day streak
           </Text>
           {currentStreak > 0 && (
-            <Text family="mono" variant="xs" style={{ color: c.textTertiary, marginTop: 2 }}>
+            <Text family="mono" variant="xs" style={{ color: c.textTertiary, marginTop: 2, textTransform: 'uppercase' }}>
               keep going
             </Text>
           )}
@@ -97,10 +97,10 @@ export function StreakCounter({ currentStreak, longestStreak, totalEntries }: St
       {/* Progress to 363 */}
       <View style={[styles.progressSection, { borderTopColor: c.frame }]}>
         <View style={styles.progressLabelRow}>
-          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
+          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
             Progress to 363
           </Text>
-          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
+          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
             {totalEntries}/363
           </Text>
         </View>

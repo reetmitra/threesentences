@@ -1,45 +1,49 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Lock, EyeOff, Download } from "lucide-react";
-import { springScale, springTransition } from "@/lib/animations";
 import { Reveal } from "@/components/ui/Reveal";
 
-const badges = [
+const quotes = [
   {
-    icon: Lock,
-    title: "Encrypted at rest",
-    description: "Your words are yours",
+    quote: "I've tried every journaling app. This is the first one I've used every day for six months.",
+    attribution: "Early beta tester, London",
   },
   {
-    icon: EyeOff,
-    title: "No ads. Ever.",
-    description: "We don\u2019t sell data",
+    quote: "Three sentences sounds like nothing. It turns out it's everything.",
+    attribution: "Designer, New York",
   },
   {
-    icon: Download,
-    title: "Export anytime",
-    description: "Your data, your way",
+    quote: "The constraint removed my last excuse. I just write.",
+    attribution: "Founder, Singapore",
   },
 ];
 
 export function TrustSection() {
   return (
     <section className="py-20 sm:py-24 px-6">
-      <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
-        {badges.map((badge, i) => (
-          <Reveal key={badge.title} delay={i * 0.12}>
-            <motion.div
-              variants={springScale}
-              transition={springTransition}
-              className="text-center"
-            >
-              <badge.icon className="w-5 h-5 text-white/20 mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-sm text-white/50">{badge.title}</p>
-              <p className="text-xs text-white/20 mt-1">{badge.description}</p>
-            </motion.div>
-          </Reveal>
-        ))}
+      <div className="max-w-5xl mx-auto">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {quotes.map((q, i) => (
+            <Reveal key={i} delay={i * 120}>
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '32px 28px', background: '#15151a', border: '1px solid #1e1e22', borderRadius: 16 }}>
+                {/* Decorative open-quote glyph */}
+                <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 72, lineHeight: 0.6, color: '#ebe7dc', opacity: 0.12, marginBottom: -24, userSelect: 'none' }}>
+                  &ldquo;
+                </div>
+                {/* Quote body */}
+                <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 20, color: '#ebe7dc', lineHeight: 1.55, flex: 1, marginTop: 32 }}>
+                  {q.quote}
+                </p>
+                {/* Attribution */}
+                <div style={{ marginTop: 'auto', paddingTop: 24 }}>
+                  <div style={{ width: 32, height: 1, background: '#1e1e22', marginBottom: 12 }} />
+                  <p style={{ fontSize: 12, color: '#8a877e', fontFamily: 'var(--font-sans)' }}>
+                    {q.attribution}
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   );

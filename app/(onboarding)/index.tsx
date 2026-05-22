@@ -367,7 +367,7 @@ export default function OnboardingScreen() {
       <View style={styles.bottomSection}>
         {renderPagination()}
         <Button
-          title="Get Started"
+          title={currentIndex === SLIDES.length - 1 ? 'Begin practice' : 'Get Started'}
           onPress={handleGetStarted}
           style={styles.nextButton}
         />

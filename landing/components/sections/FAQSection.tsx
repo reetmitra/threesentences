@@ -51,7 +51,7 @@ export function FAQSection() {
             FAQ
           </p>
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight text-[#FFFFF0]">
-            Questions
+            Questions people ask before they start.
           </h2>
         </Reveal>
 
@@ -80,7 +80,7 @@ export function FAQSection() {
                     style={{
                       color: "#6B6B8A",
                       transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s ease",
+                      transition: "transform 0.22s ease",
                     }}
                   >
                     +

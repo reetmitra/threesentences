@@ -8,9 +8,9 @@ import { fadeUp, tiltUp, staggerContainer, defaultTransition } from "@/lib/anima
 type Range = "7d" | "30d" | "90d";
 
 const RANGES: { label: string; value: Range; period: string; entries: number }[] = [
-  { label: "1 week", value: "7d", period: "7-day analysis", entries: 7 },
-  { label: "1 month", value: "30d", period: "30-day analysis", entries: 28 },
-  { label: "3 months", value: "90d", period: "90-day analysis", entries: 81 },
+  { label: "7 days", value: "7d", period: "7-day analysis", entries: 7 },
+  { label: "30 days", value: "30d", period: "30-day analysis", entries: 28 },
+  { label: "90 days", value: "90d", period: "90-day analysis", entries: 81 },
 ];
 
 const REFLECTIONS: Record<Range, string> = {
@@ -51,16 +51,16 @@ export function AIReflectionSection() {
             transition={defaultTransition}
             className="text-xs uppercase tracking-[0.3em] text-white/30 mb-4"
           >
-            Your AI mirror
+            OPTIONAL · ALWAYS OPT-IN
           </motion.p>
           <motion.h2
             variants={fadeUp}
             transition={defaultTransition}
             className="text-3xl sm:text-4xl font-light text-white/80 leading-tight"
           >
-            Patterns you can&apos;t
+            AI that finds patterns
             <br />
-            see yourself.
+            without rewriting you.
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -155,6 +155,25 @@ export function AIReflectionSection() {
                 </AnimatePresence>
               </div>
 
+              {/* 3 content cards: Theme, Observation, Question */}
+              <div className="flex flex-col gap-2 mt-4">
+                {/* Theme card */}
+                <div style={{ background: '#15151a', border: '1px solid #1e1e22', borderRadius: 12, padding: 18 }}>
+                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Theme</p>
+                  <p className="text-xs text-white/40 leading-relaxed">Momentum & execution</p>
+                </div>
+                {/* Observation card */}
+                <div style={{ background: '#15151a', border: '1px solid #1e1e22', borderRadius: 12, padding: 18 }}>
+                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Observation</p>
+                  <p className="text-xs text-white/40 leading-relaxed">Your tone has grown quieter and more certain.</p>
+                </div>
+                {/* Question card */}
+                <div style={{ background: '#15151a', borderRadius: 12, padding: 20, borderLeft: '2px solid #ffffff', borderTop: 'none', borderRight: 'none', borderBottom: 'none' }}>
+                  <p className="text-[9px] uppercase tracking-wider text-white/20 mb-1">Question</p>
+                  <p className="text-xs text-white/40 leading-relaxed">What would it mean to trust that shift?</p>
+                </div>
+              </div>
+
               {/* Card footer */}
               <AnimatePresence mode="wait">
                 <motion.p
@@ -168,6 +187,11 @@ export function AIReflectionSection() {
                   Based on {activeRange.entries} entries
                 </motion.p>
               </AnimatePresence>
+
+              {/* Footer disclaimer */}
+              <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 1.4, color: '#75726a', lineHeight: 1.6, borderTop: '1px solid #1e1e22', paddingTop: 14, marginTop: 16 }}>
+                AI patterns may be wrong. Use with care. Crisis resources always available.
+              </p>
             </div>
           </motion.div>
         </motion.div>

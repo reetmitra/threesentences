@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing[4],
     fontSize: 18,
-    fontFamily: 'Newsreader_400Regular',
+    fontFamily: 'SchibstedGrotesk_400Regular',
     lineHeight: 28,
     borderRadius: 12,
     minHeight: 200,

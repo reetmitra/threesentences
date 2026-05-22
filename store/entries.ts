@@ -308,7 +308,10 @@ export async function getEntryStats(userId: string): Promise<{
     const today = new Date();
     const checkDate = new Date(today);
 
-    // Check current streak
+    // Check current streak — if today has no entry, back up one day before counting
+    if (!dates.has(formatDateString(checkDate))) {
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
     while (dates.has(formatDateString(checkDate))) {
       currentStreak++;
       checkDate.setDate(checkDate.getDate() - 1);

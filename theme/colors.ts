@@ -13,6 +13,11 @@ export const colors = {
     textSecondary: '#75726a',    // --ink-dim secondary/metadata
     textTertiary: '#36363a',     // --ink-fade placeholders/empty dots
 
+    // Cream
+    cream:   '#efece5',
+    creamHi: '#f6f4ee',
+    creamLo: '#e4dfd2',
+
     // Semantic
     accent: '#ffffff',           // --ink-bright for interactive elements
     warn: '#f6c177',             // --warn amber
@@ -35,6 +40,9 @@ export const colors = {
     textBright: '#ffffff',
     textSecondary: '#75726a',
     textTertiary: '#36363a',
+    cream:   '#efece5',
+    creamHi: '#f6f4ee',
+    creamLo: '#e4dfd2',
     accent: '#ffffff',
     warn: '#f6c177',
     border: '#1e1e22',

@@ -501,8 +501,8 @@ export default function SettingsScreen() {
             [{ text: 'OK' }]
           );
         }}>
-          <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5 }}>Three Sentences · v1.0.0</Text>
-          <Text family="mono" variant="xs" centered style={{ color: c.textTertiary, letterSpacing: 0.5, marginTop: spacing[1] }}>Show up. Do the work. Let go of perfection.</Text>
+          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5 }}>Three Sentences · v1.0.0</Text>
+          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5, marginTop: spacing[1] }}>Be better. Do better.</Text>
         </Pressable>
       </ScrollView>
 
@@ -533,7 +533,9 @@ const styles = StyleSheet.create({
 
   // Profile header card
   profileCard: {
-    borderRadius: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1e1e22',
     padding: spacing[4],
     flexDirection: 'row',
     alignItems: 'center',
@@ -566,7 +568,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   sectionContent: {
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   row: {

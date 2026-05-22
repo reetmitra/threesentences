@@ -66,7 +66,7 @@ export function SentenceCounter({ count, target = 3 }: SentenceCounterProps) {
 
       <Animated.View style={advisoryStyle}>
         <Text
-          family="serifItalic"
+          family="sans"
           variant="sm"
           style={{ color: c.warn }}
         >

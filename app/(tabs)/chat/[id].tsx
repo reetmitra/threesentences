@@ -189,13 +189,17 @@ export default function ChatScreen() {
                                 <Text variant="base" family="sansSemibold" numberOfLines={1}>
                                     {otherUser.name}
                                 </Text>
-                                {conversation?.isTyping && (
+                                {conversation?.isTyping ? (
                                     <Animated.Text
                                         entering={FadeIn.duration(200)}
                                         style={[styles.typingText, { color: activeColors.accent }]}
                                     >
                                         typing...
                                     </Animated.Text>
+                                ) : (
+                                    <Text style={{ fontFamily: 'IBMPlexMono_400Regular', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: activeColors.textTertiary }}>
+                                        Active now
+                                    </Text>
                                 )}
                             </View>
                         </>
@@ -272,9 +276,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: spacing[3],
@@ -284,7 +288,6 @@ const styles = StyleSheet.create({
     },
     typingText: {
         fontSize: 12,
-        fontStyle: 'italic',
     },
     keyboardView: {
         flex: 1,

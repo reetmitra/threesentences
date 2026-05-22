@@ -246,7 +246,7 @@ export default function ReflectScreen() {
         {/* Latest reflection */}
         {latestReflection && !showCrisisResources && (
           <View style={styles.section}>
-            <Text variant="sm" color="secondary" style={styles.sectionTitle}>
+            <Text variant="sm" family="mono" color="secondary" style={[styles.sectionTitle, { textTransform: 'uppercase' }]}>
               LATEST REFLECTION
             </Text>
             <ReflectionCard reflection={latestReflection} />

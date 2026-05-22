@@ -153,6 +153,14 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                   >
                     We&apos;ll notify you when 3hree launches.
                   </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 3, color: '#75726a', marginTop: 24 }}
+                  >
+                    Be better. Do better.
+                  </motion.p>
                 </motion.div>
               ) : (
                 <motion.div
@@ -177,7 +185,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                       transition={{ delay: 0.15 }}
                       className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4"
                     >
-                      Join the waitlist
+                      Request early access.
                     </motion.h1>
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
@@ -243,7 +251,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                       type="submit"
                       className="w-full mt-6"
                       size="lg"
-                      disabled={isLoading || !name.trim() || !email.trim()}
+                      disabled={isLoading || !name.trim() || !/\S+@\S+\.\S+/.test(email)}
                     >
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -260,7 +268,7 @@ export function WaitlistModal({ open, onOpenChange }: WaitlistModalProps) {
                     transition={{ delay: 0.35 }}
                     className="text-center text-white/30 text-xs mt-8 tracking-wide"
                   >
-                    No spam, ever. Unsubscribe anytime.
+                    No spam. No marketing. Just a single note when your spot opens.
                   </motion.p>
                 </motion.div>
               )}

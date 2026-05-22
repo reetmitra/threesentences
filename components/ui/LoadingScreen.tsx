@@ -14,9 +14,10 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 const BRAND = Easing.bezier(0.16, 1, 0.3, 1);
 const JUGGLE = Easing.bezier(0.34, 1.5, 0.64, 1);
 
-function JuggleDot({ delay, arcHeight }: { delay: number; arcHeight: number }) {
+function JuggleDot({ delay, arcHeight, landingValue }: { delay: number; arcHeight: number; landingValue?: number }) {
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
+  const bounce = landingValue !== undefined ? landingValue : arcHeight * 0.2;
 
   useEffect(() => {
     if (reduced) return;
@@ -24,7 +25,7 @@ function JuggleDot({ delay, arcHeight }: { delay: number; arcHeight: number }) {
       delay,
       withSequence(
         withTiming(-arcHeight, { duration: 420, easing: JUGGLE }),
-        withTiming(arcHeight * 0.2, { duration: 350, easing: JUGGLE }),
+        withTiming(bounce, { duration: 350, easing: JUGGLE }),
         withTiming(0, { duration: 430, easing: JUGGLE }),
       ),
     );
@@ -66,7 +67,7 @@ export function LoadingScreen() {
     <View style={[styles.container, { backgroundColor: colors.dark.background }]}>
       <View style={styles.dotsRow}>
         <JuggleDot delay={0}   arcHeight={40} />
-        <JuggleDot delay={140} arcHeight={48} />
+        <JuggleDot delay={140} arcHeight={48} landingValue={10} />
         <JuggleDot delay={280} arcHeight={40} />
       </View>
 

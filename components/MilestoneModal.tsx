@@ -22,13 +22,13 @@ import { spacing, componentRadius } from '@/theme/spacing';
 
 const MILESTONES: Record<number, { icon: 'flame' | 'star' | 'trophy' | 'zap'; message: string; subtitle: string }> = {
   3: { icon: 'flame', message: 'Three days strong!', subtitle: 'You\'re building momentum.' },
-  7: { icon: 'flame', message: 'One week strong!', subtitle: 'The habit is forming.' },
+  7: { icon: 'flame', message: 'A first week.', subtitle: 'The habit is forming.' },
   14: { icon: 'star', message: 'Two weeks!', subtitle: 'Consistency is your superpower.' },
-  30: { icon: 'trophy', message: 'A full month!', subtitle: 'You\'re proving something to yourself.' },
+  30: { icon: 'trophy', message: 'Days unbroken.', subtitle: 'You\'re proving something to yourself.' },
   60: { icon: 'star', message: 'Sixty days!', subtitle: 'This is who you are now.' },
-  100: { icon: 'zap', message: 'Triple digits!', subtitle: 'One hundred days of showing up.' },
+  100: { icon: 'zap', message: 'A hundred days.', subtitle: 'One hundred days of showing up.' },
   200: { icon: 'trophy', message: 'Two hundred days!', subtitle: 'Relentless.' },
-  363: { icon: 'trophy', message: 'You did it.', subtitle: 'ThreeSixtyThree. The full commitment.' },
+  363: { icon: 'trophy', message: 'Three hundred sixty-three.', subtitle: 'ThreeSixtyThree. The full commitment.' },
   365: { icon: 'zap', message: 'A full year!', subtitle: 'Beyond the goal. Beyond perfection.' },
 };
 

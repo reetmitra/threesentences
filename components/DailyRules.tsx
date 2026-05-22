@@ -56,7 +56,7 @@ export function DailyRules() {
                 {rules.map((rule, index) => (
                     <View key={index} style={styles.item}>
                         <View style={styles.icon}>{rule.renderIcon()}</View>
-                        <Text variant="xs" family="serif" color="secondary" style={styles.ruleText}>
+                        <Text variant="xs" family="sans" color="secondary" style={styles.ruleText}>
                             {rule.text}
                         </Text>
                     </View>

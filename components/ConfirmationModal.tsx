@@ -53,7 +53,7 @@ export function ConfirmationModal({ visible, onCancel, onConfirm, loading }: Con
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(6,6,8,0.85)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'flex-end',
   },
   sheet: {

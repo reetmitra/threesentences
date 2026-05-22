@@ -31,7 +31,9 @@ export function FinalCTASection({ onCTAClick }: FinalCTASectionProps) {
         viewport={{ once: true, margin: "0px 0px -10% 0px" }}
         className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-2xl mx-auto leading-tight"
       >
-        Start your streak today.
+        Start with
+        <br />
+        today.
       </motion.h2>
 
       {/* Supporting copy */}
@@ -47,8 +49,15 @@ export function FinalCTASection({ onCTAClick }: FinalCTASectionProps) {
           onClick={onCTAClick}
           className="bg-[#FFFFF0] text-black font-mono text-xs tracking-[2px] uppercase px-10 py-4 rounded-full hover:-translate-y-px transition-transform duration-200"
         >
-          Join the waitlist
+          Request access →
         </button>
+      </Reveal>
+
+      {/* Bottom trust strip */}
+      <Reveal delay={0.45}>
+        <p style={{ fontSize: 10, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: 2.4, color: '#75726a', marginTop: 32 }}>
+          Invite only · iOS · Q4 2026 · No spam, ever
+        </p>
       </Reveal>
     </section>
   );

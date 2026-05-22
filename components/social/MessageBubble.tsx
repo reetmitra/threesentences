@@ -128,7 +128,7 @@ export function MessageBubble({
 
       {failed && isOwn && (
         <Pressable onPress={onRetry} hitSlop={8}>
-          <Text variant="xs" style={{ color: activeColors.warn }}>✕ Failed · tap to retry</Text>
+          <Text variant="xs" style={{ fontFamily: 'IBMPlexMono_400Regular', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, color: activeColors.warn }}>✕ Failed · tap to retry</Text>
         </Pressable>
       )}
 

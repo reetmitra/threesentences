@@ -122,7 +122,7 @@ export function ConversationCard({
 
         <View style={styles.bottomRow}>
           {conversation.isTyping ? (
-            <Text variant="sm" style={{ color: activeColors.accent, fontStyle: 'italic' }}>
+            <Text variant="sm" style={{ color: activeColors.accent }}>
               typing...
             </Text>
           ) : (
