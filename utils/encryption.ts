@@ -9,7 +9,7 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ExpoCrypto from 'expo-crypto';
-import { gcm } from '@noble/ciphers/aes';
+import { gcm } from '@noble/ciphers/aes.js';
 
 const SECURE_KEY_ALIAS = 'threesentences_encryption_key';
 const LEGACY_ASYNC_KEY = '@threesentences/encryption_key';
