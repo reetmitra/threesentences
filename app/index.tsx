@@ -12,8 +12,8 @@ import { hasCompletedOnboarding, hasLaunchedBefore, markFirstLaunch } from '@/st
 import { isProfileComplete } from '@/store/profile';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
-const FIRST_LAUNCH_LOADING_TIME = 7000; // 7s branded experience
-const RETURNING_LOADING_TIME = 1500;    // 1.5s fast return
+const FIRST_LAUNCH_LOADING_TIME = 2500; // 2.5s branded experience
+const RETURNING_LOADING_TIME = 800;     // 0.8s fast return
 
 export default function Index() {
   const { isSignedIn, isLoaded: authLoaded, userId } = useAuth();

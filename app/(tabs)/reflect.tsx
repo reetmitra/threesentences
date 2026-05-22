@@ -9,6 +9,7 @@ import {
   View,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -236,9 +237,14 @@ export default function ReflectScreen() {
             />
 
             {error && (
-              <Text variant="sm" style={[styles.error, { color: activeColors.error }]}>
-                {error}
-              </Text>
+              <TouchableOpacity onPress={handleGenerate} style={styles.errorRow}>
+                <Text variant="sm" style={[styles.error, { color: activeColors.error }]}>
+                  {error}
+                </Text>
+                <Text variant="sm" style={[styles.retryLink, { color: activeColors.textTertiary }]}>
+                  Tap to retry
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -335,9 +341,17 @@ const styles = StyleSheet.create({
   generateButton: {
     width: '100%',
   },
-  error: {
+  errorRow: {
     marginTop: spacing[2],
+    alignItems: 'center',
+  },
+  error: {
     textAlign: 'center',
+  },
+  retryLink: {
+    marginTop: spacing[1],
+    textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   emptyState: {
     paddingVertical: spacing[8],

@@ -50,6 +50,12 @@ async function getRawKeyBytes(): Promise<Uint8Array> {
       }
       hexKey = legacyKey;
     } else {
+      // KEY GENERATION — This 256-bit key is generated once and stored only in SecureStore.
+      // There is NO backup or recovery mechanism. If the user reinstalls the app (or if
+      // SecureStore is otherwise cleared), this key is permanently lost and all encrypted
+      // journal entries become unreadable forever.
+      // TODO: Before GA, implement a backup/export path (e.g., iCloud Keychain escrow,
+      //       encrypted export to cloud storage, or a user-facing "back up your key" flow).
       const keyBytes = await ExpoCrypto.getRandomBytesAsync(KEY_LENGTH);
       hexKey = bytesToHex(keyBytes);
       await SecureStore.setItemAsync(SECURE_KEY_ALIAS, hexKey, {
@@ -63,9 +69,11 @@ async function getRawKeyBytes(): Promise<Uint8Array> {
 
 async function getCryptoKey(usage: KeyUsage): Promise<CryptoKey> {
   const rawKey = await getRawKeyBytes();
+  // Cast .buffer to ArrayBuffer: TS 5.x infers Uint8Array<ArrayBufferLike> but
+  // crypto.subtle.importKey expects BufferSource which requires ArrayBuffer.
   return crypto.subtle.importKey(
     'raw',
-    rawKey,
+    rawKey.buffer as ArrayBuffer,
     { name: 'AES-GCM', length: 256 },
     false,
     [usage]
@@ -80,7 +88,8 @@ async function encryptV2(plaintext: string): Promise<string> {
   const encoded = new TextEncoder().encode(plaintext);
 
   const cipherBuffer = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv, tagLength: 128 },
+    // iv.buffer cast: TS 5.x widens Uint8Array to ArrayBufferLike; AES-GCM iv needs ArrayBuffer.
+    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: 128 },
     key,
     encoded
   );
@@ -95,9 +104,11 @@ async function decryptV2(encryptedStr: string): Promise<string> {
 
   const key = await getCryptoKey('decrypt');
   const plainBuffer = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv, tagLength: 128 },
+    // iv.buffer cast: same ArrayBufferLike → ArrayBuffer narrowing as encryptV2.
+    { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: 128 },
     key,
-    cipherBytes
+    // cipherBytes.buffer cast: same TS 5.x ArrayBufferLike narrowing needed for data arg.
+    cipherBytes.buffer as ArrayBuffer
   );
 
   return new TextDecoder().decode(plainBuffer);

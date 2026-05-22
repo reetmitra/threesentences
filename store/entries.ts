@@ -51,6 +51,12 @@ async function mapToEntry(dbEntry: DbEntry): Promise<Entry> {
     };
   } catch (error) {
     console.error('Failed to decrypt entry:', dbEntry.id, error);
+    // REINSTALL WARNING: If the user reinstalls the app, SecureStore is cleared and the
+    // encryption key is permanently lost. Any entries encrypted with that key will always
+    // land here and show as '[Unable to decrypt entry]' with no recovery path.
+    // Before shipping a recovery story, consider: (a) a pre-reinstall export/backup flow,
+    // (b) iCloud/Google Drive key escrow, or (c) a user-visible warning in Settings that
+    // "Reinstalling the app will permanently erase all journal entries."
     return {
       id: dbEntry.id,
       date: dbEntry.date,

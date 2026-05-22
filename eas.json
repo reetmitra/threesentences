@@ -1,0 +1,38 @@
+{
+  "cli": {
+    "version": ">= 14.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "channel": "production",
+      "ios": {
+        "buildConfiguration": "Release"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascApiKeyIssuerId": "YOUR_ASC_API_KEY_ISSUER_ID",
+        "ascApiKeyId": "YOUR_ASC_API_KEY_ID",
+        "appleId": "reetmitra8@gmail.com",
+        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID"
+      }
+    }
+  }
+}

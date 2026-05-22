@@ -54,7 +54,15 @@ export async function getAllReflections(userId?: string): Promise<Reflection[]> 
         .order('created_at', { ascending: false });
 
       if (!error && data && data.length > 0) {
-        const reflections: Reflection[] = data.map((r: any) => ({
+        type DbReflection = {
+          id: string;
+          created_at: string;
+          time_range: number;
+          content: string;
+          entries_analyzed: number;
+          has_crisis_indicators: boolean;
+        };
+        const reflections: Reflection[] = data.map((r: DbReflection) => ({
           id: r.id,
           generatedAt: r.created_at,
           timeRange: r.time_range as ReflectionTimeRange,

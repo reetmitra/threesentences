@@ -27,6 +27,7 @@ import { spacing, componentRadius, edgePadding } from '@/theme/spacing';
 import { countSentences } from '@/utils/sentenceDetection';
 import { getTodayEntry, saveEntry, saveDraft, getDraft, getEntryStats } from '@/store/entries';
 import { Entry, getTodayDateString } from '@/types/entry';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 const AUTO_SAVE_INTERVAL = 5000;
 
@@ -99,6 +100,7 @@ export default function TodayScreen() {
   const { userId } = useAuth();
   const c = colors.dark;
   const { showToast } = useToast();
+  const isConnected = useNetworkStatus();
 
   const [content, setContent] = useState('');
   const [todayEntry, setTodayEntry] = useState<Entry | null>(null);
@@ -160,6 +162,12 @@ export default function TodayScreen() {
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || submissionStatus !== 'idle' || !userId) return;
     setShowConfirmation(false);
+
+    if (!isConnected) {
+      showToast('error', 'No internet connection — please try again');
+      return;
+    }
+
     setSubmissionStatus('submitting');
     try {
       const entry = await saveEntry(userId, content);
@@ -183,10 +191,10 @@ export default function TodayScreen() {
         }, 1500);
       }
     } catch {
-      showToast('error', 'Save failed — try again');
+      showToast('error', 'Failed to save entry — please try again');
       setSubmissionStatus('idle');
     }
-  }, [content, canSubmit, submissionStatus, userId]);
+  }, [content, canSubmit, submissionStatus, userId, isConnected]);
 
   const formatTodayDate = () =>
     new Date().toLocaleDateString('en-US', {
