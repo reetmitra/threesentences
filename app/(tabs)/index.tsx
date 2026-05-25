@@ -191,7 +191,8 @@ export default function TodayScreen() {
         }, 1500);
       }
     } catch (err) {
-      console.error('Failed to save entry:', err);
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error('Failed to save entry:', detail);
       showToast('error', 'Failed to save entry — please try again');
       setSubmissionStatus('idle');
     }

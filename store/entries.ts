@@ -121,6 +121,13 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
   const today = getTodayDateString();
   const timezone = getCurrentTimezone();
 
+  // Ensure the Supabase client has a valid session before attempting DB writes.
+  // On real devices the async AsyncStorage read can lag behind the first DB call.
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData.session) {
+    throw new Error(`AUTH: No active session — please sign in again (${sessionError?.message ?? 'session missing'})`);
+  }
+
   // Check if entry exists for today
   const { data: existing } = await supabase
     .from('entries')
@@ -147,7 +154,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
 
     if (error) {
       console.error('Failed to update entry:', error);
-      throw new Error('Failed to save entry');
+      throw new Error(`${error.code}: ${error.message}`);
     }
 
     entryId = data.id;
@@ -167,7 +174,7 @@ export async function saveEntry(userId: string, content: string): Promise<Entry>
 
     if (error) {
       console.error('Failed to create entry:', error);
-      throw new Error('Failed to save entry');
+      throw new Error(`${error.code}: ${error.message}`);
     }
 
     entryId = data.id;
