@@ -1,0 +1,22 @@
+{
+  "name": "three-sentences-launch",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ThreeSentencesLaunch out/three-sentences-launch.mp4",
+    "still:90": "remotion still src/index.ts ThreeSentencesLaunch --frame=90 out/still-frame-90.png",
+    "still:240": "remotion still src/index.ts ThreeSentencesLaunch --frame=240 out/still-frame-240.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.466",
+    "@remotion/google-fonts": "4.0.466",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.466"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.2"
+  }
+}

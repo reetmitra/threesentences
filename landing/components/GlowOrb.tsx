@@ -11,7 +11,7 @@ interface GlowOrbProps {
 
 export function GlowOrb({
   className = "",
-  color = "255, 255, 255",
+  color = "255,255,255",
   size = 400,
   delay = 0,
 }: GlowOrbProps) {

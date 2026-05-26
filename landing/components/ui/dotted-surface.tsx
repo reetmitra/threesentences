@@ -1,144 +1,114 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
 
-type DottedSurfaceProps = Omit<React.ComponentProps<'div'>, 'ref'>;
+interface DottedSurfaceProps {
+  className?: string;
+}
 
-export function DottedSurface({ className, children, ...props }: DottedSurfaceProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<{
-    scene: THREE.Scene;
-    camera: THREE.PerspectiveCamera;
-    renderer: THREE.WebGLRenderer;
-    animationId: number;
-  } | null>(null);
+export function DottedSurface({ className }: DottedSurfaceProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const SEPARATION = 150;
-    const AMOUNTX = 40;
-    const AMOUNTY = 60;
+    let animationId: number;
+    let renderer: import('three').WebGLRenderer | null = null;
 
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000, 2000, 10000);
+    const init = async () => {
+      try {
+        const THREE = await import('three');
 
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      1,
-      10000,
-    );
-    camera.position.set(0, 355, 1220);
+        // Scene + camera
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        camera.position.z = 50;
 
-    const renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-    });
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
+        // Renderer attached to the canvas element
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        renderer.setClearColor(0x000000, 0);
 
-    containerRef.current.appendChild(renderer.domElement);
-
-    const positions: number[] = [];
-    const colors: number[] = [];
-    const geometry = new THREE.BufferGeometry();
-
-    for (let ix = 0; ix < AMOUNTX; ix++) {
-      for (let iy = 0; iy < AMOUNTY; iy++) {
-        const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
-        const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
-        positions.push(x, 0, z);
-        colors.push(200, 200, 200);
-      }
-    }
-
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    const material = new THREE.PointsMaterial({
-      size: 8,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
-      sizeAttenuation: true,
-    });
-
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    let count = 0;
-    let animationId: number = 0;
-
-    const animate = () => {
-      animationId = requestAnimationFrame(animate);
-
-      const positionAttribute = geometry.attributes.position;
-      const posArray = positionAttribute.array as Float32Array;
-
-      let i = 0;
-      for (let ix = 0; ix < AMOUNTX; ix++) {
-        for (let iy = 0; iy < AMOUNTY; iy++) {
-          const index = i * 3;
-          posArray[index + 1] =
-            Math.sin((ix + count) * 0.3) * 50 +
-            Math.sin((iy + count) * 0.5) * 50;
-          i++;
+        // 2000 random particles
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(2000 * 3);
+        for (let i = 0; i < 2000; i++) {
+          positions[i * 3]     = (Math.random() - 0.5) * 100; // x: [-50, 50]
+          positions[i * 3 + 1] = (Math.random() - 0.5) * 100; // y: [-50, 50]
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 60;  // z: [-30, 30]
         }
-      }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-      positionAttribute.needsUpdate = true;
-      renderer.render(scene, camera);
-      count += 0.1;
-    };
-
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-    animate();
-
-    sceneRef.current = { scene, camera, renderer, animationId };
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-
-      if (sceneRef.current) {
-        cancelAnimationFrame(sceneRef.current.animationId);
-
-        sceneRef.current.scene.traverse((object) => {
-          if (object instanceof THREE.Points) {
-            object.geometry.dispose();
-            if (Array.isArray(object.material)) {
-              object.material.forEach((m) => m.dispose());
-            } else {
-              object.material.dispose();
-            }
-          }
+        const material = new THREE.PointsMaterial({
+          color: 0xffffff,
+          size: 0.5,
+          transparent: true,
+          opacity: 0.3,
         });
 
-        sceneRef.current.renderer.dispose();
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
 
-        if (containerRef.current && sceneRef.current.renderer.domElement) {
-          containerRef.current.removeChild(sceneRef.current.renderer.domElement);
+        // Resize handler
+        const handleResize = () => {
+          if (!canvas || !renderer) return;
+          const w = canvas.clientWidth;
+          const h = canvas.clientHeight;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h, false);
+        };
+        window.addEventListener('resize', handleResize);
+
+        // Animation loop
+        const animate = () => {
+          animationId = requestAnimationFrame(animate);
+          points.rotation.x += 0.0001;
+          points.rotation.y += 0.0002;
+          renderer!.render(scene, camera);
+        };
+        animate();
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          cancelAnimationFrame(animationId);
+          geometry.dispose();
+          material.dispose();
+          renderer?.dispose();
+        };
+      } catch {
+        // WebGL not available — apply fallback radial gradient via canvas 2D
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const grad = ctx.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, 0,
+            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2,
+          );
+          grad.addColorStop(0, 'rgba(255,255,255,0.04)');
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+        return () => {};
       }
+    };
+
+    let cleanup: (() => void) | undefined;
+    init().then((fn) => { cleanup = fn; });
+
+    return () => {
+      cleanup?.();
     };
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn('pointer-events-none absolute inset-0', className)}
-      {...props}
-    >
-      {children}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className={className}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+    />
   );
 }

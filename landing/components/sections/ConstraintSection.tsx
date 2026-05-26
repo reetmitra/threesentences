@@ -68,7 +68,7 @@ function MiniPhone() {
               className="w-2 h-2 rounded-full transition-colors duration-200"
               style={{
                 backgroundColor:
-                  i < dotCount ? "#FFFFFF" : "rgba(255,255,255,0.12)",
+                  i < dotCount ? "#FFFFF0" : "rgba(255,255,255,0.12)",
               }}
             />
           ))}
@@ -130,6 +130,7 @@ function MiniPhone() {
 export function ConstraintSection() {
   return (
     <section
+      id="constraint"
       className="min-h-[80vh] flex items-center justify-center px-6 py-32 sm:py-40"
     >
       <div className="max-w-5xl mx-auto w-full">
