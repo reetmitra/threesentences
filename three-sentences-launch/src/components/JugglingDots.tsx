@@ -73,7 +73,8 @@ export const JugglingDots: React.FC<JugglingDotsProps> = ({
         break;
       }
       case "morph-to-check":
-        // placeholder: idle behaviour
+        // Intentional placeholder — morph-to-check is not used in the LaunchFilm.
+        // Falls back to idle breath. Implement fully if this mode is needed.
         y = breathY;
         break;
     }
@@ -92,10 +93,12 @@ export const JugglingDots: React.FC<JugglingDotsProps> = ({
       extrapolateRight: "clamp",
     });
 
+    // Origins are ~5× the tile size off-screen to ensure dots start fully hidden.
+    // At markSize=120 (default), these put dots well outside any viewport.
     const origins = [
-      { x: -600, y: 0 },
-      { x: 0, y: 450 },
-      { x: 600, y: 0 },
+      { x: -600, y: 0 },   // dot 0: from left
+      { x: 0, y: 450 },    // dot 1: from below
+      { x: 600, y: 0 },    // dot 2: from right
     ];
 
     return (
@@ -176,8 +179,16 @@ export const JugglingDots: React.FC<JugglingDotsProps> = ({
       }}
     >
       {[0, 1, 2].map((i) => {
-        const { y, opacity, scale, dotFilled } = getDotState(i);
-        const bg = dotFilled ? color : "transparent";
+        const { y, opacity, scale } = getDotState(i);
+        let bg = color;
+        let dotOpacity = opacity;
+
+        if (mode === "fill") {
+          const fillFrac = Math.max(0, Math.min(1, filled - i));
+          bg = fillFrac > 0 ? color : "transparent";
+          dotOpacity = fillFrac > 0 ? opacity * fillFrac : opacity * 0.3; // outlined dots show at 30%
+        }
+
         return (
           <div
             key={i}
@@ -188,7 +199,7 @@ export const JugglingDots: React.FC<JugglingDotsProps> = ({
               background: bg,
               border: `${borderWidth}px solid ${color}`,
               transform: `translateY(${y}px) scale(${scale})`,
-              opacity,
+              opacity: dotOpacity,
               flexShrink: 0,
               transition: "none",
             }}
