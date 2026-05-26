@@ -6,7 +6,11 @@
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts ThreeSentencesLaunch out/three-sentences-launch.mp4",
     "still:90": "remotion still src/index.ts ThreeSentencesLaunch --frame=90 out/still-frame-90.png",
-    "still:240": "remotion still src/index.ts ThreeSentencesLaunch --frame=240 out/still-frame-240.png"
+    "still:240": "remotion still src/index.ts ThreeSentencesLaunch --frame=240 out/still-frame-240.png",
+    "render:launch": "remotion render src/index.ts LaunchFilm out/launch-film-16x9.mp4 --codec h264 --jpeg-quality 85",
+    "render:launch-9x16": "remotion render src/index.ts LaunchFilm-9x16 out/launch-film-9x16.mp4 --codec h264",
+    "render:launch-1x1": "remotion render src/index.ts LaunchFilm-1x1 out/launch-film-1x1.mp4 --codec h264",
+    "still:launch": "remotion still src/index.ts LaunchFilm --frame=165 out/launch-still-165.png"
   },
   "dependencies": {
     "@remotion/cli": "4.0.466",
