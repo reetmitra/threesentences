@@ -2,6 +2,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { T, F } from "../../tokens";
+import { JugglingDots } from "../../components/JugglingDots";
 import { ease } from "../../motion/easing";
 
 function typeIn(
@@ -63,55 +64,23 @@ export const Scene02_Antagonist: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ background: T.paper }}>
-      {/* Header dots — top left */}
+      {/* Three dots at top-left — JugglingDots: enter then idle, drop at f200 */}
       <div
         style={{
           position: "absolute",
           top: 180,
           left: 200,
+          // f0→f20: fade in; f200→f224: two dots "drop" (fade out, one survives)
           opacity: frame < 200 ? dotsOpacity : postDropDotOpacity,
         }}
       >
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background: frame >= 200 ? T.inkFade : T.ink,
-          }}
+        <JugglingDots
+          start={0}
+          mode={frame < 20 ? "enter" : "idle"}
+          size={18}
+          color={frame >= 200 ? T.inkFade : T.ink}
         />
       </div>
-
-      {/* Full dots block (f0→f199, before drop) */}
-      {frame < 200 && (
-        <div
-          style={{
-            position: "absolute",
-            top: 180,
-            left: 226, // offset to avoid overlap with the single dot
-            opacity: dotsOpacity,
-            display: "flex",
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              border: `1.5px solid ${T.ink}`,
-            }}
-          />
-          <div
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              border: `1.5px solid ${T.ink}`,
-            }}
-          />
-        </div>
-      )}
 
       {/* Text block */}
       <div

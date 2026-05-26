@@ -221,7 +221,7 @@ export const Scene05_AppTour: React.FC = () => {
             opacity: dotsOpacity,
           }}
         >
-          <JugglingDots start={0} mode="idle" size={22} />
+          <JugglingDots start={0} mode="enter" size={22} color={T.ink} />
         </div>
       )}
     </AbsoluteFill>

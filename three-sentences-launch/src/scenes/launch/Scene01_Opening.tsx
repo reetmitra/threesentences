@@ -27,12 +27,12 @@ export const Scene01_Opening: React.FC = () => {
   const dotsTranslateY = dotsDriftProgress * 80;
   const dotsTranslateX = dotsDriftProgress * 60;
 
-  // Wordmark fade (f60→f84)
-  const wordmarkOpacity = interpolate(frame, [60, 84], [0, 1], {
+  // Wordmark fade (f60→f96): matches dots drift window so they arrive together
+  const wordmarkOpacity = interpolate(frame, [60, 96], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const wordmarkY = interpolate(frame, [60, 84], [8, 0], {
+  const wordmarkY = interpolate(frame, [60, 96], [8, 0], {
     easing: ease.editorial,
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -45,12 +45,12 @@ export const Scene01_Opening: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // Tagline fade (f120→f138)
-  const taglineOpacity = interpolate(frame, [120, 138], [0, 1], {
+  // Tagline fade (f120→f150): holds through scene end
+  const taglineOpacity = interpolate(frame, [120, 150], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const taglineY = interpolate(frame, [120, 138], [8, 0], {
+  const taglineY = interpolate(frame, [120, 150], [8, 0], {
     easing: ease.editorial,
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",

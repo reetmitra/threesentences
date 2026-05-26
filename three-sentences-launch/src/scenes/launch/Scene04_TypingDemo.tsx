@@ -7,7 +7,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { T } from "../../tokens";
+import { T } from "../../tokens"; // T.inkBright used for flash overlay
 import { PhoneFrame } from "../../components/PhoneFrame";
 import { ScreenToday } from "../../components/ScreenToday";
 
@@ -128,7 +128,7 @@ export const Scene04_TypingDemo: React.FC = () => {
           style={{
             position: "absolute",
             inset: 0,
-            background: "#ffffff",
+            background: T.inkBright,
             opacity: flashOpacity,
             pointerEvents: "none",
           }}

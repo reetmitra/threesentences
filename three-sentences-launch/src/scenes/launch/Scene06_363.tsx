@@ -12,7 +12,10 @@ export const Scene06_363: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  // 363 count-up (f20→f80, ease-out exponential)
+  // 363 count-up (f20→f80, ease-out exponential).
+  // Uses Easing.out(Easing.exp) directly — not in the ease.* brand abstraction
+  // because this count-up needs a strong deceleration that overshoots the brand
+  // editorial curve. Intentional deviation; update ease.ts if reused elsewhere.
   const countProgress = interpolate(frame, [20, 80], [0, 363], {
     easing: Easing.out(Easing.exp),
     extrapolateLeft: "clamp",
