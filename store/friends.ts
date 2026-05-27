@@ -455,7 +455,7 @@ export async function searchUsers(
       .from('profiles')
       .select('user_id, name, username, profile_image, interests')
       .neq('user_id', currentUserId)
-      .or(`name.ilike.%${normalizedQuery}%,username.ilike.%${normalizedQuery}%`)
+      .or(`name.ilike.*${normalizedQuery}*,username.ilike.*${normalizedQuery}*`)
       .limit(20);
 
     if (error) {

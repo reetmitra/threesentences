@@ -381,7 +381,7 @@ export async function searchProfiles(query: string, limit = 20): Promise<UserPro
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
+    .or(`username.ilike.*${query}*,name.ilike.*${query}*`)
     .eq('is_complete', true)
     .limit(limit);
 
