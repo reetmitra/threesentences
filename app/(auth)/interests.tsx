@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
@@ -82,8 +82,8 @@ export default function InterestsScreen() {
     // Animate button entrance
     buttonOpacity.value = withDelay(600, withTiming(1, { duration: 300 }));
 
-    // Initialize profile row with name from signup metadata.
-    // Use the same fallback chain as handleContinue so the row is never name=''.
+    // Pre-create the profile row so it exists before the user hits Continue.
+    // Failures here are non-fatal — handleContinue will create it on the fly if needed.
     const initProfile = async () => {
       if (user?.id) {
         const userName =
@@ -92,7 +92,12 @@ export default function InterestsScreen() {
           user.firstName ||
           user.email?.split('@')[0] ||
           'User';
-        await createProfile(user.id, userName);
+        try {
+          await createProfile(user.id, userName);
+        } catch (err) {
+          // Non-fatal: handleContinue handles the missing-profile case.
+          console.warn('initProfile: pre-create failed (will retry on Continue):', err);
+        }
       }
     };
     initProfile();
@@ -149,11 +154,17 @@ export default function InterestsScreen() {
           user.email?.split('@')[0] ||
           'User';
 
-        // Username fallback: metadata → email prefix (stripped to alphanumeric)
-        const resolvedUsername =
+        // Username: sanitize whatever came from metadata or email, then ensure it
+        // meets the 3-char minimum. Falls back to "user<uuid-prefix>" which is always safe.
+        const rawUsername =
           user.username ||
-          user.email?.split('@')[0]?.replace(/[^a-z0-9_]/gi, '').toLowerCase() ||
-          `user${user.id.slice(0, 6)}`;
+          user.email?.split('@')[0] ||
+          '';
+        const sanitizedUsername = rawUsername.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 20);
+        const resolvedUsername =
+          sanitizedUsername.length >= 3
+            ? sanitizedUsername
+            : `user${user.id.replace(/-/g, '').slice(0, 6)}`;
 
         await updateProfile(user.id, {
           name: resolvedName,
@@ -164,9 +175,14 @@ export default function InterestsScreen() {
       }
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save interests:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        'Something went wrong',
+        error?.message || 'Failed to save your interests. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }

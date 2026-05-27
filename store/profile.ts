@@ -130,10 +130,49 @@ export async function updateProfile(
   const profile = await getProfile(userId);
 
   if (!profile) {
-    // Create profile if it doesn't exist
-    const newProfile = createDefaultProfile(userId);
-    const merged = { ...newProfile, ...updates };
-    return createProfile(userId, merged.name);
+    // Profile doesn't exist yet — build a complete row from defaults + updates so
+    // nothing is lost (interests, username, isComplete are all preserved).
+    const defaults = createDefaultProfile(userId, updates.name);
+    const merged: UserProfile = {
+      ...defaults,
+      ...updates,
+      userId,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Validate before inserting
+    const validation = validateProfile(merged);
+    if (!validation.isValid) {
+      const firstError = Object.values(validation.errors).find(Boolean);
+      throw new Error(firstError || 'Invalid profile data');
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: merged.userId,
+        name: merged.name,
+        username: merged.username,
+        age: merged.age ?? null,
+        bio: merged.bio ?? null,
+        profile_image: merged.profileImage ?? null,
+        interests: merged.interests,
+        is_complete: merged.isComplete,
+        created_at: merged.createdAt,
+        updated_at: merged.updatedAt,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to create profile during update:', error.message, error.code);
+      if (error.code === '23505') {
+        throw new Error('This username is not available');
+      }
+      throw new Error(`Failed to create profile: ${error.message}`);
+    }
+
+    return mapToUserProfile(data as DbProfile);
   }
 
   // Apply updates for validation

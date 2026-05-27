@@ -353,10 +353,14 @@ export function validateProfile(profile: Partial<UserProfile>): ProfileValidatio
  */
 export function createDefaultProfile(userId: string, name?: string): UserProfile {
   const now = new Date().toISOString();
+  // Use a per-user temp username derived from their UUID so the UNIQUE constraint is
+  // never violated when multiple users are in-flight through onboarding simultaneously.
+  // The real username (from user_metadata) is written by updateProfile on completion.
+  const tempUsername = `_${userId.replace(/-/g, '').slice(0, 18)}`; // e.g. "_4a3bc2d1e0f912a3b4"
   return {
     userId,
     name: name || '',
-    username: '',
+    username: tempUsername,
     interests: [],
     createdAt: now,
     updatedAt: now,
