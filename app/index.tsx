@@ -81,9 +81,12 @@ export default function Index() {
     return <Redirect href="/(onboarding)" />;
   }
 
-  // If profile setup is incomplete, redirect to profile setup
+  // Profile incomplete — send to interests (the primary profile-creation flow),
+  // not profile-setup. profile-setup assumes a profile already exists and only
+  // collects username/bio extras; it has no name field. Interests creates the
+  // full profile from scratch and is correct for any user without is_complete=true.
   if (needsProfileSetup) {
-    return <Redirect href="/(auth)/profile-setup" />;
+    return <Redirect href="/(auth)/interests" />;
   }
 
   // All good - go to main app

@@ -141,8 +141,17 @@ export default function ProfileSetupScreen() {
         throw new Error('Not authenticated');
       }
 
+      // Resolve name from auth metadata — profile-setup has no name field so we
+      // carry it forward from signup metadata so validateProfile never throws.
+      const resolvedName =
+        user.name ||
+        user.firstName ||
+        user.email?.split('@')[0] ||
+        'User';
+
       // Update profile with all data
       await updateProfile(user.id, {
+        name: resolvedName,
         username,
         age: age ? parseInt(age, 10) : undefined,
         bio: bio.trim() || undefined,
