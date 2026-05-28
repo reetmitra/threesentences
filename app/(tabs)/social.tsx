@@ -79,8 +79,8 @@ export default function SocialScreen() {
   const tabIndicatorPosition = useSharedValue(0);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (userId) loadData();
+  }, [userId]);
 
   useEffect(() => {
     tabIndicatorPosition.value = withSpring(activeTab === 'friends' ? 0 : 1, {
@@ -90,7 +90,7 @@ export default function SocialScreen() {
   }, [activeTab, tabIndicatorPosition]);
 
   useEffect(() => {
-    if (searchQuery.trim() && currentUser) {
+    if (searchQuery.trim() && userId) {
       const delaySearch = setTimeout(() => {
         performSearch(searchQuery);
       }, 300);
@@ -98,7 +98,7 @@ export default function SocialScreen() {
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery, currentUser]);
+  }, [searchQuery, userId]);
 
   const loadData = async () => {
     try {
@@ -137,9 +137,9 @@ export default function SocialScreen() {
   }, []);
 
   const performSearch = async (query: string) => {
-    if (!currentUser) return;
+    if (!userId) return;
     try {
-      const results = await searchUsers(query, currentUser.id);
+      const results = await searchUsers(query, userId);
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
