@@ -30,7 +30,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { Conversation, UserInfo } from '@/types/social';
-import { getConversations } from '@/store/chat';
+import { getConversations, subscribeToConversations } from '@/store/chat';
 import { useAuth } from '@/hooks/useAuth';
 import { getProfile } from '@/store/profile';
 
@@ -47,9 +47,25 @@ export default function ConversationsScreen() {
     const headerOpacity = useSharedValue(0);
 
     useEffect(() => {
+        if (!userId) return;
         loadData();
         headerOpacity.value = withSpring(1, { damping: 15 });
-    }, []);
+
+        const unsubscribe = subscribeToConversations(userId, (updated) => {
+            setConversations((prev) => {
+                const idx = prev.findIndex((c) => c.id === updated.id);
+                if (idx === -1) return [updated, ...prev]; // new conversation
+                const next = [...prev];
+                next[idx] = updated;
+                // Keep sorted by updatedAt DESC
+                return next.sort(
+                    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+                );
+            });
+        });
+
+        return () => unsubscribe();
+    }, [userId]);
 
     const loadData = async () => {
         try {

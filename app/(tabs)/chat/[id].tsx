@@ -13,13 +13,13 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
-    withSpring,
     withTiming,
     FadeIn,
     SlideInDown,
@@ -31,136 +31,319 @@ import { MessageBubble, ChatInput } from '@/components/social';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import {
-    Conversation,
     Message,
     UserInfo,
-    getOtherParticipant,
     getInitials,
 } from '@/types/social';
 import {
-    getConversationById,
     getMessages,
     sendMessage,
-    markMessagesAsRead,
+    markAsRead,
+    subscribeToMessages,
+    subscribeToTyping,
+    broadcastTyping,
 } from '@/store/chat';
 import { useAuth } from '@/hooks/useAuth';
-import { getProfile } from '@/store/profile';
+import { supabase } from '@/config/supabase';
+
+// ─── DB row types ─────────────────────────────────────────────────────────────
+
+interface DbConversationRow {
+    id: string;
+    user_a_id: string;
+    user_b_id: string;
+    last_message_content: string | null;
+    last_message_at: string | null;
+    last_message_sender_id: string | null;
+    unread_count_a: number;
+    unread_count_b: number;
+    created_at: string;
+    updated_at: string | null;
+}
+
+interface DbProfileRow {
+    user_id: string;
+    name: string;
+    username: string;
+    profile_image: string | null;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const activeColors = colors.dark;
-    const { userId, user } = useAuth();
+    const { userId } = useAuth();
 
-    const [conversation, setConversation] = useState<Conversation | null>(null);
+    // State
+    const [otherUser, setOtherUser] = useState<UserInfo | null>(null);
+    // Descending order: newest first (index 0). Required for inverted FlatList.
     const [messages, setMessages] = useState<Message[]>([]);
-    const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
-    const [sending, setSending] = useState(false);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+    const [isTypingActive, setIsTypingActive] = useState(false);
 
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<FlatList<Message>>(null);
     const headerOpacity = useSharedValue(0);
 
-    useEffect(() => {
-        loadData();
-        headerOpacity.value = withTiming(1, { duration: 300 });
-    }, [id]);
+    // ─── Mount sequence ───────────────────────────────────────────────────────
 
-    const loadData = async () => {
+    useEffect(() => {
         if (!id || !userId) return;
 
-        try {
-            const profile = await getProfile(userId);
-            const userInfo: UserInfo = {
-                id: userId,
-                name: profile?.name || user?.name || 'User',
-                username: profile?.username || 'user',
-                profileImage: profile?.profileImage,
-            };
-            setCurrentUser(userInfo);
+        headerOpacity.value = withTiming(1, { duration: 300 });
 
-            const [conv, msgs] = await Promise.all([
-                getConversationById(userId, id),
-                getMessages(userId, id),
-            ]);
+        let unsubMessages: (() => void) | null = null;
+        let unsubTyping: (() => void) | null = null;
 
-            setConversation(conv);
-            setMessages(msgs);
+        (async () => {
+            try {
+                // 1. Load conversation row directly
+                const { data: convRow, error: convError } = await supabase
+                    .from('conversations')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
 
-            // Mark as read
-            if (conv) {
-                await markMessagesAsRead(userId, id);
+                if (convError || !convRow) {
+                    console.error('Failed to load conversation:', convError);
+                    setLoading(false);
+                    return;
+                }
+
+                const row = convRow as DbConversationRow;
+                const otherUserId =
+                    row.user_a_id === userId ? row.user_b_id : row.user_a_id;
+
+                // 2. Fetch other participant's profile
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('user_id, name, username, profile_image')
+                    .eq('user_id', otherUserId)
+                    .maybeSingle();
+
+                const profile = profileData as DbProfileRow | null;
+                const other: UserInfo = profile
+                    ? {
+                          id: profile.user_id,
+                          name: profile.name,
+                          username: profile.username,
+                          profileImage: profile.profile_image ?? undefined,
+                      }
+                    : { id: otherUserId, name: 'User', username: 'user' };
+
+                setOtherUser(other);
+
+                // 3. Fetch last 30 messages (ascending from store → reverse to descending)
+                const { messages: initialMsgs, nextCursor: cursor } =
+                    await getMessages(id, null);
+                setMessages([...initialMsgs].reverse()); // newest first
+                setNextCursor(cursor);
+
+                // 4. Mark as read
+                await markAsRead(id, userId);
+
+                // 5. Subscribe to new messages
+                unsubMessages = subscribeToMessages(id, (newMsg) => {
+                    setMessages((prev) => {
+                        // Avoid duplicates (optimistic already added our own)
+                        if (prev.some((m) => m.id === newMsg.id)) return prev;
+                        return [newMsg, ...prev];
+                    });
+                });
+
+                // 6. Subscribe to typing
+                unsubTyping = subscribeToTyping(id, (typingUserId, isTyping) => {
+                    if (typingUserId !== userId) {
+                        setIsTypingActive(isTyping);
+                    }
+                });
+            } catch (err) {
+                console.error('Failed to initialise chat:', err);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Failed to load chat:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        })();
 
-    const handleSend = useCallback(async (content: string) => {
-        if (!currentUser || !id || sending) return;
+        return () => {
+            unsubMessages?.();
+            unsubTyping?.();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, userId]);
 
-        setSending(true);
-        try {
-            const newMessage = await sendMessage(id, currentUser.id, content);
-            setMessages(prev => [...prev, newMessage]);
+    // ─── AppState: mark read on foreground resume ─────────────────────────────
+
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (nextState) => {
+            if (nextState === 'active' && id && userId) {
+                void markAsRead(id, userId);
+            }
+        });
+        return () => sub.remove();
+    }, [id, userId]);
+
+    // ─── Optimistic send ──────────────────────────────────────────────────────
+
+    const handleSend = useCallback(
+        async (content: string) => {
+            if (!id || !userId) return;
+
+            const optimisticId = Date.now().toString();
+            const optimisticMsg: Message = {
+                id: optimisticId,
+                conversationId: id,
+                senderId: userId,
+                content,
+                createdAt: new Date().toISOString(),
+                status: 'sending',
+            };
+
+            // 1. Append optimistic message (newest first → unshift)
+            setMessages((prev) => [optimisticMsg, ...prev]);
+
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-            // Scroll to bottom
-            setTimeout(() => {
-                flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            try {
+                // 2. Send to server
+                const sentMsg = await sendMessage(id, userId, content);
+
+                // 3. Replace optimistic with real message
+                setMessages((prev) =>
+                    prev.map((m) => (m.id === optimisticId ? sentMsg : m))
+                );
+            } catch (err) {
+                console.error('Failed to send message:', err);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+                // 4. Mark optimistic message as failed
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === optimisticId ? { ...m, status: 'failed' } : m
+                    )
+                );
+            }
+        },
+        [id, userId]
+    );
+
+    // ─── Retry failed message ─────────────────────────────────────────────────
+
+    const handleRetry = useCallback(
+        async (failedMessage: Message) => {
+            if (!id || !userId) return;
+
+            // 1. Reset status to sending
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === failedMessage.id ? { ...m, status: 'sending' } : m
+                )
+            );
+
+            try {
+                // 2. Resend
+                const sentMsg = await sendMessage(id, userId, failedMessage.content);
+
+                // 3. Replace with real message
+                setMessages((prev) =>
+                    prev.map((m) => (m.id === failedMessage.id ? sentMsg : m))
+                );
+            } catch (err) {
+                console.error('Failed to retry message:', err);
+
+                // 4. Back to failed
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === failedMessage.id ? { ...m, status: 'failed' } : m
+                    )
+                );
+            }
+        },
+        [id, userId]
+    );
+
+    // ─── Pagination: load older messages ─────────────────────────────────────
+
+    const handleEndReached = useCallback(async () => {
+        if (!id || !nextCursor || isLoadingOlder) return;
+
+        setIsLoadingOlder(true);
+        try {
+            const { messages: olderMsgs, nextCursor: newCursor } =
+                await getMessages(id, nextCursor);
+
+            // olderMsgs is ascending (oldest first) → reverse to descending, concat to END
+            setMessages((prev) => [...prev, ...[...olderMsgs].reverse()]);
+            setNextCursor(newCursor);
+        } catch (err) {
+            console.error('Failed to load older messages:', err);
         } finally {
-            setSending(false);
+            setIsLoadingOlder(false);
         }
-    }, [currentUser, id, sending]);
+    }, [id, nextCursor, isLoadingOlder]);
+
+    // ─── Typing indicators ────────────────────────────────────────────────────
 
     const handleTypingStart = useCallback(() => {
-        // Typing indicators would require additional realtime setup
-        // For now, this is a no-op
-    }, [currentUser, id]);
+        if (!id || !userId) return;
+        broadcastTyping(id, userId, true);
+    }, [id, userId]);
 
     const handleTypingEnd = useCallback(() => {
-        // Typing indicators would require additional realtime setup
-    }, [currentUser, id]);
+        if (!id || !userId) return;
+        broadcastTyping(id, userId, false);
+    }, [id, userId]);
+
+    // ─── Header animation ─────────────────────────────────────────────────────
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         opacity: headerOpacity.value,
     }));
 
-    const otherUser = conversation && currentUser
-        ? getOtherParticipant(conversation, currentUser.id)
-        : null;
+    // ─── Render message ───────────────────────────────────────────────────────
 
-    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
-        if (!currentUser) return null;
+    const renderMessage = useCallback(
+        ({ item, index }: { item: Message; index: number }) => {
+            if (!userId) return null;
 
-        const isLastInGroup = index === messages.length - 1 ||
-            messages[index + 1]?.senderId !== item.senderId;
+            // In descending order: next item (higher index) is the OLDER message.
+            // "Last in group" means the next item has a different sender (or doesn't exist).
+            // This determines whether to show the timestamp below this bubble.
+            const isLastInGroup =
+                index === messages.length - 1 ||
+                messages[index + 1]?.senderId !== item.senderId;
 
-        return (
-            <MessageBubble
-                message={item}
-                currentUserId={currentUser.id}
-                showTimestamp={isLastInGroup}
-                isLastInGroup={isLastInGroup}
-                index={index}
-            />
-        );
-    }, [currentUser, messages]);
+            return (
+                <MessageBubble
+                    message={item}
+                    currentUserId={userId}
+                    showTimestamp={isLastInGroup}
+                    isLastInGroup={isLastInGroup}
+                    index={index}
+                    failed={item.status === 'failed'}
+                    onRetry={() => handleRetry(item)}
+                />
+            );
+        },
+        [userId, messages, handleRetry]
+    );
+
+    // ─── Loading screen ───────────────────────────────────────────────────────
 
     if (loading) {
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: activeColors.background }]}>
+            <SafeAreaView
+                style={[styles.container, { backgroundColor: activeColors.background }]}
+            >
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={activeColors.accent} />
                 </View>
             </SafeAreaView>
         );
     }
+
+    // ─── Main render ──────────────────────────────────────────────────────────
 
     return (
         <SafeAreaView
@@ -174,30 +357,59 @@ export default function ChatScreen() {
                     style={styles.backButton}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <Icon name="arrowL" size={28} color={activeColors.textPrimary} strokeWidth={2} />
+                    <Icon
+                        name="arrowL"
+                        size={28}
+                        color={activeColors.textPrimary}
+                        strokeWidth={2}
+                    />
                 </Pressable>
 
                 <View style={styles.headerContent}>
                     {otherUser && (
                         <>
-                            <View style={[styles.avatar, { backgroundColor: activeColors.accentSubtle }]}>
-                                <Text variant="base" family="sansBold" style={{ color: activeColors.accent }}>
+                            <View
+                                style={[
+                                    styles.avatar,
+                                    { backgroundColor: activeColors.accentSubtle },
+                                ]}
+                            >
+                                <Text
+                                    variant="base"
+                                    family="sansBold"
+                                    style={{ color: activeColors.accent }}
+                                >
                                     {getInitials(otherUser.name)}
                                 </Text>
                             </View>
                             <View style={styles.headerText}>
-                                <Text variant="base" family="sansSemibold" numberOfLines={1}>
+                                <Text
+                                    variant="base"
+                                    family="sansSemibold"
+                                    numberOfLines={1}
+                                >
                                     {otherUser.name}
                                 </Text>
-                                {conversation?.isTyping ? (
+                                {isTypingActive ? (
                                     <Animated.Text
                                         entering={FadeIn.duration(200)}
-                                        style={[styles.typingText, { color: activeColors.accent }]}
+                                        style={[
+                                            styles.typingText,
+                                            { color: activeColors.accent },
+                                        ]}
                                     >
                                         typing...
                                     </Animated.Text>
                                 ) : (
-                                    <Text style={{ fontFamily: 'IBMPlexMono_400Regular', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1.2, color: activeColors.textTertiary }}>
+                                    <Text
+                                        style={{
+                                            fontFamily: 'IBMPlexMono_400Regular',
+                                            fontSize: 9,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 1.2,
+                                            color: activeColors.textTertiary,
+                                        }}
+                                    >
                                         Active now
                                     </Text>
                                 )}
@@ -213,23 +425,37 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={0}
             >
-                <FlatList
+                <FlatList<Message>
                     ref={flatListRef}
                     data={messages}
                     renderItem={renderMessage}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.messageList}
                     showsVerticalScrollIndicator={false}
-                    inverted={false}
-                    onContentSizeChange={() => {
-                        flatListRef.current?.scrollToEnd({ animated: false });
-                    }}
+                    inverted
+                    onEndReached={nextCursor ? handleEndReached : undefined}
+                    onEndReachedThreshold={0.2}
+                    ListFooterComponent={
+                        isLoadingOlder ? (
+                            <View style={styles.loadingOlderContainer}>
+                                <ActivityIndicator
+                                    size="small"
+                                    color={activeColors.textTertiary}
+                                />
+                            </View>
+                        ) : null
+                    }
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Text variant="base" color="secondary" centered>
                                 No messages yet
                             </Text>
-                            <Text variant="sm" color="tertiary" centered style={{ marginTop: spacing[2] }}>
+                            <Text
+                                variant="sm"
+                                color="tertiary"
+                                centered
+                                style={{ marginTop: spacing[2] }}
+                            >
                                 Send a message to start the conversation
                             </Text>
                         </View>
@@ -242,7 +468,6 @@ export default function ChatScreen() {
                         onSend={handleSend}
                         onTypingStart={handleTypingStart}
                         onTypingEnd={handleTypingEnd}
-                        disabled={sending}
                     />
                 </Animated.View>
             </KeyboardAvoidingView>
@@ -297,6 +522,10 @@ const styles = StyleSheet.create({
         paddingVertical: spacing[4],
         flexGrow: 1,
         justifyContent: 'flex-end',
+    },
+    loadingOlderContainer: {
+        paddingVertical: spacing[4],
+        alignItems: 'center',
     },
     emptyState: {
         flex: 1,
