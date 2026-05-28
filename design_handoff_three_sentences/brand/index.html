@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three Sentences · Brand</title>
+  <link rel="icon" type="image/svg+xml" href="assets/svg/logo/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500;1,6..72,600&family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    html, body, #root { margin: 0; padding: 0; background: #efece5; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Schibsted Grotesk','Helvetica Neue',Arial,sans-serif; }
+    * { box-sizing: border-box; }
+    ::selection { background: rgba(0,0,0,0.12); }
+    .page { max-width: 880px; margin: 0 auto; padding: 56px 32px 96px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;
+      font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: #6b6b6b; }
+    .topbar a { color: inherit; text-decoration: none; padding: 6px 10px; border: 1px solid #d8d4cb; border-radius: 999px; transition: background .15s, color .15s; }
+    .topbar a:hover { background: #0e0e10; color: #ebe7dc; border-color: #0e0e10; }
+    .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px;
+      padding-bottom: 28px; border-bottom: 1px solid #d8d4cb; margin-bottom: 48px; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 1.8px;
+      text-transform: uppercase; color: #6b6b6b; margin-bottom: 12px; }
+    h1 { font-family: 'Newsreader','Iowan Old Style',Georgia,serif; font-style: italic; font-weight: 400;
+      font-size: 56px; line-height: 1; letter-spacing: -1.2px; margin: 0; }
+    .blurb { font-size: 15px; line-height: 1.55; color: #4a4a4a; max-width: 380px; margin: 0; text-align: right; }
+    .grid { display: flex; flex-direction: column; gap: 56px; }
+    .grid > .item { display: flex; justify-content: center; }
+
+    .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 700px) { .grid-cards { grid-template-columns: 1fr; } }
+    .card { display: block; background: #f6f4ee; border: 1px solid #d8d4cb; border-radius: 14px;
+      padding: 24px 26px 26px; text-decoration: none; color: inherit; transition: background .15s, border-color .15s, transform .15s; }
+    .card:hover { background: #fff; border-color: #b4afa0; }
+    .card-num { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 1.6px;
+      text-transform: uppercase; color: #6b6b6b; }
+    .card-title { font-family: 'Newsreader', serif; font-style: italic; font-weight: 400;
+      font-size: 30px; line-height: 1.1; letter-spacing: -0.4px; margin: 10px 0 8px; }
+    .card-body { font-size: 13px; line-height: 1.55; color: #4a4a4a; }
+    .hero { display: flex; align-items: center; gap: 22px; margin: 0 0 40px; padding: 28px 30px;
+      background: #0e0e10; color: #ebe7dc; border-radius: 18px; }
+    .hero-mark { width: 72px; height: 72px; flex: none; border-radius: 16px; background: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 9px; }
+    .hero-dot { width: 9px; height: 9px; background: #0e0e10; border-radius: 50%; }
+    .hero-title { font-family: 'Newsreader', serif; font-style: italic; font-size: 28px; line-height: 1.1; margin: 0; }
+    .hero-sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px;
+      text-transform: uppercase; color: #75726a; margin-top: 6px; }
+    .footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid #d8d4cb;
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 1.6px;
+      text-transform: uppercase; color: #6b6b6b; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <span>Three Sentences · brand system</span>
+      <span>v1.0</span>
+    </div>
+
+    <div class="hero">
+      <div class="hero-mark">
+        <div class="hero-dot"></div>
+        <div class="hero-dot"></div>
+        <div class="hero-dot"></div>
+      </div>
+      <div>
+        <h2 class="hero-title">Three Sentences</h2>
+        <div class="hero-sub">Be better. Do better.</div>
+      </div>
+    </div>
+
+    <div class="header">
+      <div>
+        <div class="num">The brand</div>
+        <h1>Seven pieces.</h1>
+      </div>
+      <p class="blurb">Each section opens in its own page — the marks, the lockups, the icons, the atmosphere. Raw SVGs live in <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">assets/svg/</code>.</p>
+    </div>
+
+    <div class="grid-cards">
+      <a class="card" href="01-logo-mark.html">
+        <div class="card-num">01 · Section</div>
+        <div class="card-title">Logo mark</div>
+        <div class="card-body">The three-dot tile. Primary, reversed, mono, sizing ladder, clear-space rule, and don'ts.</div>
+      </a>
+      <a class="card" href="02-wordmark.html">
+        <div class="card-num">02 · Section</div>
+        <div class="card-title">Wordmark</div>
+        <div class="card-body">"Three Sentences" — Newsreader italic. Sizing, lockups, signature, cream variant.</div>
+      </a>
+      <a class="card" href="03-3hree-variant.html">
+        <div class="card-num">03 · Section</div>
+        <div class="card-title">3hree variant</div>
+        <div class="card-body">A display variant where the italic numeral "3" replaces "Th". For social, merch, casual surfaces.</div>
+      </a>
+      <a class="card" href="04-363-watermark.html">
+        <div class="card-num">04 · Section</div>
+        <div class="card-title">363 watermark</div>
+        <div class="card-body">The goal — 363 of 365. The relentless return, treated as an oversized italic numeral.</div>
+      </a>
+      <a class="card" href="05-tagline.html">
+        <div class="card-num">05 · Section</div>
+        <div class="card-title">Tagline</div>
+        <div class="card-body">"Be better. Do better." Mono uppercase, with pull-quote and signature variants.</div>
+      </a>
+      <a class="card" href="06-icons.html">
+        <div class="card-num">06 · Section</div>
+        <div class="card-title">Icons (Lucide)</div>
+        <div class="card-body">The fifteen icons that run the app. Outline, 1.5 stroke, round caps, six-size ladder.</div>
+      </a>
+      <a class="card" href="07-atmosphere.html">
+        <div class="card-num">07 · Section</div>
+        <div class="card-title">Atmosphere</div>
+        <div class="card-body">The mood — palette, type pairing, light, imagery direction, finished editorial composition.</div>
+      </a>
+    </div>
+
+    <div class="footer">
+      <span>Three Sentences · brand</span>
+      <span>BE BETTER. DO BETTER.</span>
+    </div>
+  </div>
+</body>
+</html>

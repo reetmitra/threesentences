@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Three Sentences · Be better. Do better.</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#060608">
+<meta name="description" content="A quiet daily journaling practice on a single rule: write exactly three sentences. Invite only. Launching Q4 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: #060608;
+    color: #ebe7dc;
+    font-family: 'Schibsted Grotesk', Helvetica, Arial, sans-serif;
+    scroll-behavior: smooth;
+  }
+  body { overflow-x: hidden; }
+  *:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 4px; }
+  *::selection { background: rgba(255,255,255,0.25); color: #fff; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div data-screen-label="Three Sentences — Landing page"></div>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="landing-system.jsx"></script>
+<script type="text/babel" src="landing-sections-a.jsx"></script>
+<script type="text/babel" src="landing-sections-b.jsx"></script>
+<script type="text/babel" src="landing-sections-c.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+function App() {
+  const [waitlist, setWaitlist] = useState(false);
+  const openWaitlist = () => setWaitlist(true);
+  return (
+    <>
+      <Nav onCTA={openWaitlist}/>
+      <Hero onCTA={openWaitlist}/>
+      <ProblemSection/>
+      <RuleSection onCTA={openWaitlist}/>
+      <HowSection/>
+      <FeaturesSection/>
+      <The363Section/>
+      <PrinciplesSection/>
+      <AISection/>
+      <TrustSection/>
+      <FAQSection/>
+      <FinalCTASection onCTA={openWaitlist}/>
+      <Footer onCTA={openWaitlist}/>
+      <WaitlistModal open={waitlist} onClose={() => setWaitlist(false)}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

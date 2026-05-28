@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three Sentences · 06 Icons (Lucide)</title>
+  <link rel="icon" type="image/svg+xml" href="assets/svg/logo/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500;1,6..72,600&family=Schibsted+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    html, body, #root { margin: 0; padding: 0; background: #efece5; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Schibsted Grotesk','Helvetica Neue',Arial,sans-serif; }
+    * { box-sizing: border-box; }
+    ::selection { background: rgba(0,0,0,0.12); }
+    .page { max-width: 880px; margin: 0 auto; padding: 56px 32px 96px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;
+      font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 1.6px; text-transform: uppercase; color: #6b6b6b; }
+    .topbar a { color: inherit; text-decoration: none; padding: 6px 10px; border: 1px solid #d8d4cb; border-radius: 999px; transition: background .15s, color .15s; }
+    .topbar a:hover { background: #0e0e10; color: #ebe7dc; border-color: #0e0e10; }
+    .header { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px;
+      padding-bottom: 28px; border-bottom: 1px solid #d8d4cb; margin-bottom: 48px; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 1.8px;
+      text-transform: uppercase; color: #6b6b6b; margin-bottom: 12px; }
+    h1 { font-family: 'Newsreader','Iowan Old Style',Georgia,serif; font-style: italic; font-weight: 400;
+      font-size: 56px; line-height: 1; letter-spacing: -1.2px; margin: 0; }
+    .blurb { font-size: 15px; line-height: 1.55; color: #4a4a4a; max-width: 380px; margin: 0; text-align: right; }
+    .grid { display: flex; flex-direction: column; gap: 56px; }
+    .grid > .item { display: flex; justify-content: center; }
+    .end { margin-top: 64px; }
+    .dim { opacity: 0.3; }
+</style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="06-icons.jsx"></script>
+  <script type="text/babel">
+    function Page() {
+      const items = ICONS_ITEMS;
+      return (
+        <div className="page">
+          <div className="topbar">
+            <a href="index.html">Three Sentences · brand</a>
+            <span>06 / 07</span>
+          </div>
+          <div className="header">
+            <div>
+              <div className="num">Section 06</div>
+              <h1>Icons (Lucide)</h1>
+            </div>
+            <p className="blurb">The fifteen icons that run the app. Outline, 1.5 stroke, round caps, six-size ladder.</p>
+          </div>
+          <div className="grid">
+            {items.map(({ id, Render }) => (
+              <div className="item" key={id} data-screen-label={`06 Icons (Lucide) · ${id}`}>
+                <Render />
+              </div>
+            ))}
+          </div>
+          <div className="topbar end">
+            <a href="05-tagline.html">← 05 Tagline</a>
+            <a href="07-atmosphere.html">07 Atmosphere →</a>
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<Page />);
+  </script>
+</body>
+</html>

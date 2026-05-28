@@ -1,0 +1,365 @@
+/* ============================================================
+   THREE Sentences — Colors & Type
+   ------------------------------------------------------------
+   Noir-editorial dark-only system. The product is a single
+   rule: write exactly three sentences. The design system
+   serves that constraint — restraint over expression,
+   editorial over utilitarian.
+
+   Distilled from: Three Sentences UI Spec.md
+                   Three Sentences Landing UI Spec.md
+                   proto-*.jsx interactive prototype
+
+   FONT POLICY (the slop-avoidance rule):
+     Italic Newsreader is reserved for the brand wordmark
+     and large display numerals. Reading-mode entry bodies
+     use Newsreader upright. EVERYTHING else uses Schibsted
+     Grotesk — page titles, prompts, principles, AI text,
+     milestone subtitles, card titles, body copy.
+   ============================================================ */
+
+:root {
+  /* ────────────────────────────────────────────────────────
+     Color
+     ──────────────────────────────────────────────────────── */
+  /* Inks — bone-ivory, never pure white in body. Pure white
+     is reserved for primary CTAs, active states, and the
+     bright variant of the streak pill. */
+  --ink:           #ebe7dc;   /* Primary text, default strokes, icons */
+  --ink-bright:    #ffffff;   /* CTAs, active states, submitted highlight */
+  --ink-dim:       #75726a;   /* Secondary text, metadata, inactive tabs (app) */
+  --ink-dim-2:     #8a877e;   /* Landing — slightly cooler dim */
+  --ink-fade:      #36363a;   /* Placeholder strokes, dashed borders, empty dots */
+  --ink-fade-2:    #3a3a3e;   /* Landing — slightly warmer fade */
+
+  /* Surfaces — warm near-black, never pure black. */
+  --paper:         #0e0e10;   /* App interior, page surface */
+  --paper-bg:      #060608;   /* Outer canvas backdrop */
+  --paper-2:       #0e0e10;   /* Landing — alternate section rhythm */
+
+  /* Cream side — editorial / out-of-app use (brand sheet, deck title cards, ID) */
+  --cream:         #efece5;
+  --cream-hi:      #f6f4ee;
+  --cream-lo:      #e4dfd2;
+
+  /* Surfaces — slight elevation above paper. */
+  --surface:       #15151a;   /* Cards, inputs, sheets */
+  --surface-hi:    #1c1c22;   /* Toasts, hover */
+  --frame:         #1e1e22;   /* All hairline dividers and borders */
+
+  /* Accent & semantic */
+  --accent:        #ffffff;   /* Semantic alias for "emphasis" — same as ink-bright */
+  --warn:          #f6c177;   /* Warm amber — over-count, offline, crisis only.
+                                 Never decorative. */
+  --warm:          #e8d4b3;   /* Landing — rare warm emphasis (currently unused) */
+
+  /* Quick translucent inks for atmosphere */
+  --ink-a05: rgba(235,231,220,0.05);
+  --ink-a08: rgba(235,231,220,0.08);
+  --ink-a25: rgba(235,231,220,0.25);
+  --w-a06:   rgba(255,255,255,0.06);
+  --w-a10:   rgba(255,255,255,0.10);
+  --w-a25:   rgba(255,255,255,0.25);
+
+  /* ────────────────────────────────────────────────────────
+     Type families
+     ──────────────────────────────────────────────────────── */
+  --sans:  'Schibsted Grotesk', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --serif: 'Newsreader', 'Iowan Old Style', 'Apple Garamond', 'Times New Roman', serif;
+  --mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ────────────────────────────────────────────────────────
+     Type scale (mobile / app)
+     The app scale is tight — 9 to 34px, plus a 56–84px
+     display tier for milestones and splash hero.
+     ──────────────────────────────────────────────────────── */
+  --t-caption:    9px;
+  --t-meta:       10px;
+  --t-eyebrow:    11px;
+  --t-body-sm:    13px;
+  --t-body:       14px;
+  --t-body-lg:    15px;
+  --t-read:       17px;
+  --t-read-lg:    18px;
+  --t-h3:         22px;
+  --t-h2:         28px;
+  --t-h1:         34px;
+  --t-display:    56px;
+  --t-display-lg: 84px;
+
+  /* Landing — adds fluid clamp() display sizes */
+  --t-lp-hero:    clamp(72px, 12vw, 180px);   /* "Three / Sentences." */
+  --t-lp-h1:      clamp(64px, 9vw, 140px);    /* Section headlines */
+  --t-lp-h2:      clamp(40px, 5vw, 72px);     /* Section sub-headlines */
+  --t-lp-h3:      clamp(28px, 3vw, 40px);     /* Card titles */
+  --t-lp-numeral: clamp(100px, 18vw, 280px);  /* The 363 counter */
+  --t-lp-lead:    clamp(17px, 1.4vw, 20px);   /* Section intro paragraphs */
+
+  /* Weights */
+  --w-regular:  400;
+  --w-medium:   500;
+  --w-semibold: 600;
+  --w-bold:     700;
+
+  /* Line heights */
+  --lh-tight:    1.0;
+  --lh-snug:     1.2;
+  --lh-normal:   1.4;
+  --lh-relaxed:  1.55;
+  --lh-reading:  1.6;     /* locked entries */
+
+  /* Letter-spacing (the spec's mono uses wide tracking) */
+  --ls-tight:    -0.6px;
+  --ls-display:  -1.5px;
+  --ls-numeral:  -3px;
+  --ls-body:     -0.1px;
+  --ls-eyebrow:  1.4px;
+  --ls-meta:     1.2px;
+  --ls-loud:     2.4px;
+  --ls-loudest:  3px;
+
+  /* ────────────────────────────────────────────────────────
+     Spacing & shape
+     ──────────────────────────────────────────────────────── */
+  /* 8-based scale with 4-step substeps */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;   --sp-4: 16px;
+  --sp-5: 20px;  --sp-6: 24px;  --sp-7: 28px;   --sp-8: 32px;
+  --sp-10: 40px; --sp-12: 48px; --sp-14: 56px;  --sp-16: 64px;
+  --sp-18: 72px; --sp-20: 80px; --sp-25: 100px; --sp-30: 120px;
+  --sp-40: 160px; --sp-50: 200px;
+
+  --pad-edge: 24px;          /* App content edge */
+  --pad-page: 64px;           /* Landing page edge */
+
+  --r-input: 10px;
+  --r-card:  12px;
+  --r-card-lg: 16px;
+  --r-card-xl: 20px;
+  --r-modal: 24px;
+  --r-pill:  999px;
+  --r-mark-tile: 22%;         /* % of mark size — the rounded-tile MarkDot */
+
+  /* Phone */
+  --phone-w: 360px;
+  --phone-h: 760px;
+  --hit-min: 44px;
+
+  /* ────────────────────────────────────────────────────────
+     Motion
+     ──────────────────────────────────────────────────────── */
+  --ease-brand: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-juggle: cubic-bezier(0.34, 1.5, 0.64, 1);
+  --d-snap:   180ms;
+  --d-base:   280ms;
+  --d-slow:   900ms;
+  --d-juggle: 1200ms;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+html, body {
+  margin: 0;
+  background: var(--paper-bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   Semantic tokens (use as classes; tokens above as vars)
+   ============================================================ */
+
+/* ── The wordmark — italic Newsreader is allowed here ── */
+.t-wordmark {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: var(--w-regular);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink);
+}
+
+/* ── Big numeric displays — italic Newsreader allowed ── */
+.t-numeral {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: var(--w-regular);
+  letter-spacing: var(--ls-numeral);
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ── Reading-mode body for submitted/locked entries ──
+   Upright Newsreader. Not italic — it's a journal page,
+   not a pull-quote. */
+.t-reading {
+  font-family: var(--serif);
+  font-style: normal;
+  font-weight: var(--w-regular);
+  font-size: var(--t-read);
+  line-height: var(--lh-reading);
+  letter-spacing: var(--ls-body);
+  color: var(--ink);
+}
+
+/* ── Page titles — Schibsted Grotesk, never italic ── */
+h1, .t-h1 {
+  font-family: var(--sans);
+  font-weight: var(--w-semibold);
+  font-size: var(--t-h1);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-snug);
+  color: var(--ink);
+  margin: 0;
+}
+h2, .t-h2 {
+  font-family: var(--sans);
+  font-weight: var(--w-semibold);
+  font-size: var(--t-h2);
+  letter-spacing: -0.3px;
+  line-height: var(--lh-snug);
+  color: var(--ink);
+  margin: 0;
+}
+h3, .t-h3 {
+  font-family: var(--sans);
+  font-weight: var(--w-medium);
+  font-size: var(--t-h3);
+  letter-spacing: -0.2px;
+  line-height: var(--lh-snug);
+  color: var(--ink);
+  margin: 0;
+}
+
+/* ── Body ── */
+p, .t-body {
+  font-family: var(--sans);
+  font-weight: var(--w-regular);
+  font-size: var(--t-body);
+  line-height: var(--lh-relaxed);
+  color: var(--ink);
+  margin: 0;
+}
+.t-body-sm { font-size: var(--t-body-sm); }
+.t-body-lg { font-size: var(--t-body-lg); }
+.t-dim     { color: var(--ink-dim); }
+
+/* ── Lead paragraph (landing) ── */
+.t-lead {
+  font-family: var(--sans);
+  font-weight: var(--w-regular);
+  font-size: var(--t-lp-lead);
+  line-height: var(--lh-reading);
+  letter-spacing: var(--ls-body);
+  color: var(--ink);
+}
+
+/* ── Eyebrow — mono uppercase, the brand's most distinctive
+   typographic moment after the wordmark ── */
+.t-eyebrow {
+  font-family: var(--mono);
+  font-weight: var(--w-medium);
+  font-size: var(--t-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--ink-dim);
+  line-height: 1;
+}
+.t-eyebrow-bright { color: var(--ink-bright); }
+.t-eyebrow-loud   { letter-spacing: var(--ls-loud); }
+.t-eyebrow-loudest{ letter-spacing: var(--ls-loudest); }
+
+/* ── Meta — same family, smaller ── */
+.t-meta {
+  font-family: var(--mono);
+  font-weight: var(--w-medium);
+  font-size: var(--t-meta);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-meta);
+  color: var(--ink-dim);
+}
+.t-caption {
+  font-family: var(--mono);
+  font-weight: var(--w-medium);
+  font-size: var(--t-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ink-dim);
+  line-height: 1.6;
+}
+
+/* ── Counter — mono tabular numerals for n/3, 363, etc. ── */
+.t-counter {
+  font-family: var(--mono);
+  font-weight: var(--w-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.6px;
+}
+
+/* ── Selection ── */
+::selection { background: rgba(255,255,255,0.25); color: var(--ink-bright); }
+
+/* ── Scrollbar — invisible, the noir is the point ── */
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ============================================================
+   Keyframes used across the system
+   ============================================================ */
+@keyframes pt-juggle-l {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-40px); }
+  70%  { transform: translateY(8px); }
+  100% { transform: translateY(0); }
+}
+@keyframes pt-juggle-c {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-48px); }
+  70%  { transform: translateY(10px); }
+  100% { transform: translateY(0); }
+}
+@keyframes pt-juggle-r {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-40px); }
+  70%  { transform: translateY(8px); }
+  100% { transform: translateY(0); }
+}
+@keyframes pt-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pt-screen-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pt-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.7; }
+}
+@keyframes pt-skel {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.7; }
+}
+@keyframes pt-toast-in {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes lp-cursor {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes lp-modal-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

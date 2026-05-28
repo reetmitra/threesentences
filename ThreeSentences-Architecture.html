@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Sentences - Architecture Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .architecture {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .layer {
+            background: rgba(30, 41, 59, 0.6);
+            border: 2px solid #334155;
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .layer-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #475569;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .layer-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .component {
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component:hover {
+            transform: translateY(-4px);
+            border-color: #60a5fa;
+            box-shadow: 0 8px 24px rgba(96, 165, 250, 0.2);
+        }
+
+        .component::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+        }
+
+        .component-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e2e8f0;
+        }
+
+        .component-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .tech-badge {
+            background: rgba(96, 165, 250, 0.15);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            color: #93c5fd;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .data-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 0;
+            gap: 12px;
+        }
+
+        .flow-arrow {
+            color: #60a5fa;
+            font-size: 2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .flow-label {
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #93c5fd;
+        }
+
+        /* Layer-specific colors */
+        .layer.presentation { border-color: #60a5fa; }
+        .layer.presentation .layer-icon { background: #60a5fa; color: #0f172a; }
+        .layer.presentation .component { --accent-color: #60a5fa; }
+
+        .layer.auth { border-color: #f59e0b; }
+        .layer.auth .layer-icon { background: #f59e0b; color: #0f172a; }
+        .layer.auth .component { --accent-color: #f59e0b; }
+
+        .layer.application { border-color: #8b5cf6; }
+        .layer.application .layer-icon { background: #8b5cf6; color: #fff; }
+        .layer.application .component { --accent-color: #8b5cf6; }
+
+        .layer.business { border-color: #10b981; }
+        .layer.business .layer-icon { background: #10b981; color: #0f172a; }
+        .layer.business .component { --accent-color: #10b981; }
+
+        .layer.data { border-color: #ec4899; }
+        .layer.data .layer-icon { background: #ec4899; color: #fff; }
+        .layer.data .component { --accent-color: #ec4899; }
+
+        .layer.external { border-color: #14b8a6; }
+        .layer.external .layer-icon { background: #14b8a6; color: #0f172a; }
+        .layer.external .component { --accent-color: #14b8a6; }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 8px;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        .feature-list li::before {
+            content: '▸';
+            position: absolute;
+            left: 4px;
+            color: #60a5fa;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 2rem;
+        }
+
+        .info-box h3 {
+            color: #60a5fa;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+
+        .info-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 3px solid #60a5fa;
+        }
+
+        .info-item strong {
+            color: #e2e8f0;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .info-item p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Three Sentences Architecture</h1>
+        <p class="subtitle">Comprehensive Technical Architecture Diagram</p>
+
+        <div class="architecture">
+
+            <!-- PRESENTATION LAYER -->
+            <div class="layer presentation">
+                <div class="layer-title">
+                    <div class="layer-icon">📱</div>
+                    <span>1. Presentation Layer - Client Applications</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">📱 Mobile App (iOS/Android)</div>
+                        <div class="component-desc">
+                            React Native + Expo cross-platform mobile application
+                        </div>
+                        <ul class="feature-list">
+                            <li>Expo SDK 54</li>
+                            <li>React Native 0.81.5</li>
+                            <li>Dark mode UI</li>
+                            <li>Apple Sign-In support</li>
+                            <li>Edge-to-edge Android</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">React Native</span>
+                            <span class="tech-badge">Expo</span>
+                            <span class="tech-badge">TypeScript</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🌐 Web App</div>
+                        <div class="component-desc">
+                            Progressive web app built with Expo Web
+                        </div>
+                        <ul class="feature-list">
+                            <li>Metro bundler</li>
+                            <li>Responsive design</li>
+                            <li>Dark theme</li>
+                            <li>Same codebase as mobile</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Expo Web</span>
+                            <span class="tech-badge">React</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🎬 Landing Page</div>
+                        <div class="component-desc">
+                            Marketing website with waitlist functionality
+                        </div>
+                        <ul class="feature-list">
+                            <li>Next.js 16 (App Router)</li>
+                            <li>Tailwind CSS styling</li>
+                            <li>Framer Motion animations</li>
+                            <li>Radix UI components</li>
+                            <li>Waitlist integration</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Next.js</span>
+                            <span class="tech-badge">Tailwind</span>
+                            <span class="tech-badge">Framer Motion</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🎥 Brand Video</div>
+                        <div class="component-desc">
+                            Programmatic video generation for branding
+                        </div>
+                        <ul class="feature-list">
+                            <li>Remotion 4.0</li>
+                            <li>React-based videos</li>
+                            <li>Multiple aspect ratios</li>
+                            <li>Google Fonts integration</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Remotion</span>
+                            <span class="tech-badge">React</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-flow">
+                <span class="flow-arrow">↓</span>
+                <span class="flow-label">User Interaction</span>
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <!-- AUTHENTICATION LAYER -->
+            <div class="layer auth">
+                <div class="layer-title">
+                    <div class="layer-icon">🔐</div>
+                    <span>2. Authentication & Authorization Layer</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">🎫 Clerk Authentication</div>
+                        <div class="component-desc">
+                            Primary authentication provider with secure token management
+                        </div>
+                        <ul class="feature-list">
+                            <li>Email/password authentication</li>
+                            <li>Social login (Apple Sign-In)</li>
+                            <li>OAuth flows</li>
+                            <li>Session management</li>
+                            <li>JWT token handling</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Clerk</span>
+                            <span class="tech-badge">OAuth</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🔒 Secure Token Storage</div>
+                        <div class="component-desc">
+                            Encrypted token persistence using Expo SecureStore
+                        </div>
+                        <ul class="feature-list">
+                            <li>expo-secure-store</li>
+                            <li>Encrypted at rest</li>
+                            <li>Cross-app launch persistence</li>
+                            <li>Token cache implementation</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">SecureStore</span>
+                            <span class="tech-badge">Encryption</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">👤 Auth Hooks</div>
+                        <div class="component-desc">
+                            React hooks for authentication state
+                        </div>
+                        <ul class="feature-list">
+                            <li>useAuth() - auth state</li>
+                            <li>useUser() - user details</li>
+                            <li>useSignIn() - sign in flow</li>
+                            <li>useSignUp() - registration</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">React Hooks</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-flow">
+                <span class="flow-arrow">↓</span>
+                <span class="flow-label">Authenticated Requests</span>
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <!-- APPLICATION LAYER -->
+            <div class="layer application">
+                <div class="layer-title">
+                    <div class="layer-icon">⚙️</div>
+                    <span>3. Application Layer - Routing & Navigation</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">🧭 Expo Router</div>
+                        <div class="component-desc">
+                            File-based routing with nested layouts
+                        </div>
+                        <ul class="feature-list">
+                            <li>/ - Landing/splash</li>
+                            <li>/(auth) - Login, signup, setup</li>
+                            <li>/(onboarding) - First-time flow</li>
+                            <li>/(tabs) - Main app navigation</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Expo Router</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">📑 Main Tabs</div>
+                        <div class="component-desc">
+                            Primary app navigation structure
+                        </div>
+                        <ul class="feature-list">
+                            <li>Home/Index - Daily entry</li>
+                            <li>Chat - Messaging interface</li>
+                            <li>Conversations - Chat list</li>
+                            <li>History - Past entries</li>
+                            <li>Social - Friends & groups</li>
+                            <li>Reflect - AI insights</li>
+                            <li>Profile - User settings</li>
+                            <li>Guide - Help & resources</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Tab Navigation</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🎨 UI Components</div>
+                        <div class="component-desc">
+                            Reusable component library
+                        </div>
+                        <ul class="feature-list">
+                            <li>Calendar widget</li>
+                            <li>Entry input/card</li>
+                            <li>Reflection cards</li>
+                            <li>Social components</li>
+                            <li>Modal dialogs</li>
+                            <li>Crisis resources card</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">React Components</span>
+                            <span class="tech-badge">Lucide Icons</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-flow">
+                <span class="flow-arrow">↓</span>
+                <span class="flow-label">State Management & Business Logic</span>
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <!-- BUSINESS LOGIC LAYER -->
+            <div class="layer business">
+                <div class="layer-title">
+                    <div class="layer-icon">🧠</div>
+                    <span>4. Business Logic Layer - State & Services</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">📦 State Stores</div>
+                        <div class="component-desc">
+                            Centralized state management with local persistence
+                        </div>
+                        <ul class="feature-list">
+                            <li>auth.ts - User session</li>
+                            <li>entries.ts - Journal entries</li>
+                            <li>chat.ts - Messaging state</li>
+                            <li>friends.ts - Social connections</li>
+                            <li>profile.ts - User profile</li>
+                            <li>reflections.ts - AI insights</li>
+                            <li>onboarding.ts - Setup flow</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Custom Stores</span>
+                            <span class="tech-badge">AsyncStorage</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🤖 AI Reflection Service</div>
+                        <div class="component-desc">
+                            AI-powered journal analysis with safety features
+                        </div>
+                        <ul class="feature-list">
+                            <li>Pattern detection</li>
+                            <li>Observational language</li>
+                            <li>Crisis keyword detection</li>
+                            <li>Resource display logic</li>
+                            <li>Time-based analysis (7/30/90 days)</li>
+                            <li>No diagnostic claims</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">AI Service</span>
+                            <span class="tech-badge">Safety First</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🔐 Encryption Utilities</div>
+                        <div class="component-desc">
+                            Client-side encryption for journal entries
+                        </div>
+                        <ul class="feature-list">
+                            <li>AES encryption</li>
+                            <li>expo-crypto integration</li>
+                            <li>Encrypt before upload</li>
+                            <li>Decrypt on retrieval</li>
+                            <li>Privacy-first design</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Crypto</span>
+                            <span class="tech-badge">AES</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">📅 Entry Management</div>
+                        <div class="component-desc">
+                            Journal entry lifecycle management
+                        </div>
+                        <ul class="feature-list">
+                            <li>One entry per day</li>
+                            <li>Immutable after 24hrs</li>
+                            <li>Draft persistence</li>
+                            <li>Timezone handling</li>
+                            <li>Sentence counting</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Business Rules</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-flow">
+                <span class="flow-arrow">↓</span>
+                <span class="flow-label">Data Persistence & Sync</span>
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <!-- DATA LAYER -->
+            <div class="layer data">
+                <div class="layer-title">
+                    <div class="layer-icon">💾</div>
+                    <span>5. Data Layer - Storage & Database</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">🗄️ Supabase PostgreSQL</div>
+                        <div class="component-desc">
+                            Primary database with Row Level Security
+                        </div>
+                        <ul class="feature-list">
+                            <li><strong>profiles</strong> - User profiles</li>
+                            <li><strong>entries</strong> - Journal entries (encrypted)</li>
+                            <li><strong>reflections</strong> - AI insights</li>
+                            <li><strong>messages</strong> - Chat messages</li>
+                            <li><strong>groups</strong> - Group chats</li>
+                            <li><strong>group_members</strong> - Membership</li>
+                            <li><strong>friends</strong> - Friend relationships</li>
+                            <li><strong>waitlist</strong> - Beta signups</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">PostgreSQL</span>
+                            <span class="tech-badge">Supabase</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🔒 Row Level Security</div>
+                        <div class="component-desc">
+                            Database-level access control policies
+                        </div>
+                        <ul class="feature-list">
+                            <li>User-scoped data access</li>
+                            <li>JWT-based authentication</li>
+                            <li>Friend/group permissions</li>
+                            <li>Entry privacy enforcement</li>
+                            <li>Automatic policy checks</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">RLS Policies</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">⚡ Realtime Subscriptions</div>
+                        <div class="component-desc">
+                            Live data sync for chat and social features
+                        </div>
+                        <ul class="feature-list">
+                            <li>Message streaming</li>
+                            <li>Friend request updates</li>
+                            <li>Group chat sync</li>
+                            <li>WebSocket connections</li>
+                            <li>Automatic reconnection</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Supabase Realtime</span>
+                            <span class="tech-badge">WebSockets</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">📱 Local Storage</div>
+                        <div class="component-desc">
+                            Client-side caching and offline support
+                        </div>
+                        <ul class="feature-list">
+                            <li>AsyncStorage for cache</li>
+                            <li>Draft entries</li>
+                            <li>Offline queue</li>
+                            <li>Performance optimization</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">AsyncStorage</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-flow">
+                <span class="flow-arrow">↓</span>
+                <span class="flow-label">External Integrations</span>
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <!-- EXTERNAL SERVICES -->
+            <div class="layer external">
+                <div class="layer-title">
+                    <div class="layer-icon">🔌</div>
+                    <span>6. External Services & Integrations</span>
+                </div>
+                <div class="components-grid">
+                    <div class="component">
+                        <div class="component-title">🎫 Clerk Auth Service</div>
+                        <div class="component-desc">
+                            Cloud authentication & user management
+                        </div>
+                        <ul class="feature-list">
+                            <li>User registration</li>
+                            <li>Login flows</li>
+                            <li>Social auth (Apple)</li>
+                            <li>Session management</li>
+                            <li>JWT issuance</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Clerk.com</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🗄️ Supabase BaaS</div>
+                        <div class="component-desc">
+                            Backend-as-a-Service platform
+                        </div>
+                        <ul class="feature-list">
+                            <li>PostgreSQL database</li>
+                            <li>Realtime engine</li>
+                            <li>Auth integration</li>
+                            <li>RESTful API</li>
+                            <li>Storage (future)</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Supabase.com</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🍎 Apple Services</div>
+                        <div class="component-desc">
+                            iOS platform integrations
+                        </div>
+                        <ul class="feature-list">
+                            <li>Sign in with Apple</li>
+                            <li>App Store distribution</li>
+                            <li>Push notifications (future)</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">Apple ID</span>
+                        </div>
+                    </div>
+
+                    <div class="component">
+                        <div class="component-title">🤖 AI Service (TBD)</div>
+                        <div class="component-desc">
+                            External AI provider for reflections
+                        </div>
+                        <ul class="feature-list">
+                            <li>Journal analysis</li>
+                            <li>Pattern detection</li>
+                            <li>Sentiment insights</li>
+                            <li>Safety filtering</li>
+                        </ul>
+                        <div class="tech-stack">
+                            <span class="tech-badge">To Be Implemented</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KEY FEATURES & ARCHITECTURE NOTES -->
+        <div class="info-box">
+            <h3>🎯 Key Architectural Patterns & Features</h3>
+            <div class="info-content">
+                <div class="info-item">
+                    <strong>📱 Cross-Platform Architecture</strong>
+                    <p>Single codebase powers iOS, Android, and Web using React Native and Expo. File-based routing with Expo Router provides native navigation patterns.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🔐 Privacy-First Design</strong>
+                    <p>Client-side encryption for all journal entries before cloud sync. Data encrypted at rest using expo-crypto. Users have full control over their data.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>⚡ Real-time Collaboration</strong>
+                    <p>WebSocket-based realtime messaging for direct and group chats. Supabase Realtime ensures instant message delivery and presence updates.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🧠 AI-Powered Insights</strong>
+                    <p>Reflection service analyzes journal entries using observational language. Built-in crisis detection triggers safety resources instead of automated analysis.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🎨 Immutable Journaling Philosophy</strong>
+                    <p>Entries become immutable after 24 hours, aligning with the "365 philosophy". One entry per day maximum, encouraging mindful reflection.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🔄 State Management Strategy</strong>
+                    <p>Domain-separated stores (auth, entries, chat, friends, profile) with AsyncStorage caching. Supabase handles persistence and cross-device sync.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🛡️ Row Level Security</strong>
+                    <p>Database-level access control ensures users only see their own data. JWT-based authentication with automatic policy enforcement.</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>🎬 Marketing Automation</strong>
+                    <p>Remotion-powered programmatic video generation for brand assets. Next.js landing page with waitlist integration for growth.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TECH STACK SUMMARY -->
+        <div class="info-box" style="margin-top: 2rem;">
+            <h3>🛠️ Complete Technology Stack</h3>
+            <div class="info-content">
+                <div class="info-item">
+                    <strong>Frontend</strong>
+                    <p>React Native 0.81.5, Expo SDK 54, Expo Router, React 19, TypeScript, Lucide Icons, React Native Reanimated</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Authentication</strong>
+                    <p>Clerk (@clerk/clerk-expo), Expo SecureStore, Apple Sign-In, OAuth 2.0, JWT tokens</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Backend & Database</strong>
+                    <p>Supabase (PostgreSQL), Row Level Security, Realtime Subscriptions, RESTful API, Database triggers & functions</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>State & Storage</strong>
+                    <p>Custom stores, AsyncStorage, expo-crypto (AES), Realtime sync, Offline-first design</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Landing Page</strong>
+                    <p>Next.js 16 (App Router), Tailwind CSS, Framer Motion, Radix UI, Lucide React</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Video & Media</strong>
+                    <p>Remotion 4.0, Google Fonts, React-based compositions, Multi-format rendering</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Development Tools</strong>
+                    <p>Jest testing, React Testing Library, TypeScript 5.9, Babel, Metro bundler</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>Native Capabilities</strong>
+                    <p>Expo Image Picker, Haptics, Linear Gradient, Linking, Secure Store, Auth Session</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATA FLOW SUMMARY -->
+        <div class="info-box" style="margin-top: 2rem;">
+            <h3>🔄 Critical Data Flows</h3>
+            <div class="info-content">
+                <div class="info-item">
+                    <strong>1. Journal Entry Creation</strong>
+                    <p>User writes → Client-side encryption → Supabase entry table → Background sync → Cross-device availability</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>2. AI Reflection Generation</strong>
+                    <p>User requests → Fetch encrypted entries → Decrypt client-side → AI analysis → Crisis check → Display results or resources</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>3. Real-time Messaging</strong>
+                    <p>User sends message → Supabase insert → Realtime broadcast → Recipient receives → Read receipt update</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>4. Authentication Flow</strong>
+                    <p>Login attempt → Clerk auth → JWT issued → Token cached (SecureStore) → Supabase RLS validation → App access granted</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>5. Friend Request</strong>
+                    <p>Send request → Supabase friends table → Realtime notification → Accept/decline → Relationship established → Chat enabled</p>
+                </div>
+
+                <div class="info-item">
+                    <strong>6. Profile Setup</strong>
+                    <p>Complete onboarding → Create profile → Set interests → Upload image → Profile completion flag → Enter main app</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; color: #64748b;">
+            <p style="font-size: 0.9rem;">Three Sentences (ThreeSixtyThree™) - Architecture Documentation</p>
+            <p style="font-size: 0.8rem; margin-top: 0.5rem;">Generated on February 17, 2026</p>
+        </div>
+    </div>
+</body>
+</html>

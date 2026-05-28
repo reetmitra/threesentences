@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Motion</title>
+<link rel="stylesheet" href="_base.css">
+<style>body{min-height:280px;}</style>
+</head><body><div class="card">
+<div class="label" style="margin-bottom:14px;">Brand ease · cubic-bezier(0.16, 1, 0.3, 1) · spring-like, slow-out</div>
+<div style="background:#121212;border:1px solid #2A2A2A;border-radius:12px;padding:18px;">
+  <div style="height:6px;background:#2A2A2A;border-radius:3px;overflow:hidden;">
+    <div style="height:100%;width:0%;background:#fff;animation:slide 2.4s cubic-bezier(0.16,1,0.3,1) infinite;"></div>
+  </div>
+  <div style="font-family:var(--font-mono);font-size:11px;color:#A0A0A0;margin-top:14px;line-height:1.7;">
+    --d-fast    200ms   tap feedback, hover<br>
+    --d-base    400ms   panel reveals, in-app transitions<br>
+    --d-slow    900ms   landing page text & cards<br>
+    --d-glacial 1500ms  hero text scramble
+  </div>
+</div>
+<style>
+@keyframes slide { 0% {width:0%} 60% {width:100%} 100% {width:100%} }
+</style>
+</div></body></html>
