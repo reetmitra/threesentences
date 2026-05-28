@@ -51,7 +51,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
   const activeColors = colors.dark;
-  const { userId } = useAuth();
+  const { userId, isLoaded } = useAuth();
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -78,8 +78,13 @@ export default function ProfileScreen() {
   const editButtonRotation = useSharedValue(0);
 
   useEffect(() => {
+    // Wait for useAuth() to finish resolving the session before checking userId.
+    // On the very first render session is null (async), so userId is briefly null
+    // even for authenticated users — calling loadProfile() immediately would
+    // incorrectly redirect to login.
+    if (!isLoaded) return;
     loadProfile();
-  }, []);
+  }, [isLoaded, userId]);
 
   const loadProfile = async () => {
     try {
