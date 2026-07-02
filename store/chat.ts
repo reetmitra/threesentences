@@ -472,15 +472,24 @@ export function subscribeToGroupMessages(
 // Typing Indicators (Broadcast)
 // ============================================
 
+// One subscribed channel per conversation, shared by broadcast and subscribe.
+// Broadcast on a channel that was never subscribed goes nowhere, and creating
+// a fresh channel object per keystroke leaks sockets — so both sides reuse
+// the channel that subscribeToTyping joined.
+const typingChannels = new Map<string, RealtimeChannel>();
+
 /**
- * Broadcast a typing indicator event (fire-and-forget, no await)
+ * Broadcast a typing indicator event (fire-and-forget, no await).
+ * No-op until subscribeToTyping has joined the conversation's channel
+ * (the chat screen subscribes on mount, before the user can type).
  */
 export function broadcastTyping(
   conversationId: string,
   userId: string,
   isTyping: boolean
 ): void {
-  const channel = supabase.channel(`typing:${conversationId}`);
+  const channel = typingChannels.get(conversationId);
+  if (!channel || channel.state !== 'joined') return;
   void channel.send({
     type: 'broadcast',
     event: 'typing',
@@ -504,6 +513,46 @@ export function subscribeToTyping(
       };
       onTyping(userId, isTyping);
     })
+    .subscribe();
+
+  typingChannels.set(conversationId, channel);
+
+  return () => {
+    typingChannels.delete(conversationId);
+    channel.unsubscribe();
+  };
+}
+
+// ============================================
+// Read Receipts
+// ============================================
+
+/**
+ * Subscribe to messages being marked read in a conversation.
+ * Fires with the ids of messages whose is_read flipped to true, so the
+ * sender's bubbles can move to the bright double-check state live.
+ */
+export function subscribeToMessageReads(
+  conversationId: string,
+  onRead: (messageId: string, senderId: string) => void
+): () => void {
+  const channel: RealtimeChannel = supabase
+    .channel(`message-reads:${conversationId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${conversationId}`,
+      },
+      (payload) => {
+        const row = payload.new as DbMessage;
+        if (row.is_read) {
+          onRead(row.id, row.sender_id);
+        }
+      }
+    )
     .subscribe();
 
   return () => {

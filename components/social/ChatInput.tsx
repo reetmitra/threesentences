@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { View, StyleSheet, TextInput, Pressable, Keyboard } from 'react-native';
+import { View, StyleSheet, TextInput, Pressable, Keyboard, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -139,6 +139,8 @@ export function ChatInput({
           style={[
             styles.input,
             { color: activeColors.textPrimary },
+            // Recolor the browser's default blue focus ring to a brand tone.
+            Platform.OS === 'web' && ({ outlineColor: activeColors.creamLo, outlineWidth: 1 } as any),
           ]}
           placeholder={placeholder}
           placeholderTextColor={activeColors.textTertiary}

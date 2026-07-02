@@ -37,7 +37,7 @@ import { getProfile } from '@/store/profile';
 export default function ConversationsScreen() {
     const activeColors = colors.dark;
     const { showToast } = useToast();
-    const { userId, user } = useAuth();
+    const { userId, user, isLoaded } = useAuth();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function ConversationsScreen() {
     const headerOpacity = useSharedValue(0);
 
     useEffect(() => {
-        if (!userId) return;
+        if (!isLoaded || !userId) return;
         loadData();
         headerOpacity.value = withSpring(1, { damping: 15 });
 
@@ -65,7 +65,7 @@ export default function ConversationsScreen() {
         });
 
         return () => unsubscribe();
-    }, [userId]);
+    }, [isLoaded, userId]);
 
     const loadData = async () => {
         try {

@@ -119,7 +119,9 @@ export function MessageBubble({
           variant="base"
           style={[
             styles.messageText,
-            { color: isOwn ? activeColors.background : activeColors.textPrimary },
+            // Failed bubbles drop the light accent background, so the usual
+            // dark-on-light text color would be invisible there.
+            { color: isOwn && !failed ? activeColors.background : activeColors.textPrimary },
           ]}
         >
           {message.content}
@@ -134,7 +136,7 @@ export function MessageBubble({
 
       {showTimestamp && (
         <View style={[styles.metaContainer, isOwn && styles.metaContainerOwn]}>
-          <Text variant="xs" color="tertiary" style={styles.timestamp}>
+          <Text variant="xs" color="secondary" style={styles.timestamp}>
             {formatTimestamp(message.createdAt)}
           </Text>
           {renderStatusIcon()}

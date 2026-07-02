@@ -201,7 +201,7 @@ export function FriendCard({
             {user.name}
           </Text>
           <Text variant="sm" color="secondary" numberOfLines={1}>
-            @{user.username}
+            @{user.username.replace(/^@+/, '')}
           </Text>
           {mutualFriendsCount > 0 && friendshipStatus !== 'friends' && (
             <Text variant="xs" color="tertiary" style={styles.mutualFriends}>

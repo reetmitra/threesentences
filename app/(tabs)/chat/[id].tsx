@@ -41,6 +41,7 @@ import {
     markAsRead,
     subscribeToMessages,
     subscribeToTyping,
+    subscribeToMessageReads,
     broadcastTyping,
 } from '@/store/chat';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,7 +74,7 @@ interface DbProfileRow {
 export default function ChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const activeColors = colors.dark;
-    const { userId } = useAuth();
+    const { userId, isLoaded } = useAuth();
 
     // State
     const [otherUser, setOtherUser] = useState<UserInfo | null>(null);
@@ -86,16 +87,20 @@ export default function ChatScreen() {
 
     const flatListRef = useRef<FlatList<Message>>(null);
     const headerOpacity = useSharedValue(0);
+    // Clears a stuck "typing..." if the peer's typing-end broadcast never arrives
+    // (network drop, app killed mid-keystroke).
+    const typingTimeout = useRef<NodeJS.Timeout | null>(null);
 
     // ─── Mount sequence ───────────────────────────────────────────────────────
 
     useEffect(() => {
-        if (!id || !userId) return;
+        if (!isLoaded || !id || !userId) return;
 
         headerOpacity.value = withTiming(1, { duration: 300 });
 
         let unsubMessages: (() => void) | null = null;
         let unsubTyping: (() => void) | null = null;
+        let unsubReads: (() => void) | null = null;
 
         (async () => {
             try {
@@ -151,13 +156,34 @@ export default function ChatScreen() {
                         if (prev.some((m) => m.id === newMsg.id)) return prev;
                         return [newMsg, ...prev];
                     });
+                    // The chat is open, so an incoming message is read on arrival —
+                    // without this the sender's badge counts messages we're looking at.
+                    if (newMsg.senderId !== userId) {
+                        void markAsRead(id, userId);
+                    }
                 });
 
                 // 6. Subscribe to typing
                 unsubTyping = subscribeToTyping(id, (typingUserId, isTyping) => {
                     if (typingUserId !== userId) {
                         setIsTypingActive(isTyping);
+                        if (typingTimeout.current) clearTimeout(typingTimeout.current);
+                        if (isTyping) {
+                            typingTimeout.current = setTimeout(() => setIsTypingActive(false), 4000);
+                        }
                     }
+                });
+
+                // 7. Subscribe to read receipts: flip own messages to 'read' live
+                unsubReads = subscribeToMessageReads(id, (messageId, senderId) => {
+                    if (senderId !== userId) return;
+                    setMessages((prev) =>
+                        prev.map((m) =>
+                            m.id === messageId && m.status !== 'read'
+                                ? { ...m, status: 'read' }
+                                : m
+                        )
+                    );
                 });
             } catch (err) {
                 console.error('Failed to initialise chat:', err);
@@ -169,9 +195,11 @@ export default function ChatScreen() {
         return () => {
             unsubMessages?.();
             unsubTyping?.();
+            unsubReads?.();
+            if (typingTimeout.current) clearTimeout(typingTimeout.current);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id, userId]);
+    }, [isLoaded, id, userId]);
 
     // ─── AppState: mark read on foreground resume ─────────────────────────────
 
@@ -404,13 +432,12 @@ export default function ChatScreen() {
                                     <Text
                                         style={{
                                             fontFamily: 'IBMPlexMono_400Regular',
-                                            fontSize: 9,
-                                            textTransform: 'uppercase',
+                                            fontSize: 10,
                                             letterSpacing: 1.2,
-                                            color: activeColors.textTertiary,
+                                            color: activeColors.textSecondary,
                                         }}
                                     >
-                                        Active now
+                                        @{otherUser.username.replace(/^@+/, '')}
                                     </Text>
                                 )}
                             </View>
@@ -520,8 +547,9 @@ const styles = StyleSheet.create({
     messageList: {
         paddingHorizontal: spacing[4],
         paddingVertical: spacing[4],
+        // Inverted list: flex-start (default) is the visual bottom. flex-end
+        // here would pin sparse conversations to the top of the screen.
         flexGrow: 1,
-        justifyContent: 'flex-end',
     },
     loadingOlderContainer: {
         paddingVertical: spacing[4],
