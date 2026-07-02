@@ -113,6 +113,9 @@ export default function TodayScreen() {
 
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
+  // True while the user is re-editing an already-submitted entry (same-day grace):
+  // resubmits shouldn't re-fire the streak toast or milestone celebration.
+  const isEditingSubmitted = useRef(false);
 
   const sentenceCount = countSentences(content);
   const canSubmit = sentenceCount === 3;
@@ -172,6 +175,18 @@ export default function TodayScreen() {
     try {
       const entry = await saveEntry(userId, content);
       setSubmissionStatus('success');
+
+      if (isEditingSubmitted.current) {
+        isEditingSubmitted.current = false;
+        showToast('success', 'UPDATED · LOCKS AT MIDNIGHT');
+        setTimeout(() => {
+          setTodayEntry(entry);
+          setContent('');
+          setSubmissionStatus('idle');
+        }, 1500);
+        return;
+      }
+
       const stats = await getEntryStats(userId);
       const streak = stats.currentStreak;
       if (isMilestone(streak)) {
@@ -233,12 +248,13 @@ export default function TodayScreen() {
           <EntryCard entry={todayEntry} />
           <View style={styles.submittedMessage}>
             <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1.5 }}>
-              Locked · See you tomorrow
+              Locks at midnight · edit until then
             </Text>
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => {
                 if (todayEntry) setContent(todayEntry.content);
+                isEditingSubmitted.current = true;
                 setTodayEntry(null);
                 setSubmissionStatus('idle');
               }}

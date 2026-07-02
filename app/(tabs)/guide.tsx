@@ -125,28 +125,32 @@ export default function InsightsScreen() {
           </Animated.View>
         )}
 
-        {aiEnabled && (
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Pressable
-              style={[styles.card, { backgroundColor: c.surface, borderColor: c.frame }]}
-              onPress={() => router.push('/(tabs)/reflect')}
-            >
-              <View style={styles.cardHeader}>
-                <Icon name="spark" size={18} color={c.textSecondary} strokeWidth={1.5} />
-                <Text family="mono" variant="xs" uppercase style={[styles.cardEyebrow, { color: c.textSecondary }]}>
-                  AI Reflection
-                </Text>
-              </View>
-              <Text family="sans" variant="base" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
-                Discover patterns and themes in your recent entries.
+        {/* Always visible so the feature is discoverable pre-opt-in; the Reflect
+            screen itself shows the enable-in-settings state when disabled. */}
+        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+          <Pressable
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.frame }]}
+            onPress={() => router.push('/(tabs)/reflect')}
+          >
+            <View style={styles.cardHeader}>
+              <Icon name="spark" size={18} color={c.textSecondary} strokeWidth={1.5} />
+              <Text family="mono" variant="xs" uppercase style={[styles.cardEyebrow, { color: c.textSecondary }]}>
+                AI Reflection
               </Text>
-              <View style={styles.cardAction}>
-                <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>Generate reflection</Text>
-                <ArrowRight size={14} color={c.textBright} />
-              </View>
-            </Pressable>
-          </Animated.View>
-        )}
+            </View>
+            <Text family="sans" variant="base" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+              {aiEnabled
+                ? 'Discover patterns and themes in your recent entries.'
+                : 'Enable AI to discover patterns in your entries.'}
+            </Text>
+            <View style={styles.cardAction}>
+              <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>
+                {aiEnabled ? 'Generate reflection' : 'Learn more'}
+              </Text>
+              <ArrowRight size={14} color={c.textBright} />
+            </View>
+          </Pressable>
+        </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(300).duration(400)}>
           <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
@@ -165,7 +169,7 @@ export default function InsightsScreen() {
               Presence Over Perfection
             </Text>
             <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
-              Three sentences. No edits. No deletions. Your words stand as written, capturing how you felt in the moment.
+              Three sentences, locked at midnight. No deletions. Your words stand as written, capturing how you felt in the moment.
             </Text>
           </View>
         </Animated.View>

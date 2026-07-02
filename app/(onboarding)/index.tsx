@@ -9,11 +9,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  Dimensions,
   FlatList,
   ViewToken,
   TouchableOpacity,
   TextInput,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -36,8 +37,6 @@ import { countSentences } from '@/utils/sentenceDetection';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { completeOnboarding } from '@/store/onboarding';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface OnboardingSlide {
   id: string;
@@ -69,7 +68,7 @@ const SLIDES: OnboardingSlide[] = [
     id: '3',
     title: 'Presence Over Perfection',
     description:
-      'Once submitted, your entry cannot be edited. Your words stand as written, capturing how you felt in that moment.',
+      'At midnight, your entry locks for good. Refine it through the day if you must — after that, your words stand as written.',
     highlight: 'Done is better than perfect.',
     interactive: 'no-edit',
   },
@@ -197,7 +196,7 @@ function NoEditDemo() {
       {typingDone && (
         <Animated.View entering={FadeIn.delay(1400).duration(400)}>
           <Text family="mono" variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
-            Entries are permanent once submitted
+            Entries lock for good at midnight
           </Text>
         </Animated.View>
       )}
@@ -233,6 +232,9 @@ function PageDot({ active }: { active: boolean }) {
 
 export default function OnboardingScreen() {
   const c = colors.dark;
+  // useWindowDimensions (not Dimensions.get at module scope) so slides track
+  // rotation and browser resizes instead of going blank offscreen.
+  const { width: screenWidth } = useWindowDimensions();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -292,7 +294,7 @@ export default function OnboardingScreen() {
   ).current;
 
   const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => (
-    <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
+    <View style={[styles.slide, { width: screenWidth }]}>
       <View style={styles.slideContent}>
         {/* Slide eyebrow */}
         <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 2, marginBottom: spacing[4] }}>
@@ -361,11 +363,26 @@ export default function OnboardingScreen() {
         bounces={false}
         onScrollBeginDrag={handleScrollBegin}
         onMomentumScrollEnd={handleScrollEnd}
+        style={styles.carousel}
+        contentContainerStyle={styles.carouselContent}
+        getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
       />
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
         {renderPagination()}
+        {Platform.OS === 'web' && currentIndex < SLIDES.length - 1 && (
+          <TouchableOpacity
+            onPress={() => handleDotPress(currentIndex + 1)}
+            style={styles.webNextButton}
+            accessibilityRole="button"
+            accessibilityLabel="Next slide"
+          >
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+              Next →
+            </Text>
+          </TouchableOpacity>
+        )}
         <Button
           title={currentIndex === SLIDES.length - 1 ? 'Begin practice' : 'Get Started'}
           onPress={handleGetStarted}
@@ -380,8 +397,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  carousel: {
+    flex: 1,
+  },
+  carouselContent: {
+    // Stretch items to full height so justifyContent:'center' on the slide
+    // actually centers on web (RN-web horizontal lists don't stretch by default).
+    flexGrow: 1,
+  },
   slide: {
     flex: 1,
+    height: '100%',
     justifyContent: 'center',
     paddingHorizontal: spacing[6],
   },
@@ -434,6 +460,12 @@ const styles = StyleSheet.create({
   nextButton: {
     width: '100%',
   },
+  webNextButton: {
+    alignSelf: 'center',
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[4],
+    marginBottom: spacing[3],
+  },
 
   // Practice input (Slide 2)
   practiceContainer: {
@@ -448,7 +480,7 @@ const styles = StyleSheet.create({
     padding: spacing[3],
     fontSize: 15,
     minHeight: 80,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'SchibstedGrotesk_400Regular',
   },
 
   // No-edit demo (Slide 3)

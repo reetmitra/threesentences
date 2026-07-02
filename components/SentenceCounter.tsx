@@ -64,7 +64,11 @@ export function SentenceCounter({ count, target = 3 }: SentenceCounterProps) {
         {count} / {target} · {statusText}
       </Text>
 
-      <Animated.View style={advisoryStyle}>
+      <Animated.View
+        style={advisoryStyle}
+        pointerEvents="none"
+        aria-hidden={!isOver}
+      >
         <Text
           family="sans"
           variant="sm"
