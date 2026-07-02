@@ -29,14 +29,26 @@ STRUCTURE:
 
 You are a mirror, not a therapist. Reflect what you see without interpretation.`
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS })
   }
 
   const authHeader = req.headers.get('Authorization')
   if (!authHeader) {
-    return new Response('Unauthorized', { status: 401 })
+    return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
   }
 
   try {
@@ -45,7 +57,7 @@ serve(async (req) => {
     if (!entries || !Array.isArray(entries) || entries.length === 0) {
       return new Response(JSON.stringify({ error: 'No entries provided' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
       })
     }
 
@@ -54,7 +66,7 @@ serve(async (req) => {
       console.error('ANTHROPIC_API_KEY not set in environment')
       return new Response(JSON.stringify({ error: 'API key not configured' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
       })
     }
 
@@ -84,7 +96,7 @@ serve(async (req) => {
       console.error('Anthropic API error:', response.status, errText)
       return new Response(JSON.stringify({ error: 'AI service unavailable', status: response.status }), {
         status: 502,
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
       })
     }
 
@@ -94,18 +106,18 @@ serve(async (req) => {
     if (!content) {
       return new Response(JSON.stringify({ error: 'Empty response from AI' }), {
         status: 502,
-        headers: { 'Content-Type': 'application/json' },
+        headers: JSON_HEADERS,
       })
     }
 
     return new Response(JSON.stringify({ content }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
     })
   } catch (error) {
     console.error('Edge function error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
     })
   }
 })

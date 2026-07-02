@@ -250,4 +250,155 @@ CREATE TRIGGER auto_add_group_admin AFTER INSERT ON public.groups
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.friends;
 
+-- ============================================
+-- STEP 8: DM conversations (applied live 2026-05-28, captured 2026-07-02)
+-- ============================================
+
+CREATE TABLE public.conversations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_a_id TEXT NOT NULL,
+  user_b_id TEXT NOT NULL,
+  last_message_content TEXT,
+  last_message_at TIMESTAMPTZ,
+  last_message_sender_id TEXT,
+  unread_count_a INTEGER NOT NULL DEFAULT 0,
+  unread_count_b INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_a_id, user_b_id)
+);
+
+CREATE INDEX conversations_user_a ON public.conversations (user_a_id);
+CREATE INDEX conversations_user_b ON public.conversations (user_b_id);
+
+ALTER TABLE public.messages ADD COLUMN conversation_id UUID REFERENCES public.conversations(id) ON DELETE CASCADE;
+CREATE INDEX messages_conversation_at ON public.messages (conversation_id, created_at DESC);
+
+-- RLS
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY conversations_select ON public.conversations FOR SELECT
+  USING (user_a_id = (auth.uid())::text OR user_b_id = (auth.uid())::text);
+CREATE POLICY conversations_insert ON public.conversations FOR INSERT
+  WITH CHECK (user_a_id = (auth.uid())::text OR user_b_id = (auth.uid())::text);
+CREATE POLICY conversations_update ON public.conversations FOR UPDATE
+  USING (user_a_id = (auth.uid())::text OR user_b_id = (auth.uid())::text);
+
+CREATE POLICY messages_select_dm ON public.messages FOR SELECT
+  USING (
+    conversation_id IS NOT NULL AND conversation_id IN (
+      SELECT id FROM public.conversations
+      WHERE user_a_id = (auth.uid())::text OR user_b_id = (auth.uid())::text
+    )
+  );
+CREATE POLICY messages_insert_dm ON public.messages FOR INSERT
+  WITH CHECK (
+    sender_id = (auth.uid())::text AND conversation_id IS NOT NULL AND conversation_id IN (
+      SELECT id FROM public.conversations
+      WHERE user_a_id = (auth.uid())::text OR user_b_id = (auth.uid())::text
+    )
+  );
+
+-- Get or create the canonical conversation between two users
+CREATE OR REPLACE FUNCTION public.get_or_create_conversation(p_user_id_1 TEXT, p_user_id_2 TEXT)
+RETURNS public.conversations
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_a TEXT;
+  v_user_b TEXT;
+  v_conversation public.conversations;
+BEGIN
+  -- Canonical ordering: smaller string = user_a
+  IF p_user_id_1 < p_user_id_2 THEN
+    v_user_a := p_user_id_1; v_user_b := p_user_id_2;
+  ELSE
+    v_user_a := p_user_id_2; v_user_b := p_user_id_1;
+  END IF;
+
+  INSERT INTO public.conversations (user_a_id, user_b_id)
+  VALUES (v_user_a, v_user_b)
+  ON CONFLICT (user_a_id, user_b_id) DO NOTHING;
+
+  SELECT * INTO v_conversation
+  FROM public.conversations
+  WHERE user_a_id = v_user_a AND user_b_id = v_user_b;
+
+  RETURN v_conversation;
+END;
+$$;
+
+-- Atomically insert a DM and update the conversation summary.
+-- Sets receiver_id from the conversation so the legacy message_target
+-- CHECK (receiver_id XOR group_id) is satisfied.
+CREATE OR REPLACE FUNCTION public.send_dm(p_conversation_id UUID, p_sender_id TEXT, p_content TEXT)
+RETURNS public.messages
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_message public.messages;
+  v_receiver_id TEXT;
+BEGIN
+  SELECT CASE WHEN user_a_id = p_sender_id THEN user_b_id ELSE user_a_id END
+    INTO v_receiver_id
+  FROM public.conversations
+  WHERE id = p_conversation_id
+    AND (user_a_id = p_sender_id OR user_b_id = p_sender_id);
+
+  IF v_receiver_id IS NULL THEN
+    RAISE EXCEPTION 'Sender % is not a participant of conversation %', p_sender_id, p_conversation_id;
+  END IF;
+
+  INSERT INTO public.messages (conversation_id, sender_id, receiver_id, content)
+  VALUES (p_conversation_id, p_sender_id, v_receiver_id, p_content)
+  RETURNING * INTO v_message;
+
+  UPDATE public.conversations
+  SET
+    last_message_content   = p_content,
+    last_message_at        = NOW(),
+    last_message_sender_id = p_sender_id,
+    -- Increment unread for the recipient only
+    unread_count_a = CASE
+      WHEN user_b_id = p_sender_id THEN unread_count_a + 1
+      ELSE unread_count_a
+    END,
+    unread_count_b = CASE
+      WHEN user_a_id = p_sender_id THEN unread_count_b + 1
+      ELSE unread_count_b
+    END,
+    updated_at = NOW()
+  WHERE id = p_conversation_id;
+
+  RETURN v_message;
+END;
+$$;
+
+-- Reset the caller's unread counter and mark incoming messages read
+CREATE OR REPLACE FUNCTION public.mark_conversation_read(p_conversation_id UUID, p_user_id TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.conversations
+  SET
+    unread_count_a = CASE WHEN user_a_id = p_user_id THEN 0 ELSE unread_count_a END,
+    unread_count_b = CASE WHEN user_b_id = p_user_id THEN 0 ELSE unread_count_b END,
+    updated_at = NOW()
+  WHERE id = p_conversation_id
+    AND (user_a_id = p_user_id OR user_b_id = p_user_id);
+
+  UPDATE public.messages
+  SET is_read = TRUE
+  WHERE conversation_id = p_conversation_id
+    AND sender_id != p_user_id
+    AND is_read = FALSE;
+END;
+$$;
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+
 SELECT 'Schema created successfully!' as status;
