@@ -349,6 +349,18 @@ export function validateProfile(profile: Partial<UserProfile>): ProfileValidatio
 }
 
 /**
+ * Canonical username form: no leading @, lowercase, [a-z0-9_] only, max 20 chars.
+ * Used at signup, profile save, and anywhere a handle is compared or stored.
+ */
+export function normalizeUsername(raw: string): string {
+  return raw
+    .replace(/^@+/, '')
+    .replace(/[^a-z0-9_]/gi, '')
+    .toLowerCase()
+    .slice(0, 20);
+}
+
+/**
  * Create a default empty profile
  */
 export function createDefaultProfile(userId: string, name?: string): UserProfile {

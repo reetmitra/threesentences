@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,7 +43,9 @@ import {
   InterestCategoryGroup,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
-import { createProfile, updateProfile } from '@/store/profile';
+import { createProfile, updateProfile, getProfile } from '@/store/profile';
+import { normalizeUsername } from '@/types/profile';
+import { useToast } from '@/contexts/ToastContext';
 
 // Map group icon names to lucide components
 const GROUP_ICON_MAP: Record<string, LucideIcon> = {
@@ -61,6 +63,7 @@ export default function InterestsScreen() {
   const c = colors.dark;
   const params = useLocalSearchParams<{ name?: string }>();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [selectedInterests, setSelectedInterests] = useState<InterestId[]>([]);
   const [loading, setLoading] = useState(false);
@@ -156,19 +159,22 @@ export default function InterestsScreen() {
 
         // Username: sanitize whatever came from metadata or email, then ensure it
         // meets the 3-char minimum. Falls back to "user<uuid-prefix>" which is always safe.
-        const rawUsername =
-          user.username ||
-          user.email?.split('@')[0] ||
-          '';
-        const sanitizedUsername = rawUsername.replace(/[^a-z0-9_]/gi, '').toLowerCase().slice(0, 20);
+        const sanitizedUsername = normalizeUsername(
+          user.username || user.email?.split('@')[0] || ''
+        );
         const resolvedUsername =
           sanitizedUsername.length >= 3
             ? sanitizedUsername
             : `user${user.id.replace(/-/g, '').slice(0, 6)}`;
 
+        // If the profile already carries a real (non-temp) username, don't resend it —
+        // resending the metadata username after a collision would 409 forever.
+        const existing = await getProfile(user.id);
+        const hasRealUsername = !!existing?.username && !existing.username.startsWith('_');
+
         await updateProfile(user.id, {
           name: resolvedName,
-          username: resolvedUsername,
+          ...(hasRealUsername ? {} : { username: resolvedUsername }),
           interests: selectedInterests,
           isComplete: true,
         });
@@ -178,11 +184,25 @@ export default function InterestsScreen() {
     } catch (error: any) {
       console.error('Failed to save interests:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        'Something went wrong',
-        error?.message || 'Failed to save your interests. Please check your connection and try again.',
-        [{ text: 'OK' }]
-      );
+      if (typeof error?.message === 'string' && error.message.includes('username is not available')) {
+        // Collision with the name chosen at signup. Salvage everything except
+        // the username (otherwise profile-setup's save would fail validation on
+        // empty interests), then send the user somewhere they can pick a new handle.
+        try {
+          if (user?.id) {
+            await updateProfile(user.id, {
+              name: user.name || user.firstName || user.email?.split('@')[0] || 'User',
+              interests: selectedInterests,
+            });
+          }
+        } catch {
+          // Best-effort — profile-setup still lets them finish.
+        }
+        showToast('error', 'That username is taken — pick a new one to finish up');
+        router.push('/(auth)/profile-setup');
+      } else {
+        showToast('error', error?.message || 'Failed to save your interests. Check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }

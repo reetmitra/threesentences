@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -11,39 +11,40 @@ import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
 import { supabase } from '@/config/supabase';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function ResetPasswordScreen() {
   const c = colors.dark;
+  const { showToast } = useToast();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleReset = useCallback(async () => {
     if (!password || !confirm) {
-      Alert.alert('Error', 'Please fill in both fields');
+      showToast('error', 'Please fill in both fields');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match');
+      showToast('error', 'Passwords do not match');
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      showToast('error', 'Password must be at least 8 characters');
       return;
     }
     try {
       setLoading(true);
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      Alert.alert('Password updated', 'You can now sign in with your new password.', [
-        { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-      ]);
+      showToast('success', 'Password updated — sign in with your new password', 5000);
+      router.replace('/(auth)/login');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Could not update password');
+      showToast('error', error.message || 'Could not update password');
     } finally {
       setLoading(false);
     }
-  }, [password, confirm]);
+  }, [password, confirm, showToast]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top', 'bottom']}>

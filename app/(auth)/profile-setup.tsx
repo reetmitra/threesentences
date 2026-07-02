@@ -5,19 +5,19 @@
  * Includes username, age (optional), and bio.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -44,6 +44,7 @@ import { updateProfile, completeProfileSetup } from '@/store/profile';
 
 export default function ProfileSetupScreen() {
   const c = colors.dark;
+  const { showToast } = useToast();
   const params = useLocalSearchParams<{ name?: string }>();
   const { user } = useAuth();
 
@@ -61,14 +62,21 @@ export default function ProfileSetupScreen() {
   const buttonScale = useSharedValue(1);
   const checkScale = useSharedValue(0);
 
+  const prefilled = useRef(false);
+
   useEffect(() => {
     formOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
 
+    // Prefill once only — `user` re-renders must not clobber what the user typed.
+    if (prefilled.current) return;
+
     // Prefer username from signup metadata, fall back to suggestion from name param
     if (user?.username) {
+      prefilled.current = true;
       setUsername(user.username);
       validateUsernameInput(user.username);
     } else if (params.name) {
+      prefilled.current = true;
       const suggested = suggestUsername(params.name);
       setUsername(suggested);
       validateUsernameInput(suggested);
@@ -169,7 +177,7 @@ export default function ProfileSetupScreen() {
       buttonScale.value = withSpring(1);
       setLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', (error as Error).message);
+      showToast('error', (error as Error).message);
     }
   };
 

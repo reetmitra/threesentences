@@ -13,6 +13,7 @@ import {
   createDefaultProfile,
   validateProfile,
   validateUsername,
+  normalizeUsername,
   PROFILE_CONSTRAINTS,
 } from '@/types/profile';
 
@@ -106,18 +107,23 @@ export async function createProfile(
     updated_at: profile.updatedAt,
   };
 
-  const { data, error } = await supabase
+  // Upsert so a concurrent create (e.g. app root + interests screen both
+  // pre-creating on mount) is a no-op instead of a 23505 error.
+  const { error } = await supabase
     .from('profiles')
-    .insert(insertData)
-    .select()
-    .single();
+    .upsert(insertData, { onConflict: 'user_id', ignoreDuplicates: true });
 
   if (error) {
     console.error('Failed to create profile:', error.message, error.code, error.details);
     throw new Error(`Failed to create profile: ${error.message}`);
   }
 
-  return mapToUserProfile(data as DbProfile);
+  // Re-read: with ignoreDuplicates the upsert returns no row when one already existed.
+  const created = await getProfile(userId);
+  if (!created) {
+    throw new Error('Failed to create profile: row not found after upsert');
+  }
+  return created;
 }
 
 /**
@@ -127,6 +133,12 @@ export async function updateProfile(
   userId: string,
   updates: ProfileUpdate
 ): Promise<UserProfile> {
+  // Usernames are stored in canonical form (no @, lowercase) so lookups,
+  // uniqueness, and "@handle" display never disagree.
+  if (updates.username !== undefined) {
+    updates = { ...updates, username: normalizeUsername(updates.username) };
+  }
+
   const profile = await getProfile(userId);
 
   if (!profile) {

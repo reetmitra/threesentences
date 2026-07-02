@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, TouchableOpacity, Alert,
+  View, StyleSheet, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,9 +12,11 @@ import { Logo } from '@/components/ui/Logo';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
 import { supabase } from '@/config/supabase';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function LoginScreen() {
   const c = colors.dark;
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ export default function LoginScreen() {
 
   const handleForgotPassword = useCallback(async () => {
     if (!email) {
-      Alert.alert('Enter your email', 'Type your email address above, then tap "Forgot password?"');
+      showToast('info', 'Type your email above, then tap "Forgot password?"');
       return;
     }
     try {
@@ -31,17 +33,17 @@ export default function LoginScreen() {
         redirectTo: 'threesentences://reset-password',
       });
       if (error) throw error;
-      Alert.alert('Check your email', 'A password reset link has been sent to ' + email);
+      showToast('success', `Password reset link sent to ${email}`, 5000);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Could not send reset email');
+      showToast('error', error.message || 'Could not send reset email');
     } finally {
       setResetLoading(false);
     }
-  }, [email]);
+  }, [email, showToast]);
 
   const handleLogin = useCallback(async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showToast('error', 'Please fill in all fields');
       return;
     }
     try {
@@ -50,11 +52,11 @@ export default function LoginScreen() {
       if (error) throw error;
       router.replace('/');
     } catch (error: any) {
-      Alert.alert('Sign in failed', error.message || 'An error occurred');
+      showToast('error', error.message || 'Sign in failed');
     } finally {
       setLoading(false);
     }
-  }, [email, password]);
+  }, [email, password, showToast]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top', 'bottom']}>
