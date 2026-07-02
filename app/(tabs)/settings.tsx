@@ -10,9 +10,10 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   Share,
   Switch,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,6 +24,8 @@ import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
 import { AIOptInModal } from '@/components/AIOptInModal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { SkeletonStatsCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
@@ -41,6 +44,13 @@ import {
   scheduleDailyReminder,
   cancelDailyReminder,
 } from '@/services/notifications';
+
+// react-native-web's Switch colors its ON thumb with `activeThumbColor`
+// (default teal) which RN core types don't know about — without this the
+// toggles render green on web, off-brand for the monochrome system.
+const WEB_SWITCH_PROPS = (
+  Platform.OS === 'web' ? { activeThumbColor: colors.dark.paper } : {}
+) as Record<string, unknown>;
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -122,6 +132,8 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [reminderHour, setReminderHour] = useState(20);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteData' | null>(null);
+  const [showExportSheet, setShowExportSheet] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string } | null>(null);
 
   const loadData = useCallback(async () => {
@@ -159,23 +171,13 @@ export default function SettingsScreen() {
     }, [loadData])
   );
 
-  const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            await signOut();
-            router.replace('/(auth)/login');
-          },
-        },
-      ]
-    );
+  const handleSignOut = () => setConfirmAction('signOut');
+
+  const confirmSignOut = async () => {
+    setConfirmAction(null);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await signOut();
+    router.replace('/(auth)/login');
   };
 
   const handleAIToggle = async (value: boolean) => {
@@ -245,62 +247,57 @@ export default function SettingsScreen() {
     }
   };
 
-  const showExportOptions = () => {
-    Alert.alert(
-      'Export Entries',
-      'Choose your export format',
-      [
-        { text: 'Plain Text', onPress: () => handleExport('txt') },
-        { text: 'JSON', onPress: () => handleExport('json') },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
+  const showExportOptions = () => setShowExportSheet(true);
 
   const handleDeleteReflections = () => {
     if (reflectionCount === 0) {
-      Alert.alert('No Reflections', 'You don\'t have any reflections to delete.');
+      showToast('info', "You don't have any reflections to delete.");
       return;
     }
-
-    Alert.alert(
-      'Delete All Reflections',
-      `This will permanently delete all ${reflectionCount} AI-generated reflections.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            await deleteAllReflections();
-            setReflectionCount(0);
-            showToast('success', 'All reflections deleted.');
-          },
-        },
-      ]
-    );
+    setConfirmAction('deleteReflections');
   };
 
-  const handleDeleteData = () => {
-    Alert.alert(
-      'Delete All Data',
-      'This will permanently delete all your journal entries, reflections, and settings.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            await clearAllData();
-            showToast('success', 'All data has been removed.');
-            loadData();
-          },
-        },
-      ]
-    );
+  const confirmDeleteReflections = async () => {
+    setConfirmAction(null);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    await deleteAllReflections();
+    setReflectionCount(0);
+    showToast('success', 'All reflections deleted.');
   };
+
+  const handleDeleteData = () => setConfirmAction('deleteData');
+
+  const confirmDeleteData = async () => {
+    setConfirmAction(null);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    await clearAllData();
+    showToast('success', 'All data has been removed.');
+    loadData();
+  };
+
+  const CONFIRM_CONFIG = {
+    signOut: {
+      title: 'Sign out?',
+      message: 'You can sign back in anytime — your entries stay put.',
+      confirmLabel: 'Sign Out',
+      onConfirm: confirmSignOut,
+      destructive: false,
+    },
+    deleteReflections: {
+      title: 'Delete all reflections?',
+      message: `This permanently deletes all ${reflectionCount} AI-generated reflections.`,
+      confirmLabel: 'Delete',
+      onConfirm: confirmDeleteReflections,
+      destructive: true,
+    },
+    deleteData: {
+      title: 'Delete all data?',
+      message: 'This permanently deletes all your journal entries, reflections, and settings.',
+      confirmLabel: 'Delete Everything',
+      onConfirm: confirmDeleteData,
+      destructive: true,
+    },
+  } as const;
 
   const displayName = userProfile?.name || user?.firstName || 'User';
   const displayEmail = user?.email;
@@ -373,6 +370,7 @@ export default function SettingsScreen() {
                     true: c.textBright,
                   }}
                   thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
                 />
               }
             />
@@ -390,6 +388,7 @@ export default function SettingsScreen() {
                     true: c.textBright,
                   }}
                   thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
                 />
               }
             />
@@ -407,6 +406,7 @@ export default function SettingsScreen() {
                     true: c.textBright,
                   }}
                   thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
                 />
               }
             />
@@ -424,6 +424,7 @@ export default function SettingsScreen() {
                     true: c.textBright,
                   }}
                   thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
                 />
               }
             />
@@ -495,11 +496,7 @@ export default function SettingsScreen() {
 
         {/* Footer */}
         <Pressable style={styles.footer} onPress={() => {
-          Alert.alert(
-            'About ThreeSixtyThree™',
-            'Three Sentences is the official journaling application of the ThreeSixtyThree™ self-improvement system.\n\nVersion 1.0.0\n\n"Show up. Do the work. Let go of perfection."',
-            [{ text: 'OK' }]
-          );
+          showToast('info', 'ThreeSixtyThree™ v1.0.0 — "Show up. Do the work. Let go of perfection."', 5000);
         }}>
           <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5 }}>Three Sentences · v1.0.0</Text>
           <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5, marginTop: spacing[1] }}>Be better. Do better.</Text>
@@ -511,6 +508,45 @@ export default function SettingsScreen() {
         onCancel={() => setShowAIOptInModal(false)}
         onConfirm={handleAIOptInConfirm}
       />
+
+      {confirmAction && (
+        <ConfirmationModal
+          visible
+          title={CONFIRM_CONFIG[confirmAction].title}
+          message={CONFIRM_CONFIG[confirmAction].message}
+          confirmLabel={CONFIRM_CONFIG[confirmAction].confirmLabel}
+          destructive={CONFIRM_CONFIG[confirmAction].destructive}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={CONFIRM_CONFIG[confirmAction].onConfirm}
+        />
+      )}
+
+      <BottomSheet visible={showExportSheet} onClose={() => setShowExportSheet(false)} maxHeight={0.32}>
+        <View style={styles.exportSheet}>
+          <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
+            Export Entries
+          </Text>
+          <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+            Choose your export format
+          </Text>
+          <TouchableOpacity
+            style={[styles.exportOption, { borderColor: c.frame }]}
+            onPress={() => { setShowExportSheet(false); handleExport('txt'); }}
+            accessibilityRole="button"
+            accessibilityLabel="Export as plain text"
+          >
+            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary }}>Plain Text</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.exportOption, { borderColor: c.frame }]}
+            onPress={() => { setShowExportSheet(false); handleExport('json'); }}
+            accessibilityRole="button"
+            accessibilityLabel="Export as JSON"
+          >
+            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary }}>JSON</Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -529,6 +565,18 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing[4],
+  },
+  exportSheet: {
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[2],
+  },
+  exportOption: {
+    height: 52,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[3],
   },
 
   // Profile header card

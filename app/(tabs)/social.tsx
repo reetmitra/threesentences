@@ -12,7 +12,6 @@ import {
   TextInput,
   Pressable,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -183,7 +182,7 @@ export default function SocialScreen() {
       );
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', (error as Error).message);
+      showToast('error', (error as Error).message);
     }
   };
 
@@ -218,7 +217,7 @@ export default function SocialScreen() {
       setPendingRequests((prev) => [...prev, request]);
       setNewFriendId(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', (error as Error).message);
+      showToast('error', (error as Error).message);
     }
   };
 

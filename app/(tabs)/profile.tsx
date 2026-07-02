@@ -12,7 +12,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Pressable,
   Image,
   Modal,
@@ -48,10 +47,13 @@ import {
 } from '@/types/profile';
 import { getProfile, updateProfile, updateProfileImage } from '@/store/profile';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
 
 export default function ProfileScreen() {
   const activeColors = colors.dark;
   const { userId, isLoaded } = useAuth();
+  const { showToast } = useToast();
 
   // Profile state
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -69,6 +71,7 @@ export default function ProfileScreen() {
   const [selectedInterests, setSelectedInterests] = useState<InterestId[]>([]);
   const [profileImage, setProfileImage] = useState<string | undefined>();
   const [showImageOptions, setShowImageOptions] = useState(false);
+  const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<InterestCategoryGroup>>(
     new Set()
   );
@@ -207,11 +210,7 @@ export default function ProfileScreen() {
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please allow camera access to take a profile photo.',
-        [{ text: 'OK' }]
-      );
+      showToast('error', 'Allow camera access in device settings to take a profile photo.');
       return;
     }
 
@@ -232,11 +231,7 @@ export default function ProfileScreen() {
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please allow photo library access to choose a profile photo.',
-        [{ text: 'OK' }]
-      );
+      showToast('error', 'Allow photo library access in device settings to choose a profile photo.');
       return;
     }
 
@@ -252,35 +247,27 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleRemovePhoto = async () => {
+  const handleRemovePhoto = () => {
     setShowImageOptions(false);
+    setConfirmRemovePhoto(true);
+  };
 
-    Alert.alert(
-      'Remove Photo',
-      'Are you sure you want to remove your profile photo?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (userId) {
-                await updateProfileImage(userId, null);
-                setProfileImage(undefined);
-                if (profile) {
-                  setProfile({ ...profile, profileImage: undefined });
-                }
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              }
-            } catch (error) {
-              console.error('Failed to remove photo:', error);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            }
-          },
-        },
-      ]
-    );
+  const confirmRemovePhotoAction = async () => {
+    setConfirmRemovePhoto(false);
+    try {
+      if (userId) {
+        await updateProfileImage(userId, null);
+        setProfileImage(undefined);
+        if (profile) {
+          setProfile({ ...profile, profileImage: undefined });
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error('Failed to remove photo:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      showToast('error', 'Failed to remove photo');
+    }
   };
 
   const saveProfileImage = async (uri: string) => {
@@ -296,7 +283,7 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Failed to save profile image:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to save profile image');
+      showToast('error', 'Failed to save profile image');
     }
   };
 
@@ -327,15 +314,12 @@ export default function ProfileScreen() {
     }
 
     if (!name.trim()) {
-      Alert.alert('Error', 'Name is required');
+      showToast('error', 'Name is required');
       return;
     }
 
     if (selectedInterests.length < PROFILE_CONSTRAINTS.interests.minCount) {
-      Alert.alert(
-        'Error',
-        `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`
-      );
+      showToast('error', `Please select at least ${PROFILE_CONSTRAINTS.interests.minCount} interests`);
       return;
     }
 
@@ -360,7 +344,7 @@ export default function ProfileScreen() {
     } catch (error) {
       saveButtonScale.value = withSpring(1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', (error as Error).message);
+      showToast('error', (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -809,6 +793,16 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <ConfirmationModal
+        visible={confirmRemovePhoto}
+        title="Remove photo?"
+        message="Your profile photo will be removed."
+        confirmLabel="Remove"
+        destructive
+        onCancel={() => setConfirmRemovePhoto(false)}
+        onConfirm={confirmRemovePhotoAction}
+      />
     </SafeAreaView>
   );
 }

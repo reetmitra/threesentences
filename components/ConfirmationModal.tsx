@@ -10,9 +10,25 @@ interface ConfirmationModalProps {
   onCancel: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  title?: string;
+  message?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  /** Amber-tinted confirm button for irreversible actions */
+  destructive?: boolean;
 }
 
-export function ConfirmationModal({ visible, onCancel, onConfirm, loading }: ConfirmationModalProps) {
+export function ConfirmationModal({
+  visible,
+  onCancel,
+  onConfirm,
+  loading,
+  title = 'Submit entry?',
+  message = 'You can refine your three sentences until midnight. After that, they stand as written.',
+  confirmLabel = 'Submit',
+  cancelLabel = 'Cancel',
+  destructive = false,
+}: ConfirmationModalProps) {
   const c = colors.dark;
 
   return (
@@ -28,20 +44,32 @@ export function ConfirmationModal({ visible, onCancel, onConfirm, loading }: Con
           onStartShouldSetResponder={() => true}
         >
           <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
-            Submit entry?
+            {title}
           </Text>
           <Text serif variant="base" style={{ color: c.textSecondary, lineHeight: 26, marginBottom: spacing[6] }}>
-            Once submitted, your entry is permanent. Three sentences, locked.
+            {message}
           </Text>
           <View style={styles.actions}>
             <TouchableOpacity
               onPress={onCancel}
               style={[styles.ghostButton, { borderColor: c.frame }]}
             >
-              <Text family="sansSemibold" variant="base" style={{ color: c.textSecondary }}>Cancel</Text>
+              <Text family="sansSemibold" variant="base" style={{ color: c.textSecondary }}>{cancelLabel}</Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Button title="Submit" onPress={onConfirm} loading={loading} />
+              {destructive ? (
+                <TouchableOpacity
+                  onPress={onConfirm}
+                  disabled={loading}
+                  style={[styles.destructiveButton, { borderColor: c.warn }]}
+                >
+                  <Text family="sansSemibold" variant="base" style={{ color: c.warn }}>
+                    {confirmLabel}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <Button title={confirmLabel} onPress={onConfirm} loading={loading} />
+              )}
             </View>
           </View>
         </View>
@@ -75,6 +103,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: spacing[5],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  destructiveButton: {
+    height: 52,
+    borderRadius: 999,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
