@@ -5,7 +5,7 @@
  */
 
 import React, { forwardRef, useState } from 'react';
-import { TextInput, TextInputProps, StyleSheet, ViewStyle, View } from 'react-native';
+import { TextInput, TextInputProps, StyleSheet, ViewStyle, View, Platform } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { typography } from '@/theme/typography';
@@ -47,6 +47,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
             borderWidth: focused ? 1 : StyleSheet.hairlineWidth,
             borderRadius: componentRadius.input,
           },
+          // The bright border already marks focus; recolor the browser's
+          // default blue focus ring instead of stacking it on top.
+          Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
           style,
         ]}
         placeholderTextColor={c.textTertiary}

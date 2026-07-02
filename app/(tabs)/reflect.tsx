@@ -337,6 +337,9 @@ const styles = StyleSheet.create({
   },
   rangeButton: {
     flex: 1,
+    // Chips are narrow at phone widths; without this the default 24px
+    // horizontal padding wraps "30 days" onto two lines.
+    paddingHorizontal: spacing[2],
   },
   generateButton: {
     width: '100%',

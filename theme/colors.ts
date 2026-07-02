@@ -10,7 +10,7 @@ export const colors = {
     // Ink (text)
     textPrimary: '#ebe7dc',      // --ink bone-ivory, never pure white
     textBright: '#ffffff',       // --ink-bright CTAs, active states
-    textSecondary: '#75726a',    // --ink-dim secondary/metadata
+    textSecondary: '#7f7c74',    // --ink-dim secondary/metadata (>=4.5:1 on bg for AA body text)
     textTertiary: '#36363a',     // --ink-fade placeholders/empty dots
 
     // Cream
@@ -38,7 +38,7 @@ export const colors = {
     frame: '#1e1e22',
     textPrimary: '#ebe7dc',
     textBright: '#ffffff',
-    textSecondary: '#75726a',
+    textSecondary: '#7f7c74',
     textTertiary: '#36363a',
     cream:   '#efece5',
     creamHi: '#f6f4ee',

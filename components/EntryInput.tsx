@@ -51,6 +51,8 @@ export function EntryInput({
           backgroundColor: activeColors.paper,
           color: activeColors.textPrimary,
         },
+        // Recolor the browser's default blue focus ring to a brand tone.
+        Platform.OS === 'web' && ({ outlineColor: activeColors.creamLo, outlineWidth: 1 } as any),
       ]}
       value={value}
       onChangeText={onChangeText}

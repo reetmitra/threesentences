@@ -28,7 +28,7 @@
       "package": "com.threesixtythree.threesentences"
     },
     "web": {
-      "favicon": "./assets/svg/logo/favicon.svg",
+      "favicon": "./assets/images/favicon.png",
       "bundler": "metro",
       "backgroundColor": "#0e0e10"
     },

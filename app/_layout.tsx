@@ -3,6 +3,7 @@
  */
 
 import React, { useEffect } from 'react';
+import { Platform, View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -58,19 +59,37 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ToastProvider>
         <StatusBar style="light" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: activeColors.background },
-            animation: 'fade',
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(onboarding)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-        </Stack>
+        {/* On web, phone-shaped screens get a centered column instead of
+            stretching edge-to-edge on desktop windows. */}
+        <View style={[styles.webFrame, { backgroundColor: activeColors.background }]}>
+          <View style={styles.webColumn}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: activeColors.background },
+                animation: 'fade',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(onboarding)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+            </Stack>
+          </View>
+        </View>
       </ToastProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  webFrame: {
+    flex: 1,
+  },
+  webColumn: {
+    flex: 1,
+    ...(Platform.OS === 'web'
+      ? { width: '100%', maxWidth: 560, alignSelf: 'center' as const }
+      : null),
+  },
+});

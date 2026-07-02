@@ -51,7 +51,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
     >
       {loading
         ? <ActivityIndicator color={textColor} size="small" />
-        : <Text family="sansSemibold" variant="base" style={{ color: textColor }}>{title}</Text>
+        : <Text family="sansSemibold" variant="base" numberOfLines={1} style={{ color: textColor }}>{title}</Text>
       }
     </TouchableOpacity>
   );
