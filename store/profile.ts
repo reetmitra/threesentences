@@ -57,17 +57,15 @@ function mapToUserProfile(dbProfile: DbProfile): UserProfile {
  */
 export async function getProfile(userId: string): Promise<UserProfile | null> {
   try {
+    // maybeSingle: a missing profile is an expected state (fresh signups),
+    // not an error — .single() logs an HTTP 406 for every empty lookup.
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned - profile doesn't exist
-        return null;
-      }
       console.error('Failed to get profile:', error.message, error.code, error.details);
       return null;
     }
@@ -108,12 +106,15 @@ export async function createProfile(
   };
 
   // Upsert so a concurrent create (e.g. app root + interests screen both
-  // pre-creating on mount) is a no-op instead of a 23505 error.
+  // pre-creating on mount) is a no-op instead of a 23505 error. ignoreDuplicates
+  // only covers the user_id conflict target; a race can still 23505 on the
+  // username unique key (both writers insert the same per-user temp handle),
+  // which equally means the row already exists — fall through to the re-read.
   const { error } = await supabase
     .from('profiles')
     .upsert(insertData, { onConflict: 'user_id', ignoreDuplicates: true });
 
-  if (error) {
+  if (error && error.code !== '23505') {
     console.error('Failed to create profile:', error.message, error.code, error.details);
     throw new Error(`Failed to create profile: ${error.message}`);
   }

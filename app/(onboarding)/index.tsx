@@ -2,10 +2,11 @@
  * ThreeSixtyThree™ Three Sentences - Onboarding Flow
  *
  * Introduces the 363 philosophy before first use.
+ * Self-paced: Continue advances, Skip exits, slide content reveals on arrival.
  * Slides 2 and 3 are interactive to build understanding.
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,6 +14,7 @@ import {
   ViewToken,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
 } from 'react-native';
@@ -24,19 +26,23 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
-  withSequence,
   withSpring,
+  withRepeat,
   FadeIn,
   Easing,
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
+import { Logo } from '@/components/ui/Logo';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { SentenceCounter } from '@/components/SentenceCounter';
 import { countSentences } from '@/utils/sentenceDetection';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 import { completeOnboarding } from '@/store/onboarding';
+
+const EASE_OUT_CUBIC = Easing.out(Easing.cubic);
 
 interface OnboardingSlide {
   id: string;
@@ -81,6 +87,33 @@ const SLIDES: OnboardingSlide[] = [
   },
 ];
 
+/**
+ * Reveals a slide's content the first time it becomes the active slide,
+ * so animations play for the reader instead of firing at mount while
+ * the slide is still offscreen.
+ */
+function SlideReveal({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(16);
+  const activated = useRef(false);
+
+  useEffect(() => {
+    if (!active || activated.current) return;
+    activated.current = true;
+    const duration = reduced ? 0 : 480;
+    opacity.value = withTiming(1, { duration, easing: EASE_OUT_CUBIC });
+    translateY.value = withTiming(0, { duration, easing: EASE_OUT_CUBIC });
+  }, [active, reduced]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
 /** Mini practice input for Slide 2 */
 function PracticeInput() {
   const c = colors.dark;
@@ -88,7 +121,7 @@ function PracticeInput() {
   const sentenceCount = countSentences(text);
 
   return (
-    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.practiceContainer}>
+    <View style={styles.practiceContainer}>
       <Text family="mono" variant="sm" style={[styles.practiceLabel, { color: c.textSecondary }]}>
         Try it — write 3 sentences:
       </Text>
@@ -100,6 +133,7 @@ function PracticeInput() {
             color: c.textPrimary,
             borderColor: sentenceCount === 3 ? c.textBright : c.frame,
           },
+          Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
         ]}
         placeholder="Start typing..."
         placeholderTextColor={c.textTertiary}
@@ -109,53 +143,86 @@ function PracticeInput() {
         textAlignVertical="top"
       />
       <SentenceCounter count={sentenceCount} />
-    </Animated.View>
+    </View>
   );
 }
 
-/** No-edit demo animation for Slide 3 */
-function NoEditDemo() {
-  const c = colors.dark;
+/** Blinking caret for the typewriter demo */
+function Caret() {
+  const opacity = useSharedValue(1);
 
-  // Typewriter text
+  useEffect(() => {
+    opacity.value = withRepeat(withTiming(0, { duration: 480 }), -1, true);
+  }, []);
+
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.Text style={[{ color: colors.dark.textBright }, style]}>|</Animated.Text>
+  );
+}
+
+/** No-edit demo animation for Slide 3 — starts when the slide becomes active */
+function NoEditDemo({ active }: { active: boolean }) {
+  const c = colors.dark;
+  const reduced = useReducedMotion();
+
   const DEMO_TEXT = 'Today I felt grateful.';
   const [displayText, setDisplayText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
+  const started = useRef(false);
 
   // Strikethrough animation
   const strikeWidth = useSharedValue(0);
   const editOpacity = useSharedValue(0);
   const editScale = useSharedValue(0.5);
 
-  // Typewriter effect
+  // Typewriter effect, triggered by first activation
   useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < DEMO_TEXT.length) {
-        setDisplayText(DEMO_TEXT.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(interval);
-        setTypingDone(true);
-      }
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
+    if (!active || started.current) return;
+    started.current = true;
+
+    if (reduced) {
+      setDisplayText(DEMO_TEXT);
+      setTypingDone(true);
+      return;
+    }
+
+    let interval: ReturnType<typeof setInterval> | undefined;
+    // Small lead-in so the slide reveal lands before the typing begins
+    const leadIn = setTimeout(() => {
+      let i = 0;
+      interval = setInterval(() => {
+        if (i < DEMO_TEXT.length) {
+          setDisplayText(DEMO_TEXT.slice(0, i + 1));
+          i++;
+        } else {
+          if (interval) clearInterval(interval);
+          setTypingDone(true);
+        }
+      }, 55);
+    }, 500);
+
+    return () => {
+      clearTimeout(leadIn);
+      if (interval) clearInterval(interval);
+    };
+  }, [active, reduced]);
 
   // After typing: show edit icon, then strike through it
   useEffect(() => {
     if (!typingDone) return;
 
-    // Show the edit icon
-    editOpacity.value = withDelay(400, withTiming(1, { duration: 300 }));
-    editScale.value = withDelay(400, withSpring(1, { damping: 12, stiffness: 200 }));
+    const showDelay = reduced ? 0 : 400;
+    const strikeDelay = reduced ? 0 : 1000;
 
-    // Animate strikethrough across the icon
+    editOpacity.value = withDelay(showDelay, withTiming(1, { duration: reduced ? 0 : 300 }));
+    editScale.value = withDelay(showDelay, withSpring(1, { damping: 12, stiffness: 200 }));
     strikeWidth.value = withDelay(
-      1000,
-      withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) })
+      strikeDelay,
+      withTiming(1, { duration: reduced ? 0 : 400, easing: EASE_OUT_CUBIC })
     );
-  }, [typingDone]);
+  }, [typingDone, reduced]);
 
   const editStyle = useAnimatedStyle(() => ({
     opacity: editOpacity.value,
@@ -167,14 +234,12 @@ function NoEditDemo() {
   }));
 
   return (
-    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.noEditContainer}>
+    <View style={styles.noEditContainer}>
       {/* Simulated entry */}
-      <View style={[styles.noEditEntry, { backgroundColor: c.surface }]}>
-        <Text variant="base" style={{ color: c.textPrimary, minHeight: 24 }}>
+      <View style={[styles.noEditEntry, { backgroundColor: c.surface, borderLeftColor: c.textBright }]}>
+        <Text serif variant="base" style={{ color: c.textPrimary, minHeight: 24 }}>
           {displayText}
-          {!typingDone && (
-            <Text variant="base" style={{ color: c.textBright }}>|</Text>
-          )}
+          {!typingDone && <Caret />}
         </Text>
       </View>
 
@@ -182,7 +247,6 @@ function NoEditDemo() {
       {typingDone && (
         <Animated.View style={[styles.noEditIconContainer, editStyle]}>
           <Icon name="edit" size={22} color={c.textTertiary} />
-          {/* Red strikethrough line */}
           <Animated.View
             style={[
               styles.strikethrough,
@@ -194,13 +258,13 @@ function NoEditDemo() {
       )}
 
       {typingDone && (
-        <Animated.View entering={FadeIn.delay(1400).duration(400)}>
+        <Animated.View entering={FadeIn.delay(reduced ? 0 : 1400).duration(reduced ? 0 : 400)}>
           <Text family="mono" variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
             Entries lock for good at midnight
           </Text>
         </Animated.View>
       )}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -222,7 +286,7 @@ function PageDot({ active }: { active: boolean }) {
         {
           height: 6,
           borderRadius: 3,
-          backgroundColor: active ? colors.dark.textBright : colors.dark.frame,
+          backgroundColor: active ? colors.dark.textBright : colors.dark.textTertiary,
         },
         style,
       ]}
@@ -237,52 +301,38 @@ export default function OnboardingScreen() {
   const { width: screenWidth } = useWindowDimensions();
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Measured height of the carousel area — RN-web horizontal lists don't
+  // stretch cells, so each slide gets the exact height to center within.
+  const [listHeight, setListHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Auto-rotation logic
+  const isLastSlide = currentIndex === SLIDES.length - 1;
+
+  const goToSlide = (index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+  };
+
+  // Re-align the scroll offset to the current slide after a resize/rotation —
+  // page boundaries move with the width and can leave the list mid-slide.
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isAutoPlaying) {
-      interval = setInterval(() => {
-        if (currentIndex < SLIDES.length - 1) {
-          flatListRef.current?.scrollToIndex({
-            index: currentIndex + 1,
-            animated: true,
-          });
-        } else {
-          flatListRef.current?.scrollToIndex({
-            index: 0,
-            animated: true,
-          });
-        }
-      }, 4000);
+    if (currentIndex > 0) {
+      flatListRef.current?.scrollToIndex({ index: currentIndex, animated: false });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenWidth]);
 
-    return () => clearInterval(interval);
-  }, [currentIndex, isAutoPlaying]);
-
-  const handleGetStarted = async () => {
+  const handleComplete = async () => {
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await completeOnboarding();
     router.replace('/(auth)/interests');
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const handleScrollBegin = () => {
-    setIsAutoPlaying(false);
-  };
-
-  const handleScrollEnd = () => {
-    setIsAutoPlaying(false);
-  };
-
-  const handleDotPress = (index: number) => {
-    setIsAutoPlaying(false);
-    flatListRef.current?.scrollToIndex({
-      index,
-      animated: true,
-    });
+  const handleContinue = () => {
+    if (isLastSlide) {
+      void handleComplete();
+    } else {
+      goToSlide(currentIndex + 1);
+    }
   };
 
   const onViewableItemsChanged = useRef(
@@ -293,51 +343,68 @@ export default function OnboardingScreen() {
     }
   ).current;
 
-  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => (
-    <View style={[styles.slide, { width: screenWidth }]}>
-      <View style={styles.slideContent}>
-        {/* Slide eyebrow */}
-        <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 2, marginBottom: spacing[4] }}>
-          {`0${index + 1} / 04`}
-        </Text>
-        {item.subtitle && (
-          <Text family="mono" variant="sm" uppercase style={[styles.subtitle, { color: c.textSecondary, letterSpacing: 2 }]}>
-            {item.subtitle}
-          </Text>
-        )}
-        <Text family="sansSemibold" variant="2xl" style={[styles.title, { color: c.textPrimary, marginBottom: spacing[3] }]}>
-          {item.title}
-        </Text>
-        <Text serif variant="base" style={[styles.description, { color: c.textSecondary, lineHeight: 28 }]}>
-          {item.description}
-        </Text>
-        {item.highlight && (
-          <View style={[styles.highlightBox, { backgroundColor: c.surface }]}>
-            <Text
-              serif
-              variant="base"
-              style={[styles.highlight, { color: c.textPrimary }]}
-            >
-              {item.highlight}
+  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => {
+    const active = index === currentIndex;
+    return (
+      <View
+        style={[
+          styles.slide,
+          { width: screenWidth },
+          listHeight > 0 && { height: listHeight },
+        ]}
+      >
+        <View style={styles.slideContent}>
+          <SlideReveal active={active}>
+            {index === 0 && (
+              <View style={styles.logoMark}>
+                <Logo size={44} />
+              </View>
+            )}
+            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 2, marginBottom: spacing[4] }}>
+              {`0${index + 1} / 04`}
             </Text>
-          </View>
-        )}
+            {item.subtitle && (
+              <Text family="mono" variant="sm" uppercase style={[styles.subtitle, { color: c.textSecondary, letterSpacing: 2 }]}>
+                {item.subtitle}
+              </Text>
+            )}
+            <Text family="sansSemibold" variant="2xl" style={[styles.title, { color: c.textPrimary, marginBottom: spacing[3] }]}>
+              {item.title}
+            </Text>
+            <Text serif variant="base" style={[styles.description, { color: c.textSecondary, lineHeight: 28 }]}>
+              {item.description}
+            </Text>
+            {item.highlight && (
+              <View style={[styles.highlightBox, { backgroundColor: c.surface, borderLeftColor: c.textBright }]}>
+                <Text
+                  serif
+                  variant="base"
+                  style={[styles.highlight, { color: c.textPrimary }]}
+                >
+                  {item.highlight}
+                </Text>
+              </View>
+            )}
 
-        {/* Interactive elements */}
-        {item.interactive === 'practice' && <PracticeInput />}
-        {item.interactive === 'no-edit' && <NoEditDemo />}
+            {/* Interactive elements */}
+            {item.interactive === 'practice' && <PracticeInput />}
+            {item.interactive === 'no-edit' && <NoEditDemo active={active} />}
+          </SlideReveal>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderPagination = () => (
     <View style={styles.pagination}>
       {SLIDES.map((_, index) => (
         <TouchableOpacity
           key={index}
-          onPress={() => handleDotPress(index)}
+          onPress={() => goToSlide(index)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={styles.dotWrapper}
+          accessibilityRole="button"
+          accessibilityLabel={`Go to slide ${index + 1} of ${SLIDES.length}`}
         >
           <PageDot active={index === currentIndex} />
         </TouchableOpacity>
@@ -350,45 +417,56 @@ export default function OnboardingScreen() {
       style={[styles.container, { backgroundColor: c.background }]}
       edges={['top', 'bottom']}
     >
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        renderItem={renderSlide}
-        keyExtractor={(item) => item.id}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
-        bounces={false}
-        onScrollBeginDrag={handleScrollBegin}
-        onMomentumScrollEnd={handleScrollEnd}
-        style={styles.carousel}
-        contentContainerStyle={styles.carouselContent}
-        getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
-      />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Top bar: quiet exit for the impatient */}
+        <View style={styles.topBar}>
+          {!isLastSlide && (
+            <TouchableOpacity
+              onPress={() => void handleComplete()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Skip introduction"
+            >
+              <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+                Skip
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Bottom section */}
-      <View style={styles.bottomSection}>
-        {renderPagination()}
-        {Platform.OS === 'web' && currentIndex < SLIDES.length - 1 && (
-          <TouchableOpacity
-            onPress={() => handleDotPress(currentIndex + 1)}
-            style={styles.webNextButton}
-            accessibilityRole="button"
-            accessibilityLabel="Next slide"
-          >
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
-              Next →
-            </Text>
-          </TouchableOpacity>
-        )}
-        <Button
-          title={currentIndex === SLIDES.length - 1 ? 'Begin practice' : 'Get Started'}
-          onPress={handleGetStarted}
-          style={styles.nextButton}
-        />
-      </View>
+        <View
+          style={styles.carouselWrapper}
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={SLIDES}
+            renderItem={renderSlide}
+            keyExtractor={(item) => item.id}
+            extraData={currentIndex}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+            bounces={false}
+            getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
+          />
+        </View>
+
+        {/* Bottom section */}
+        <View style={styles.bottomSection}>
+          {renderPagination()}
+          <Button
+            title={isLastSlide ? 'Begin practice' : 'Continue'}
+            onPress={handleContinue}
+            style={styles.nextButton}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -397,17 +475,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  carousel: {
-    flex: 1,
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[4],
+    minHeight: 40,
   },
-  carouselContent: {
-    // Stretch items to full height so justifyContent:'center' on the slide
-    // actually centers on web (RN-web horizontal lists don't stretch by default).
-    flexGrow: 1,
+  carouselWrapper: {
+    flex: 1,
   },
   slide: {
-    flex: 1,
-    height: '100%',
     justifyContent: 'center',
     paddingHorizontal: spacing[6],
   },
@@ -415,6 +494,9 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
+  },
+  logoMark: {
+    marginBottom: spacing[6],
   },
   subtitle: {
     marginBottom: spacing[2],
@@ -431,6 +513,7 @@ const styles = StyleSheet.create({
   highlightBox: {
     padding: spacing[4],
     borderRadius: 12,
+    borderLeftWidth: 2,
   },
   highlight: {
     fontStyle: 'italic',
@@ -445,26 +528,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing[6],
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-  },
-  dotActive: {
-    width: 24,
-  },
   dotWrapper: {
     marginHorizontal: 4,
   },
   nextButton: {
     width: '100%',
-  },
-  webNextButton: {
-    alignSelf: 'center',
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[4],
-    marginBottom: spacing[3],
   },
 
   // Practice input (Slide 2)
@@ -491,6 +559,7 @@ const styles = StyleSheet.create({
   noEditEntry: {
     padding: spacing[3],
     borderRadius: 12,
+    borderLeftWidth: 2,
     width: '100%',
     marginBottom: spacing[3],
   },
