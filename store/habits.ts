@@ -23,15 +23,19 @@ async function requireUserId(): Promise<string> {
   return data.session.user.id;
 }
 
+async function fetchActiveHabits(): Promise<Habit[]> {
+  const { data, error } = await supabase
+    .from('habits')
+    .select('*')
+    .is('archived_at', null)
+    .order('position', { ascending: true });
+  if (error) throw error;
+  return ((data ?? []) as DbHabit[]).map(mapToHabit);
+}
+
 export async function getActiveHabits(): Promise<Habit[]> {
   try {
-    const { data, error } = await supabase
-      .from('habits')
-      .select('*')
-      .is('archived_at', null)
-      .order('position', { ascending: true });
-    if (error) throw error;
-    return ((data ?? []) as DbHabit[]).map(mapToHabit);
+    return await fetchActiveHabits();
   } catch (error) {
     console.error('Failed to load habits:', error);
     return [];
@@ -56,7 +60,16 @@ export async function addHabit(rawName: string): Promise<Habit> {
   if (!v.ok) throw new Error(v.error);
   await requireUserId();
 
-  const position = nextFreeHabitPosition(await getActiveHabits());
+  // Not getActiveHabits: its [] on error would pick slot 0 and report a
+  // misleading "three habits" conflict.
+  let active: Habit[];
+  try {
+    active = await fetchActiveHabits();
+  } catch (error) {
+    console.error('Failed to load habits:', error);
+    throw new Error('Could not add that habit. Check your connection.');
+  }
+  const position = nextFreeHabitPosition(active);
   if (position === null) throw new Error(THREE_HABITS_ERROR);
 
   const { data, error } = await supabase

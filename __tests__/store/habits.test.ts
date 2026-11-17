@@ -1,9 +1,11 @@
 import { addHabit } from '@/store/habits';
 import { THREE_HABITS_ERROR } from '@/types/tracking';
 
+let mockRead: { data: unknown; error: unknown } = { data: [], error: null };
+
 jest.mock('@/config/supabase', () => {
   const selectChain = {
-    is: jest.fn(() => ({ order: jest.fn(() => Promise.resolve({ data: [], error: null })) })),
+    is: jest.fn(() => ({ order: jest.fn(() => Promise.resolve(mockRead)) })),
   };
   return {
     supabase: {
@@ -21,8 +23,17 @@ jest.mock('@/config/supabase', () => {
 });
 
 describe('addHabit', () => {
-  it('maps 23505 to the three-habit message', async () => {
+  beforeEach(() => {
+    mockRead = { data: [], error: null };
     jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  it('maps 23505 to the three-habit message', async () => {
     await expect(addHabit('Read')).rejects.toThrow(THREE_HABITS_ERROR);
+  });
+  it('a failed habits read asks to check the connection, not "three habits"', async () => {
+    mockRead = { data: null, error: { message: 'Network request failed' } };
+    await expect(addHabit('Read')).rejects.toThrow(
+      'Could not add that habit. Check your connection.',
+    );
   });
 });
