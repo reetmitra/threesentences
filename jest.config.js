@@ -1,3 +1,8 @@
+// Run every test in a DST timezone so date tests (logicalDate.dst.test.ts)
+// exercise real offset changes. Setting TZ inside a test file is too late:
+// the worker's timezone is already fixed by then.
+process.env.TZ = 'America/New_York';
+
 module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
