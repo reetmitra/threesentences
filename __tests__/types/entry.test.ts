@@ -14,6 +14,7 @@ import {
   setDayRolloverHour,
   getDayRolloverHour,
   formatRolloverLabel,
+  isStaleDate,
   DEFAULT_DAY_ROLLOVER_HOUR,
 } from '@/types/entry';
 
@@ -166,5 +167,16 @@ describe('logical day', () => {
   it('formats rollover labels', () => {
     expect(formatRolloverLabel(0)).toBe('midnight');
     expect(formatRolloverLabel(4)).toBe('4am');
+  });
+  // A check-in tap on a screen loaded before the rollover must not write.
+  it('isStaleDate flips at the rollover hour, not at midnight', () => {
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 3, 59))).toBe(false);
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 4, 0))).toBe(true);
+    setDayRolloverHour(0);
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 0, 0))).toBe(true);
+  });
+  it('isStaleDate is true for a later day after the rollover moves back', () => {
+    setDayRolloverHour(6);
+    expect(isStaleDate('2026-11-18', new Date(2026, 10, 18, 5, 0))).toBe(true);
   });
 });

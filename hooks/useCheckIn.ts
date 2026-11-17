@@ -5,11 +5,14 @@
  * in the background, one write at a time per answer (see SaveQueue). If a
  * save fails the answer goes back to the last saved value, with a toast.
  * Loads on mount and whenever `date` changes; call `reload()` to refresh.
+ * A tap after the logical day has ended writes nothing: it re-renders the
+ * host so it picks up the new date (the old day is locked).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 import { getCachedSettings } from '@/store/settings';
+import { isStaleDate } from '@/types/entry';
 import {
   addHabit as storeAddHabit,
   archiveHabit,
@@ -33,6 +36,7 @@ import {
 } from '@/types/tracking';
 
 const SAVE_ERROR = "Couldn't save — check your connection.";
+const NEW_DAY = 'A new day has started.';
 
 export interface CheckIn {
   trackers: TrackerSettings;
@@ -89,6 +93,8 @@ export function useCheckIn(date: string): CheckIn {
   const [answers, setAnswers] = useState<HabitAnswers>({});
   const [mood, setMoodValue] = useState<MoodValue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Re-renders the host, which recomputes its logical date.
+  const [, bump] = useReducer((n: number) => n + 1, 0);
 
   // Keyed by date (mood) and date|habitId (answers), so a write that
   // settles after the day rolls over can't touch the new day's state.
@@ -102,6 +108,8 @@ export function useCheckIn(date: string): CheckIn {
     const moodAtStart = new Map(moodQueues);
     const answersAtStart = new Map(answerQueues);
     const [h, a, m] = await Promise.all([getActiveHabits(), getHabitAnswers(date), getMood(date)]);
+    // The day rolled over while this read was in flight; the new day's read owns the state.
+    if (dateRef.current !== date) return;
     let shown: HabitAnswers = {};
     for (const habit of h) {
       const v = applyRead(answerQueues, answersAtStart, `${date}|${habit.id}`, a[habit.id] ?? null);
@@ -119,6 +127,11 @@ export function useCheckIn(date: string): CheckIn {
 
   const answerHabit = useCallback(
     (habitId: string, done: boolean | null) => {
+      if (isStaleDate(date)) {
+        bump();
+        showToast('info', NEW_DAY);
+        return;
+      }
       const key = `${date}|${habitId}`;
       const queue = answerQueues.get(key) ?? newSaveQueue<boolean | null>(null);
       advance(
@@ -137,6 +150,11 @@ export function useCheckIn(date: string): CheckIn {
 
   const chooseMood = useCallback(
     (next: MoodValue | null) => {
+      if (isStaleDate(date)) {
+        bump();
+        showToast('info', NEW_DAY);
+        return;
+      }
       const queue = moodQueues.get(date) ?? newSaveQueue<MoodValue | null>(null);
       advance(
         moodQueues,

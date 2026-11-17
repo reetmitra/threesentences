@@ -94,6 +94,11 @@ export function getTodayDateString(now: Date = new Date()): string {
   return getLogicalDateString(now, dayRolloverHour);
 }
 
+/** True when `date` is no longer the current logical day, so it is locked. */
+export function isStaleDate(date: string, now: Date = new Date()): boolean {
+  return getTodayDateString(now) !== date;
+}
+
 export function formatRolloverLabel(hour: number): string {
   return hour === 0 ? 'midnight' : `${hour}am`;
 }
