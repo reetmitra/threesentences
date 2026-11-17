@@ -142,3 +142,61 @@ export function isMoodValue(n: unknown): n is MoodValue {
 
 /** habitId -> done; a missing key means unanswered. */
 export type HabitAnswers = Record<string, boolean>;
+
+// ---------------------------------------------------------------------------
+// Check-in save queue (one per mood or per habit answer, per day)
+// ---------------------------------------------------------------------------
+
+/**
+ * One write in flight at a time; only the latest tap waits behind it, so
+ * writes land in tap order and the last tap wins. The UI shows the latest
+ * tap while a write is pending, otherwise the last value known saved.
+ */
+export interface SaveQueue<V> {
+  confirmed: V;
+  inFlight: { value: V } | null;
+  queued: { value: V } | null;
+}
+
+export interface SaveStep<V> {
+  queue: SaveQueue<V>;
+  /** Write this value now. */
+  send: { value: V } | null;
+  /** True when a failure rolled the UI back to the saved value. */
+  failed: boolean;
+}
+
+export function newSaveQueue<V>(confirmed: V): SaveQueue<V> {
+  return { confirmed, inFlight: null, queued: null };
+}
+
+export function shownValue<V>(q: SaveQueue<V>): V {
+  return (q.queued ?? q.inFlight ?? { value: q.confirmed }).value;
+}
+
+export function queueTap<V>(q: SaveQueue<V>, value: V): SaveStep<V> {
+  if (q.inFlight) return { queue: { ...q, queued: { value } }, send: null, failed: false };
+  return { queue: { ...q, inFlight: { value } }, send: { value }, failed: false };
+}
+
+/** The in-flight write finished; send the queued tap next, if any. */
+export function settleSave<V>(q: SaveQueue<V>, ok: boolean): SaveStep<V> {
+  const confirmed = ok && q.inFlight ? q.inFlight.value : q.confirmed;
+  if (q.queued) {
+    return { queue: { confirmed, inFlight: q.queued, queued: null }, send: q.queued, failed: false };
+  }
+  return { queue: newSaveQueue(confirmed), send: null, failed: !ok };
+}
+
+/**
+ * A server read finished. `atStart` is the queue as it was when the read
+ * began: if anything happened since, the read may predate it, so keep ours.
+ */
+export function applyServerValue<V>(
+  current: SaveQueue<V> | undefined,
+  atStart: SaveQueue<V> | undefined,
+  saved: V,
+): SaveQueue<V> {
+  if (current && current !== atStart) return current;
+  return current ? { ...current, confirmed: saved } : newSaveQueue(saved);
+}
