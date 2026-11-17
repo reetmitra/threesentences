@@ -69,7 +69,7 @@ export function ProblemSection() {
               </H3>
               <div style={{ height: 26 }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Two days of grace built in', 'A calendar that fills as you do', 'Your words stay your words', 'A small circle, end-to-end encrypted'].map((t, i) => (
+                {['Two days of grace built in', 'A calendar that fills as you do', 'Your words stay your words', 'A small circle, private by default'].map((t, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: LP_INK_BRIGHT, flexShrink: 0 }} />
                     <P style={{ color: LP_INK }}>{t}</P>

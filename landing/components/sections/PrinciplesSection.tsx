@@ -20,7 +20,7 @@ const principles = [
   {
     n: "02",
     title: "Privacy.",
-    body: "Your journal belongs to you. End-to-end encrypted. No ads, no data selling, no scraping your entries to train anything. What you write, stays yours.",
+    body: "Your journal belongs to you. Encrypted in transit and at rest. No ads, no data selling, no scraping your entries to train anything. What you write, stays yours.",
   },
   {
     n: "03",

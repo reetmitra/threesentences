@@ -44,8 +44,8 @@ export function AIOptInModal({
           </Text>
           <Text variant="sm" color="secondary" style={styles.sectionText}>
             When you request a reflection, your journal entries for the selected time period
-            are sent to an AI service for analysis. The AI reads your entries to identify
-            themes and patterns.
+            are sent to Claude, an AI model made by Anthropic, for analysis. The AI reads
+            your entries to identify themes and patterns.
           </Text>
         </View>
 
@@ -54,9 +54,8 @@ export function AIOptInModal({
             Your privacy
           </Text>
           <Text variant="sm" color="secondary" style={styles.sectionText}>
-            • Entries are decrypted only when you request a reflection{'\n'}
-            • Entries are not stored by the AI service{'\n'}
-            • Analysis happens on-demand, not automatically{'\n'}
+            • Nothing is sent until you request a reflection{'\n'}
+            • Anthropic does not use your entries to train its models{'\n'}
             • You can delete all reflections at any time{'\n'}
             • You can disable this feature at any time
           </Text>
@@ -76,8 +75,8 @@ export function AIOptInModal({
         {/* Warning box */}
         <View style={[styles.warningBox, { backgroundColor: activeColors.surfaceHover }]}>
           <Text variant="sm" color="secondary">
-            By enabling this feature, you consent to having your journal entries
-            analyzed by AI when you request a reflection.
+            By enabling this feature, you consent to your journal entries being sent to
+            Anthropic and analyzed by AI each time you request a reflection.
           </Text>
         </View>
       </ScrollView>
