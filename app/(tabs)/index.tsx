@@ -26,8 +26,20 @@ import { colors } from '@/theme/colors';
 import { spacing, componentRadius, edgePadding } from '@/theme/spacing';
 import { countSentences } from '@/utils/sentenceDetection';
 import { getTodayEntry, saveEntry, saveDraft, getDraft, getEntryStats } from '@/store/entries';
-import { Entry, getTodayDateString } from '@/types/entry';
+import { getProfile } from '@/store/profile';
+import {
+  Entry,
+  formatRolloverLabel,
+  getDayRolloverHour,
+  getTodayDateString,
+  parseDateString,
+} from '@/types/entry';
+import { suggestHabits } from '@/types/tracking';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useCheckIn } from '@/hooks/useCheckIn';
+import { MoodPicker } from '@/components/MoodPicker';
+import { HabitCheckList } from '@/components/HabitCheckList';
+import { HabitSetupSheet } from '@/components/HabitSetupSheet';
 
 const AUTO_SAVE_INTERVAL = 5000;
 
@@ -110,7 +122,15 @@ export default function TodayScreen() {
   const [showMilestone, setShowMilestone] = useState(false);
   const [milestoneStreak, setMilestoneStreak] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [showHabitSetup, setShowHabitSetup] = useState(false);
+  const [interests, setInterests] = useState<string[]>([]);
 
+  // Logical date: before the rollover hour this is still yesterday.
+  const today = getTodayDateString();
+  const lockLabel = formatRolloverLabel(getDayRolloverHour());
+  const checkIn = useCheckIn(today);
+
+  const profileLoaded = useRef(false);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
   // True while the user is re-editing an already-submitted entry (same-day grace):
@@ -124,7 +144,15 @@ export default function TodayScreen() {
     if (!userId) return;
     setIsLoading(true);
     try {
-      const existing = await getTodayEntry(userId);
+      const [existing, profile] = await Promise.all([
+        getTodayEntry(userId),
+        profileLoaded.current ? null : getProfile(userId),
+        checkIn.reload(),
+      ]);
+      if (profile) {
+        profileLoaded.current = true;
+        setInterests(profile.interests);
+      }
       if (existing) {
         setTodayEntry(existing);
         setContent('');
@@ -140,7 +168,7 @@ export default function TodayScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, checkIn.reload]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -178,7 +206,7 @@ export default function TodayScreen() {
 
       if (isEditingSubmitted.current) {
         isEditingSubmitted.current = false;
-        showToast('success', 'UPDATED · LOCKS AT MIDNIGHT');
+        showToast('success', `UPDATED · LOCKS AT ${formatRolloverLabel(getDayRolloverHour()).toUpperCase()}`);
         setTimeout(() => {
           setTodayEntry(entry);
           setContent('');
@@ -214,11 +242,46 @@ export default function TodayScreen() {
   }, [content, canSubmit, submissionStatus, userId, isConnected]);
 
   const formatTodayDate = () =>
-    new Date().toLocaleDateString('en-US', {
+    parseDateString(today).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
     }).toUpperCase();
+
+  // Sentences → mood → habits, in both the writing and the done state.
+  const trackerSections = (
+    <>
+      {checkIn.trackers.mood && (
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={styles.eyebrow}>
+            How was today
+          </Text>
+          <MoodPicker value={checkIn.mood} onChange={checkIn.chooseMood} />
+        </View>
+      )}
+      {checkIn.trackers.habits && (
+        <View style={styles.section}>
+          <HabitCheckList
+            habits={checkIn.habits}
+            answers={checkIn.answers}
+            onAnswer={checkIn.answerHabit}
+            onEdit={() => setShowHabitSetup(true)}
+          />
+        </View>
+      )}
+    </>
+  );
+
+  const habitSheet = (
+    <HabitSetupSheet
+      visible={showHabitSetup}
+      onClose={() => setShowHabitSetup(false)}
+      habits={checkIn.habits}
+      suggestions={suggestHabits(interests, checkIn.habits.map((h) => h.name))}
+      onAdd={checkIn.addHabit}
+      onRemove={checkIn.removeHabit}
+    />
+  );
 
   if (isLoading) {
     return (
@@ -248,7 +311,7 @@ export default function TodayScreen() {
           <EntryCard entry={todayEntry} />
           <View style={styles.submittedMessage}>
             <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1.5 }}>
-              Locks at midnight · edit until then
+              {`Locks at ${lockLabel} · edit until then`}
             </Text>
             <TouchableOpacity
               style={styles.editButton}
@@ -264,7 +327,9 @@ export default function TodayScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+          {trackerSections}
         </ScrollView>
+        {habitSheet}
       </SafeAreaView>
     );
   }
@@ -276,7 +341,14 @@ export default function TodayScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.writingContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          alwaysBounceVertical={false}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
             <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: 6 }}>
               {formatTodayDate()}
@@ -297,6 +369,7 @@ export default function TodayScreen() {
 
           <View style={styles.footer}>
             <SentenceCounter count={sentenceCount} target={3} />
+            {trackerSections}
             <View style={{ height: spacing[4] }} />
             <SubmitButton
               status={submissionStatus}
@@ -304,7 +377,7 @@ export default function TodayScreen() {
               disabled={!canSubmit}
             />
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <ConfirmationModal
@@ -312,7 +385,9 @@ export default function TodayScreen() {
         onCancel={() => setShowConfirmation(false)}
         onConfirm={handleSubmit}
         loading={submissionStatus === 'submitting'}
+        message={`You can refine your three sentences until ${lockLabel}. After that, they stand as written.`}
       />
+      {habitSheet}
       <MilestoneModal
         visible={showMilestone}
         streak={milestoneStreak}
@@ -325,11 +400,16 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   keyboardView: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: edgePadding.content, paddingTop: spacing[4] },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: edgePadding.content, paddingBottom: spacing[8] },
+  // flexGrow + flex:1 input: with trackers off the input still fills the screen as before;
+  // with them on the content overflows and the input sits at its minimum.
+  writingContent: { flexGrow: 1, paddingHorizontal: edgePadding.content, paddingTop: spacing[4] },
   header: { marginBottom: spacing[5] },
-  inputContainer: { flex: 1, marginBottom: spacing[4] },
+  // Matches EntryInput's own minHeight so the input never overflows its container.
+  inputContainer: { flex: 1, minHeight: 200, marginBottom: spacing[4] },
+  section: { marginTop: spacing[6] },
+  eyebrow: { color: colors.dark.textSecondary, letterSpacing: 1.5, marginBottom: spacing[3] },
   footer: { paddingTop: spacing[4], paddingBottom: spacing[6] },
   submitButton: { height: 52, borderRadius: componentRadius.button, alignItems: 'center', justifyContent: 'center', width: '100%' },
   submittedMessage: { marginTop: spacing[6], alignItems: 'center', gap: spacing[3] },
