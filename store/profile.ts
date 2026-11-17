@@ -7,6 +7,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/config/supabase';
+import { resetSettingsCache } from '@/store/settings';
 import {
   UserProfile,
   ProfileUpdate,
@@ -443,6 +444,7 @@ export async function deleteAccount(): Promise<void> {
     throw new Error('Could not delete your account. Please try again.');
   }
   await AsyncStorage.clear();
+  await resetSettingsCache();
   // The auth user no longer exists server-side; only drop the local session.
   await supabase.auth.signOut({ scope: 'local' });
 }

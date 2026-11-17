@@ -10,6 +10,7 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { hasCompletedOnboarding, hasLaunchedBefore, markFirstLaunch } from '@/store/onboarding';
 import { isProfileComplete } from '@/store/profile';
+import { hydrateSettingsFromCache, loadSettings } from '@/store/settings';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 const FIRST_LAUNCH_LOADING_TIME = 2500; // 2.5s branded experience
@@ -35,7 +36,10 @@ export default function Index() {
       if (!isReturning) await markFirstLaunch();
 
       try {
+        // Apply cached day-rollover hour first so it's right even offline
+        await hydrateSettingsFromCache();
         if (isSignedIn && userId) {
+          await loadSettings();
           // Check onboarding state
           const completed = await hasCompletedOnboarding();
           setShouldShowOnboarding(!completed);

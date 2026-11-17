@@ -37,6 +37,7 @@ import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/sto
 import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile, deleteAccount } from '@/store/profile';
+import { resetSettingsCache } from '@/store/settings';
 import { refreshHapticsPreference } from '@/utils/haptics';
 import {
   requestNotificationPermission,
@@ -176,6 +177,7 @@ export default function SettingsScreen() {
     setConfirmAction(null);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await signOut();
+    await resetSettingsCache();
     router.replace('/(auth)/login');
   };
 
