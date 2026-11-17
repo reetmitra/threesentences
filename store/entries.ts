@@ -13,6 +13,7 @@ import {
   Draft,
   getTodayDateString,
   formatDateString,
+  parseDateString,
   getCurrentTimezone,
   generateId,
 } from '@/types/entry';
@@ -290,8 +291,7 @@ export async function getEntryStats(userId: string): Promise<{
     let longestStreak = 0;
     let streak = 0;
 
-    const today = new Date();
-    const checkDate = new Date(today);
+    const checkDate = parseDateString(getTodayDateString());
 
     // Check current streak — if today has no entry, back up one day before counting
     if (!dates.has(formatDateString(checkDate))) {
@@ -501,7 +501,7 @@ export async function getEntriesForReflection(
   days: number = 7
 ): Promise<Entry[]> {
   try {
-    const startDate = new Date();
+    const startDate = parseDateString(getTodayDateString());
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = formatDateString(startDate);
 

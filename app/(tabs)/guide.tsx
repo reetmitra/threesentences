@@ -16,6 +16,7 @@ import { spacing, edgePadding } from '@/theme/spacing';
 import { getEntryStats, hasEntryForToday } from '@/store/entries';
 import { getPreferences } from '@/store/onboarding';
 import { getDailyPrompt } from '@/constants/prompts';
+import { getTodayDateString } from '@/types/entry';
 
 export default function InsightsScreen() {
   const c = colors.dark;
@@ -29,7 +30,7 @@ export default function InsightsScreen() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [promptEnabled, setPromptEnabled] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateString();
   const dailyPrompt = getDailyPrompt(today);
 
   const loadData = useCallback(async () => {

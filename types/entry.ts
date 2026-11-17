@@ -64,13 +64,38 @@ export interface UserPreferences {
   reminderMinute: number;
 }
 
+export const DEFAULT_DAY_ROLLOVER_HOUR = 4;
+export const DAY_ROLLOVER_OPTIONS = [0, 1, 2, 3, 4, 5, 6] as const;
+
+let dayRolloverHour: number = DEFAULT_DAY_ROLLOVER_HOUR;
+
+/** Set the hour (0-6) at which the logical day rolls over. Invalid values are ignored. */
+export function setDayRolloverHour(hour: number): void {
+  if (Number.isInteger(hour) && hour >= 0 && hour <= 6) dayRolloverHour = hour;
+}
+
+export function getDayRolloverHour(): number {
+  return dayRolloverHour;
+}
+
 /**
- * Helper to get today's date in YYYY-MM-DD format
- * Uses local timezone
+ * Logical date (YYYY-MM-DD, local timezone): times before rolloverHour
+ * belong to the previous day. Subtracts hours via setHours (not ms
+ * arithmetic) so DST transitions don't shift the result.
  */
-export function getTodayDateString(): string {
-  const now = new Date();
-  return formatDateString(now);
+export function getLogicalDateString(now: Date, rolloverHour: number): string {
+  const shifted = new Date(now);
+  shifted.setHours(shifted.getHours() - rolloverHour);
+  return formatDateString(shifted);
+}
+
+/** Today's logical date at the configured rollover hour. */
+export function getTodayDateString(now: Date = new Date()): string {
+  return getLogicalDateString(now, dayRolloverHour);
+}
+
+export function formatRolloverLabel(hour: number): string {
+  return hour === 0 ? 'midnight' : `${hour}am`;
 }
 
 /**
