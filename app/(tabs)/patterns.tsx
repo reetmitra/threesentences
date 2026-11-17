@@ -13,6 +13,7 @@ import { RangeSelector } from '@/components/patterns/RangeSelector';
 import { MoodChart } from '@/components/patterns/MoodChart';
 import { HabitGrid } from '@/components/patterns/HabitGrid';
 import { DayDetail } from '@/components/patterns/DayDetail';
+import { SkeletonCalendar, SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
@@ -72,6 +73,11 @@ export default function PatternsScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [habitsLoaded, setHabitsLoaded] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const selectedRef = useRef<string | null>(null);
 
   // Drop results from a superseded range/month so a slow response can't overwrite a newer one.
   const rangeKey = useRef('');
@@ -100,10 +106,17 @@ export default function PatternsScreen() {
         getPreferences(),
       ]);
       setStats(s);
+      setStatsLoaded(true);
       setHabits(h);
+      setHabitsLoaded(true);
       setAiEnabled(prefs.aiReflectionEnabled);
+      setPrefsLoaded(true);
     } catch {
       // Secondary data; keep what is shown.
+    } finally {
+      setStatsLoaded(true);
+      setHabitsLoaded(true);
+      setPrefsLoaded(true);
     }
   }, [userId]);
 
@@ -114,24 +127,14 @@ export default function PatternsScreen() {
     if (!rangeOk || !monthOk) showToast('error', LOAD_ERROR);
   }, [isLoaded, loadRange, loadMonth, loadExtras, showToast]);
 
-  // Range or month changed: refresh just that slice. Toast once per slice failure.
-  const firstRun = useRef(true);
-  useEffect(() => {
-    if (firstRun.current) { firstRun.current = false; return; }
-    if (!isLoaded) return;
-    loadRange().then((ok) => { if (!ok) showToast('error', LOAD_ERROR); });
-  }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const firstMonthRun = useRef(true);
-  useEffect(() => {
-    if (firstMonthRun.current) { firstMonthRun.current = false; return; }
-    if (!isLoaded) return;
-    loadMonth().then((ok) => { if (!ok) showToast('error', LOAD_ERROR); });
-  }, [month, year]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Mount + every focus.
+  // Also re-runs when range/month change identity: one cycle, one toast.
   useFocusEffect(useCallback(() => {
-    refreshAll();
+    // Selection is cleared on focus so the panel never shows stale entry state.
+    setSelectedDate(null);
+    setSelectedEntry(null);
+    selectedRef.current = null;
+    refreshAll().finally(() => setLoaded(true));
   }, [refreshAll]));
 
   const onRefresh = useCallback(async () => {
@@ -142,17 +145,19 @@ export default function PatternsScreen() {
 
   const handleSelectDate = useCallback(async (date: string) => {
     if (!userId) return;
+    selectedRef.current = date;
     setSelectedDate(date);
     setSelectedEntry(null);
     try {
       const entry = await getEntryForDate(userId, date);
-      setSelectedEntry(entry);
+      if (selectedRef.current === date) setSelectedEntry(entry);
     } catch {
-      showToast('error', 'Could not load entry');
+      if (selectedRef.current === date) showToast('error', 'Could not load entry');
     }
   }, [userId, showToast]);
 
   const clearSelection = () => {
+    selectedRef.current = null;
     setSelectedDate(null);
     setSelectedEntry(null);
   };
@@ -182,6 +187,9 @@ export default function PatternsScreen() {
   const selectedDay = selectedDate
     ? monthDays.find((d) => d.date === selectedDate) ?? null
     : null;
+
+  // A day known to have an entry must not flash "No entry" while it loads (or offline).
+  const entryPending = !selectedEntry && !!selectedDay?.hasEntry;
 
   const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
@@ -230,17 +238,22 @@ export default function PatternsScreen() {
         </View>
 
         <View style={[styles.calendarContainer, { backgroundColor: c.surface, borderColor: c.frame }]}>
-          <Calendar
-            year={year}
-            month={month}
-            entryDates={entryDates}
-            fullHabitDates={fullHabitDates}
-            selectedDate={selectedDate}
-            onSelectDate={handleSelectDate}
-          />
+          {loaded || monthDays.length > 0 ? (
+            <Calendar
+              year={year}
+              month={month}
+              entryDates={entryDates}
+              fullHabitDates={fullHabitDates}
+              selectedDate={selectedDate}
+              onSelectDate={handleSelectDate}
+            />
+          ) : (
+            <SkeletonCalendar />
+          )}
         </View>
 
-        {selectedDate && (
+        {selectedDate && entryPending && <SkeletonCard style={styles.entrySkeleton} />}
+        {selectedDate && !entryPending && (
           <DayDetail
             date={selectedDate}
             entry={selectedEntry}
@@ -265,7 +278,11 @@ export default function PatternsScreen() {
             <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
               Habits
             </Text>
-            <HabitGrid habits={habits} days={rangeDays} range={range} />
+            {habitsLoaded ? (
+              <HabitGrid habits={habits} days={rangeDays} range={range} />
+            ) : (
+              <SkeletonCard style={styles.cardSkeleton} />
+            )}
           </View>
         )}
 
@@ -281,28 +298,38 @@ export default function PatternsScreen() {
               AI Reflection
             </Text>
           </View>
-          <Text family="sans" variant="base" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
-            {aiEnabled
-              ? 'Discover patterns and themes in your recent entries.'
-              : 'Enable AI to discover patterns in your entries.'}
-          </Text>
-          <View style={styles.cardAction}>
-            <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>
-              {aiEnabled ? 'Generate reflection' : 'Learn more'}
-            </Text>
-            <ArrowRight size={14} color={c.textBright} />
-          </View>
+          {prefsLoaded ? (
+            <>
+              <Text family="sans" variant="base" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+                {aiEnabled
+                  ? 'Discover patterns and themes in your recent entries.'
+                  : 'Enable AI to discover patterns in your entries.'}
+              </Text>
+              <View style={styles.cardAction}>
+                <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>
+                  {aiEnabled ? 'Generate reflection' : 'Learn more'}
+                </Text>
+                <ArrowRight size={14} color={c.textBright} />
+              </View>
+            </>
+          ) : (
+            <SkeletonCard style={styles.cardSkeleton} />
+          )}
         </Pressable>
 
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
             363 Progress
           </Text>
-          <StreakCounter
-            currentStreak={stats.currentStreak}
-            longestStreak={stats.longestStreak}
-            totalEntries={stats.totalEntries}
-          />
+          {statsLoaded ? (
+            <StreakCounter
+              currentStreak={stats.currentStreak}
+              longestStreak={stats.longestStreak}
+              totalEntries={stats.totalEntries}
+            />
+          ) : (
+            <SkeletonCard style={styles.cardSkeleton} />
+          )}
         </View>
 
         <View style={styles.section}>
@@ -341,6 +368,8 @@ const styles = StyleSheet.create({
   navButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   navButtonDisabled: { opacity: 0.4 },
   calendarContainer: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3], marginBottom: spacing[4] },
+  entrySkeleton: { height: 120, marginBottom: spacing[4] },
+  cardSkeleton: { height: 80 },
   section: { marginTop: spacing[5] },
   eyebrow: { letterSpacing: 1.5, marginBottom: spacing[3] },
   card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginTop: spacing[5] },
