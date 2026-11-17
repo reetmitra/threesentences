@@ -9,7 +9,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/config/supabase';
 import { setDayRolloverHour } from '@/types/entry';
-import { DEFAULT_SETTINGS, DbUserSettings, UserSettings, mapToUserSettings } from '@/types/tracking';
+import {
+  DEFAULT_SETTINGS,
+  DbUserSettings,
+  SettingsPatch,
+  TrackerSettings,
+  UserSettings,
+  mapToUserSettings,
+} from '@/types/tracking';
 
 const CACHE_KEY = '@threesentences/user_settings';
 
@@ -84,12 +91,17 @@ export async function loadSettings(): Promise<UserSettings> {
   }
 }
 
-export async function updateSettings(patch: Partial<UserSettings>): Promise<UserSettings> {
-  const previous = current;
-  const next: UserSettings = {
-    dayRolloverHour: patch.dayRolloverHour ?? previous.dayRolloverHour,
-    trackers: { ...previous.trackers, ...patch.trackers },
+function merge(base: UserSettings, patch: SettingsPatch): UserSettings {
+  return {
+    dayRolloverHour: patch.dayRolloverHour ?? base.dayRolloverHour,
+    trackers: { ...base.trackers, ...patch.trackers },
   };
+}
+
+/** Applies `patch` to the cached settings at once, then saves; rolls back on failure. */
+export async function updateSettings(patch: SettingsPatch): Promise<UserSettings> {
+  const previous = current;
+  const next = merge(previous, patch);
   apply(next);
   await writeCache(next);
 
@@ -110,8 +122,18 @@ export async function updateSettings(patch: Partial<UserSettings>): Promise<User
     return next;
   } catch (error) {
     console.error('Failed to save settings:', error);
-    apply(previous);
-    await writeCache(previous);
+    // Roll back only the keys this patch set, so a concurrent update survives.
+    const trackers: Partial<TrackerSettings> = {};
+    for (const key of Object.keys(patch.trackers ?? {}) as (keyof TrackerSettings)[]) {
+      trackers[key] = previous.trackers[key];
+    }
+    const rolledBack = apply(
+      merge(current, {
+        dayRolloverHour: patch.dayRolloverHour === undefined ? undefined : previous.dayRolloverHour,
+        trackers,
+      }),
+    );
+    await writeCache(rolledBack);
     throw new Error('Could not save your settings. Please try again.');
   }
 }

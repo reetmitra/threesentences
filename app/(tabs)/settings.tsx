@@ -38,7 +38,7 @@ import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile, deleteAccount } from '@/store/profile';
 import { resetSettingsCache, getCachedSettings, updateSettings } from '@/store/settings';
-import { UserSettings } from '@/types/tracking';
+import { SettingsPatch, UserSettings } from '@/types/tracking';
 import { useCheckIn } from '@/hooks/useCheckIn';
 import { HabitSetupSheet } from '@/components/HabitSetupSheet';
 import { suggestHabits } from '@/types/tracking';
@@ -176,19 +176,22 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // loadSettings may have landed after mount (boot-timeout path).
+      setSettings(getCachedSettings());
       loadData();
       checkIn.reload();
     }, [loadData, checkIn.reload])
   );
 
-  const saveSettings = async (patch: Partial<UserSettings>, successMessage?: string) => {
+  const saveSettings = async (patch: SettingsPatch, successMessage?: string) => {
     try {
-      setSettings(await updateSettings(patch));
+      await updateSettings(patch);
       if (successMessage) showToast('success', successMessage);
     } catch (error) {
-      setSettings(getCachedSettings());
       showToast('error', error instanceof Error ? error.message : 'Could not save your settings. Please try again.');
     }
+    // The cache, not this call's result: another save may have settled since.
+    setSettings(getCachedSettings());
   };
 
   const handleRolloverSelect = (hour: number) => {
@@ -478,7 +481,7 @@ export default function SettingsScreen() {
               rightElement={
                 <Switch
                   value={settings.trackers.habits}
-                  onValueChange={(value) => saveSettings({ trackers: { ...settings.trackers, habits: value } })}
+                  onValueChange={(value) => saveSettings({ trackers: { habits: value } })}
                   trackColor={{ false: c.surfaceHi, true: c.textBright }}
                   thumbColor={c.textPrimary}
                   {...WEB_SWITCH_PROPS}
@@ -493,7 +496,7 @@ export default function SettingsScreen() {
               rightElement={
                 <Switch
                   value={settings.trackers.mood}
-                  onValueChange={(value) => saveSettings({ trackers: { ...settings.trackers, mood: value } })}
+                  onValueChange={(value) => saveSettings({ trackers: { mood: value } })}
                   trackColor={{ false: c.surfaceHi, true: c.textBright }}
                   thumbColor={c.textPrimary}
                   {...WEB_SWITCH_PROPS}
@@ -639,8 +642,9 @@ export default function SettingsScreen() {
         onRemove={checkIn.removeHabit}
       />
 
-      <BottomSheet visible={showRolloverSheet} onClose={() => setShowRolloverSheet(false)} maxHeight={0.6}>
-        <View style={styles.exportSheet}>
+      {/* Scrolls so the seven options never clip (667pt screens, large Dynamic Type). */}
+      <BottomSheet visible={showRolloverSheet} onClose={() => setShowRolloverSheet(false)} maxHeight={0.75}>
+        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.exportSheet}>
           <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
             Day ends at
           </Text>
@@ -664,7 +668,7 @@ export default function SettingsScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </BottomSheet>
 
       <BottomSheet visible={showExportSheet} onClose={() => setShowExportSheet(false)} maxHeight={0.32}>
@@ -715,6 +719,9 @@ const styles = StyleSheet.create({
   exportSheet: {
     paddingHorizontal: spacing[6],
     paddingTop: spacing[2],
+  },
+  sheetScroll: {
+    flex: 1,
   },
   exportOption: {
     height: 52,

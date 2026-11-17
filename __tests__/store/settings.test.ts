@@ -3,6 +3,7 @@ import {
   hydrateSettingsFromCache,
   getCachedSettings,
   resetSettingsCache,
+  updateSettings,
 } from '@/store/settings';
 import { DEFAULT_SETTINGS } from '@/types/tracking';
 import { getDayRolloverHour } from '@/types/entry';
@@ -37,5 +38,20 @@ describe('settings cache', () => {
     expect(getCachedSettings()).toEqual(DEFAULT_SETTINGS);
     expect(getDayRolloverHour()).toBe(4);
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith(KEY);
+  });
+});
+
+// The supabase mock has no auth, so every save fails and rolls back.
+describe('updateSettings', () => {
+  const SAVE_ERROR = 'Could not save your settings. Please try again.';
+
+  it('applies only the changed tracker key, and two failed toggles each roll back their own', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const habits = updateSettings({ trackers: { habits: false } });
+    const mood = updateSettings({ trackers: { mood: false } });
+    expect(getCachedSettings().trackers).toEqual({ habits: false, mood: false });
+    await expect(habits).rejects.toThrow(SAVE_ERROR);
+    await expect(mood).rejects.toThrow(SAVE_ERROR);
+    expect(getCachedSettings()).toEqual(DEFAULT_SETTINGS);
   });
 });

@@ -17,6 +17,12 @@ export interface UserSettings {
   trackers: TrackerSettings;
 }
 
+/** A settings change: only the keys being changed (so concurrent toggles compose). */
+export interface SettingsPatch {
+  dayRolloverHour?: number;
+  trackers?: Partial<TrackerSettings>;
+}
+
 export const DEFAULT_SETTINGS: UserSettings = {
   dayRolloverHour: DEFAULT_DAY_ROLLOVER_HOUR,
   trackers: { habits: true, mood: true },
