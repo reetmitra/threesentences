@@ -14,10 +14,13 @@
       "backgroundColor": "#0e0e10"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.threesixtythree.threesentences",
       "backgroundColor": "#0e0e10",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -41,6 +44,14 @@
           "sounds": []
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Three Sentences accesses your photos only when you choose a profile photo.",
+          "cameraPermission": "Three Sentences uses your camera only when you choose to take a profile photo.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }
