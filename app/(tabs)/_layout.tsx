@@ -8,7 +8,7 @@ import Animated, {
   Easing as ReanimatedEasing,
 } from 'react-native-reanimated';
 import { colors } from '@/theme/colors';
-import { Calendar, Settings } from 'lucide-react-native';
+import { ChartLine, Settings } from 'lucide-react-native';
 import { Icon } from '@/components/ui/Icon';
 import { Text } from '@/components/ui/Text';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -119,18 +119,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="history"
-          options={{
-            title: 'History',
-            tabBarIcon: ({ color, focused }) => (
-            <TabIconWithDot focused={focused}>
-              <Calendar color={color} size={22} strokeWidth={1.5} />
-            </TabIconWithDot>
-          ),
-            tabBarAccessibilityLabel: 'History — past entries',
-          }}
-        />
-        <Tabs.Screen
           name="social"
           options={{
             title: 'The Circle',
@@ -143,15 +131,15 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="guide"
+          name="patterns"
           options={{
-            title: 'Insights',
+            title: 'Patterns',
             tabBarIcon: ({ color, focused }) => (
             <TabIconWithDot focused={focused}>
-              <Icon name="flame" color={color} size={22} strokeWidth={1.5} />
+              <ChartLine color={color} size={22} strokeWidth={1.5} />
             </TabIconWithDot>
           ),
-            tabBarAccessibilityLabel: 'Insights — streaks and progress',
+            tabBarAccessibilityLabel: 'Patterns — your history and trends',
           }}
         />
         <Tabs.Screen
