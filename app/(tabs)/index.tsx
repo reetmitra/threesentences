@@ -28,6 +28,8 @@ import { spacing, componentRadius, edgePadding } from '@/theme/spacing';
 import { countSentences } from '@/utils/sentenceDetection';
 import { getTodayEntry, saveEntry, saveDraft, getDraft, getEntryStats } from '@/store/entries';
 import { getProfile } from '@/store/profile';
+import { getPreferences } from '@/store/onboarding';
+import { getDailyPrompt } from '@/constants/prompts';
 import {
   Entry,
   formatRolloverLabel,
@@ -110,6 +112,8 @@ function SubmitButton({
   );
 }
 
+const DEFAULT_PLACEHOLDER = 'Three sentences. What happened?';
+
 export default function TodayScreen() {
   const { userId } = useAuth();
   const c = colors.dark;
@@ -126,6 +130,7 @@ export default function TodayScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHabitSetup, setShowHabitSetup] = useState(false);
   const [interests, setInterests] = useState<string[]>([]);
+  const [promptEnabled, setPromptEnabled] = useState(false);
 
   // Logical date: before the rollover hour this is still yesterday.
   const today = getTodayDateString();
@@ -152,6 +157,10 @@ export default function TodayScreen() {
       const [existing, profile] = await Promise.all([
         getTodayEntry(userId),
         profileLoaded.current ? null : getProfile(userId),
+        // Cosmetic: a failed read just keeps the default placeholder.
+        getPreferences()
+          .then((prefs) => setPromptEnabled(prefs.dailyPromptEnabled))
+          .catch(() => undefined),
         checkIn.reload(),
       ]);
       if (profile) {
@@ -377,7 +386,7 @@ export default function TodayScreen() {
               value={content}
               onChangeText={setContent}
               autoFocus={!content}
-              placeholder="Three sentences. What happened?"
+              placeholder={promptEnabled ? getDailyPrompt(today).text : DEFAULT_PLACEHOLDER}
             />
           </View>
 

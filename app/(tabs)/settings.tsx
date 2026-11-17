@@ -433,7 +433,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Lightbulb size={22} color={c.textPrimary} />}
               title="Daily Writing Prompt"
-              subtitle={promptEnabled ? 'Shown on Insights tab' : 'Disabled'}
+              subtitle={promptEnabled ? "Shown as today's prompt" : 'Disabled'}
               showChevron={false}
               rightElement={
                 <Switch
