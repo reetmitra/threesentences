@@ -177,7 +177,8 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData])
+      checkIn.reload();
+    }, [loadData, checkIn.reload])
   );
 
   const saveSettings = async (patch: Partial<UserSettings>, successMessage?: string) => {
