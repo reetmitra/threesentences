@@ -332,9 +332,15 @@ describe('profile types', () => {
       expect(profile.bio).toBeUndefined();
     });
 
-    it('sets empty username', () => {
+    // A per-user temp handle (not '') so two users mid-onboarding never collide
+    // on the UNIQUE username constraint; the real username is set on completion.
+    it('sets a per-user temporary username', () => {
       const profile = createDefaultProfile('user123');
-      expect(profile.username).toBe('');
+      expect(profile.username).toBe('_user123');
+      expect(createDefaultProfile('a1b2-c3d4').username).toBe('_a1b2c3d4');
+      expect(createDefaultProfile('user123').username).not.toBe(
+        createDefaultProfile('user456').username
+      );
     });
   });
 
