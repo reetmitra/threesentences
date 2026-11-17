@@ -74,7 +74,7 @@ const SLIDES: OnboardingSlide[] = [
     id: '3',
     title: 'Presence Over Perfection',
     description:
-      'At midnight, your entry locks for good. Refine it through the day if you must — after that, your words stand as written.',
+      'When your day ends, your entry locks for good. Refine it until then — after that, your words stand as written.',
     highlight: 'Done is better than perfect.',
     interactive: 'no-edit',
   },
@@ -260,7 +260,7 @@ function NoEditDemo({ active }: { active: boolean }) {
       {typingDone && (
         <Animated.View entering={FadeIn.delay(reduced ? 0 : 1400).duration(reduced ? 0 : 400)}>
           <Text family="mono" variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
-            Entries lock for good at midnight
+            Entries lock for good when your day ends
           </Text>
         </Animated.View>
       )}

@@ -170,7 +170,7 @@ export default function InsightsScreen() {
               Presence Over Perfection
             </Text>
             <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
-              Three sentences, locked at midnight. No deletions. Your words stand as written, capturing how you felt in the moment.
+              Three sentences, locked when your day ends. No deletions. Your words stand as written, capturing how you felt in the moment.
             </Text>
           </View>
         </Animated.View>

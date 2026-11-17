@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Download, Trash2, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
+import { Download, Trash2, ListChecks, SmilePlus, Moon, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '@/constants/links';
 import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
@@ -37,7 +37,12 @@ import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/sto
 import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile, deleteAccount } from '@/store/profile';
-import { resetSettingsCache } from '@/store/settings';
+import { resetSettingsCache, getCachedSettings, updateSettings } from '@/store/settings';
+import { UserSettings } from '@/types/tracking';
+import { useCheckIn } from '@/hooks/useCheckIn';
+import { HabitSetupSheet } from '@/components/HabitSetupSheet';
+import { suggestHabits } from '@/types/tracking';
+import { DAY_ROLLOVER_OPTIONS, formatRolloverLabel, getTodayDateString } from '@/types/entry';
 import { refreshHapticsPreference } from '@/utils/haptics';
 import {
   requestNotificationPermission,
@@ -134,7 +139,11 @@ export default function SettingsScreen() {
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteAccount' | null>(null);
   const [showExportSheet, setShowExportSheet] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string; interests?: string[] } | null>(null);
+  const [settings, setSettings] = useState<UserSettings>(() => getCachedSettings());
+  const [showHabitSetup, setShowHabitSetup] = useState(false);
+  const [showRolloverSheet, setShowRolloverSheet] = useState(false);
+  const checkIn = useCheckIn(getTodayDateString());
 
   const loadData = useCallback(async () => {
     if (!userId) return;
@@ -170,6 +179,22 @@ export default function SettingsScreen() {
       loadData();
     }, [loadData])
   );
+
+  const saveSettings = async (patch: Partial<UserSettings>, successMessage?: string) => {
+    try {
+      setSettings(await updateSettings(patch));
+      if (successMessage) showToast('success', successMessage);
+    } catch (error) {
+      setSettings(getCachedSettings());
+      showToast('error', error instanceof Error ? error.message : 'Could not save your settings. Please try again.');
+    }
+  };
+
+  const handleRolloverSelect = (hour: number) => {
+    setShowRolloverSheet(false);
+    if (hour === settings.dayRolloverHour) return;
+    saveSettings({ dayRolloverHour: hour }, `Your day now ends at ${formatRolloverLabel(hour)}.`);
+  };
 
   const handleSignOut = () => setConfirmAction('signOut');
 
@@ -440,6 +465,57 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Trackers Section */}
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Trackers</Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<ListChecks size={22} color={c.textPrimary} />}
+              title="Habits"
+              subtitle={settings.trackers.habits ? 'Shown in your nightly check-in' : 'Off'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={settings.trackers.habits}
+                  onValueChange={(value) => saveSettings({ trackers: { ...settings.trackers, habits: value } })}
+                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
+                  thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
+                />
+              }
+            />
+            <SettingsRow
+              icon={<SmilePlus size={22} color={c.textPrimary} />}
+              title="Mood"
+              subtitle={settings.trackers.mood ? 'Shown in your nightly check-in' : 'Off'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={settings.trackers.mood}
+                  onValueChange={(value) => saveSettings({ trackers: { ...settings.trackers, mood: value } })}
+                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
+                  thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
+                />
+              }
+            />
+            {settings.trackers.habits && (
+              <SettingsRow
+                icon={<Icon name="edit" size={22} color={c.textPrimary} />}
+                title="Edit habits"
+                subtitle={`${checkIn.habits.length} active`}
+                onPress={() => setShowHabitSetup(true)}
+              />
+            )}
+            <SettingsRow
+              icon={<Moon size={22} color={c.textPrimary} />}
+              title="Day ends at"
+              subtitle={formatRolloverLabel(settings.dayRolloverHour)}
+              onPress={() => setShowRolloverSheet(true)}
+            />
+          </View>
+        </View>
+
         {/* Your Data Section */}
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Your Data</Text>
@@ -553,6 +629,43 @@ export default function SettingsScreen() {
         />
       )}
 
+      <HabitSetupSheet
+        visible={showHabitSetup}
+        onClose={() => setShowHabitSetup(false)}
+        habits={checkIn.habits}
+        suggestions={suggestHabits(userProfile?.interests ?? [], checkIn.habits.map((h) => h.name))}
+        onAdd={checkIn.addHabit}
+        onRemove={checkIn.removeHabit}
+      />
+
+      <BottomSheet visible={showRolloverSheet} onClose={() => setShowRolloverSheet(false)} maxHeight={0.6}>
+        <View style={styles.exportSheet}>
+          <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
+            Day ends at
+          </Text>
+          <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+            Entries lock and a new day begins at this hour.
+          </Text>
+          {DAY_ROLLOVER_OPTIONS.map((hour) => {
+            const selected = hour === settings.dayRolloverHour;
+            const label = formatRolloverLabel(hour);
+            return (
+              <Pressable
+                key={hour}
+                style={styles.rolloverOption}
+                onPress={() => handleRolloverSelect(hour)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Day ends at ${label}`}
+              >
+                <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, flex: 1 }}>{label}</Text>
+                {selected && <Icon name="check" size={20} color={c.textPrimary} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
+
       <BottomSheet visible={showExportSheet} onClose={() => setShowExportSheet(false)} maxHeight={0.32}>
         <View style={styles.exportSheet}>
           <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
@@ -609,6 +722,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
+  },
+
+  rolloverOption: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   // Profile header card
