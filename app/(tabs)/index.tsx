@@ -146,12 +146,22 @@ export default function TodayScreen() {
   // True while the user is re-editing an already-submitted entry (same-day grace):
   // resubmits shouldn't re-fire the streak toast or milestone celebration.
   const isEditingSubmitted = useRef(false);
+  // Logical date of the last loadData; null until the first load.
+  const loadedDate = useRef<string | null>(null);
 
   const sentenceCount = countSentences(content);
   const canSubmit = sentenceCount === 3;
 
   const loadData = useCallback(async () => {
     if (!userId) return;
+    const date = getTodayDateString();
+    // The day rolled over since the last load: the text on screen and edit mode
+    // belong to a locked day. Same-day loads (and the first) keep what's there.
+    if (loadedDate.current && loadedDate.current !== date) {
+      setContent('');
+      isEditingSubmitted.current = false;
+    }
+    loadedDate.current = date;
     setIsLoading(true);
     try {
       const [existing, profile] = await Promise.all([
@@ -203,10 +213,14 @@ export default function TodayScreen() {
 
   useEffect(() => {
     if (entryForToday) return;
+    // Dated when typed, not when the timer fires: a timer still pending when the
+    // app was suspended fires on resume and must not file last night's text
+    // under the new day (getDraft would then restore it).
+    const date = getTodayDateString();
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       if (content !== lastSavedContent.current && content.trim()) {
-        await saveDraft({ content, date: getTodayDateString(), lastSaved: new Date().toISOString() });
+        await saveDraft({ content, date, lastSaved: new Date().toISOString() });
         lastSavedContent.current = content;
       }
     }, AUTO_SAVE_INTERVAL);
@@ -339,6 +353,12 @@ export default function TodayScreen() {
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => {
+                // Left open across the rollover: this is last night's entry, now
+                // locked. Load the new day instead of prefilling it.
+                if (isStaleDate(today)) {
+                  loadData();
+                  return;
+                }
                 setContent(entryForToday.content);
                 isEditingSubmitted.current = true;
                 setTodayEntry(null);
