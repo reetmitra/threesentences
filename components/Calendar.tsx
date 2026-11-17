@@ -9,7 +9,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { radius, spacing } from '@/theme/spacing';
 import { getTodayDateString, formatDateString } from '@/types/entry';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -20,6 +20,8 @@ interface CalendarProps {
   entryDates: Set<string>; // Set of YYYY-MM-DD strings
   selectedDate: string | null;
   onSelectDate: (date: string) => void;
+  /** Days where every answered habit was done; drawn with a thin ring. */
+  fullHabitDates?: Set<string>;
 }
 
 interface DayCell {
@@ -37,6 +39,7 @@ export function Calendar({
   entryDates,
   selectedDate,
   onSelectDate,
+  fullHabitDates,
 }: CalendarProps) {
   const activeColors = colors.dark;
   const todayStr = getTodayDateString();
@@ -111,6 +114,7 @@ export function Calendar({
 
     const isSelected = cell.date === selectedDate;
     const canSelect = cell.hasEntry;
+    const isFullHabitDay = fullHabitDates?.has(cell.date ?? '') ?? false;
 
     return (
       <Pressable
@@ -123,9 +127,10 @@ export function Calendar({
         onPress={() => canSelect && cell.date && onSelectDate(cell.date)}
         disabled={!canSelect}
         accessibilityRole="button"
-        accessibilityLabel={`${cell.day}, ${cell.hasEntry ? 'has entry' : 'no entry'}${cell.isToday ? ', today' : ''}`}
+        accessibilityLabel={`${cell.day}, ${cell.hasEntry ? 'has entry' : 'no entry'}${isFullHabitDay ? ', all habits done' : ''}${cell.isToday ? ', today' : ''}`}
         accessibilityState={{ selected: isSelected, disabled: !canSelect }}
       >
+        {isFullHabitDay && <View style={styles.fullHabitRing} />}
         <Text
           variant="base"
           style={[
@@ -216,6 +221,16 @@ const styles = StyleSheet.create({
   },
   todayCell: {
     borderWidth: 1,
+  },
+  fullHabitRing: {
+    position: 'absolute',
+    top: spacing[1],
+    right: spacing[1],
+    bottom: spacing[1],
+    left: spacing[1],
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.dark.textSecondary,
   },
   dayText: {
     textAlign: 'center',
