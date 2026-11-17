@@ -190,12 +190,74 @@ export interface Database {
                     created_at?: string
                 }
             }
+            blocks: {
+                Row: {
+                    blocker_id: string
+                    blocked_id: string
+                    created_at: string
+                }
+                Insert: {
+                    blocker_id?: string
+                    blocked_id: string
+                    created_at?: string
+                }
+                Update: {
+                    blocker_id?: string
+                    blocked_id?: string
+                    created_at?: string
+                }
+            }
+            reports: {
+                Row: {
+                    id: string
+                    reporter_id: string
+                    reported_user_id: string
+                    conversation_id: string | null
+                    reason: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    reporter_id?: string
+                    reported_user_id: string
+                    conversation_id?: string | null
+                    reason: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    reporter_id?: string
+                    reported_user_id?: string
+                    conversation_id?: string | null
+                    reason?: string
+                    created_at?: string
+                }
+            }
+            ai_usage: {
+                Row: {
+                    user_id: string
+                    day: string
+                    count: number
+                }
+                Insert: {
+                    user_id: string
+                    day?: string
+                    count?: number
+                }
+                Update: {
+                    user_id?: string
+                    day?: string
+                    count?: number
+                }
+            }
         }
         Views: {
             [_ in never]: never
         }
         Functions: {
-            [_ in never]: never
+            is_blocked_with: { Args: { p_other: string }; Returns: boolean }
+            bump_ai_usage: { Args: Record<string, never>; Returns: number }
+            delete_my_account: { Args: Record<string, never>; Returns: undefined }
         }
         Enums: {
             friend_status: 'pending' | 'accepted' | 'blocked'
