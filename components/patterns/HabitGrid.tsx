@@ -51,10 +51,10 @@ export function HabitGrid({ habits, days, range }: HabitGridProps) {
               {days.map((d) => {
                 const a = d.answers[habit.id];
                 return (
-                  <View
-                    key={d.date}
-                    style={[styles.cell, a === true && styles.done, a === false && styles.notDone]}
-                  />
+                  <View key={d.date} style={[styles.cell, a === true && styles.done]}>
+                    {/* Outline on a child: a bordered node can't shrink below 2pt. */}
+                    {a === false && <View style={styles.notDone} />}
+                  </View>
                 );
               })}
             </View>
@@ -78,8 +78,13 @@ const styles = StyleSheet.create({
   },
   name: { flex: 1, color: c.textPrimary },
   count: { color: c.textSecondary },
-  cells: { flexDirection: 'row', gap: 2, height: spacing[4] },
+  cells: { flexDirection: 'row', gap: 2, height: spacing[4], overflow: 'hidden' },
   cell: { flex: 1, borderRadius: radius.sm },
   done: { backgroundColor: c.textBright },
-  notDone: { borderWidth: 1, borderColor: c.frame },
+  notDone: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: c.textSecondary,
+  },
 });

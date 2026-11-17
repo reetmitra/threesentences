@@ -113,7 +113,8 @@ export function Calendar({
     }
 
     const isSelected = cell.date === selectedDate;
-    const canSelect = cell.hasEntry;
+    // Any past day or today opens; entries, mood and habits all live there.
+    const canSelect = !cell.isFuture;
     const isFullHabitDay = fullHabitDates?.has(cell.date ?? '') ?? false;
 
     return (
