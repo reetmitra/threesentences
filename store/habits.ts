@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/config/supabase';
+import { fetchAllPages } from '@/utils/exportFormat';
 import {
   DbHabit,
   Habit,
@@ -40,12 +41,15 @@ export async function getActiveHabits(): Promise<Habit[]> {
 /** All habits including archived (for export). */
 export async function getAllHabits(): Promise<Habit[]> {
   try {
-    const { data, error } = await supabase
-      .from('habits')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) throw error;
-    return ((data ?? []) as DbHabit[]).map(mapToHabit);
+    const rows = await fetchAllPages<DbHabit>((from, to) =>
+      supabase
+        .from('habits')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    );
+    return rows.map(mapToHabit);
   } catch (error) {
     console.error('Failed to load all habits:', error);
     return [];

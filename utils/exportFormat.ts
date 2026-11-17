@@ -41,3 +41,19 @@ export function buildTxtExport(
     })
     .join('\n');
 }
+
+const PAGE = 1000;
+
+/** Fetch every row via .range() pages; throws on any error so callers never return partial data. */
+export async function fetchAllPages<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await fetchPage(from, from + PAGE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE) return rows;
+  }
+}
