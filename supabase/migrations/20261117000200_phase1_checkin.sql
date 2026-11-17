@@ -9,7 +9,7 @@ CREATE TABLE public.user_settings (
 CREATE TABLE public.habits (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     TEXT NOT NULL DEFAULT (auth.uid())::text,
-  name        TEXT NOT NULL CHECK (char_length(name) BETWEEN 1 AND 40),
+  name        TEXT NOT NULL CHECK (char_length(btrim(name)) BETWEEN 1 AND 40),
   position    SMALLINT NOT NULL CHECK (position BETWEEN 0 AND 2),
   link        TEXT CHECK (link IN ('workout', 'sleep')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -46,7 +46,14 @@ CREATE POLICY checkins_owner ON public.checkins FOR ALL
 CREATE POLICY habit_logs_owner ON public.habit_logs FOR ALL
   USING ((auth.uid())::text = user_id)
   WITH CHECK ((auth.uid())::text = user_id AND EXISTS (
-    SELECT 1 FROM public.habits h WHERE h.id = habit_id AND h.user_id = (auth.uid())::text));
+    SELECT 1 FROM public.habits h WHERE h.id = habit_logs.habit_id AND h.user_id = (auth.uid())::text));
+
+CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON public.user_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_habit_logs_updated_at BEFORE UPDATE ON public.habit_logs
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_checkins_updated_at BEFORE UPDATE ON public.checkins
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Account deletion must also remove the new per-user tables.
 CREATE OR REPLACE FUNCTION public.delete_my_account()

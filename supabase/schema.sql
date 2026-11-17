@@ -497,6 +497,11 @@ BEGIN
   DELETE FROM public.group_members WHERE user_id = v_me;
   DELETE FROM public.groups        WHERE created_by = v_me;
   DELETE FROM public.ai_usage      WHERE user_id = v_me;
+  -- Phase 1 tables are defined further down in this file (plpgsql resolves at call time).
+  DELETE FROM public.habit_logs    WHERE user_id = v_me;
+  DELETE FROM public.habits        WHERE user_id = v_me;
+  DELETE FROM public.checkins      WHERE user_id = v_me;
+  DELETE FROM public.user_settings WHERE user_id = v_me;
   DELETE FROM public.profiles      WHERE user_id = v_me;
   DELETE FROM auth.users           WHERE id = auth.uid();
 END;
@@ -552,7 +557,7 @@ CREATE TABLE public.user_settings (
 CREATE TABLE public.habits (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     TEXT NOT NULL DEFAULT (auth.uid())::text,
-  name        TEXT NOT NULL CHECK (char_length(name) BETWEEN 1 AND 40),
+  name        TEXT NOT NULL CHECK (char_length(btrim(name)) BETWEEN 1 AND 40),
   position    SMALLINT NOT NULL CHECK (position BETWEEN 0 AND 2),
   link        TEXT CHECK (link IN ('workout', 'sleep')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -589,40 +594,14 @@ CREATE POLICY checkins_owner ON public.checkins FOR ALL
 CREATE POLICY habit_logs_owner ON public.habit_logs FOR ALL
   USING ((auth.uid())::text = user_id)
   WITH CHECK ((auth.uid())::text = user_id AND EXISTS (
-    SELECT 1 FROM public.habits h WHERE h.id = habit_id AND h.user_id = (auth.uid())::text));
+    SELECT 1 FROM public.habits h WHERE h.id = habit_logs.habit_id AND h.user_id = (auth.uid())::text));
 
--- Account deletion must also remove the new per-user tables.
-CREATE OR REPLACE FUNCTION public.delete_my_account()
-RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE
-  v_me TEXT := (auth.uid())::text;
-BEGIN
-  IF v_me IS NULL THEN
-    RAISE EXCEPTION 'not signed in' USING ERRCODE = '42501';
-  END IF;
-
-  DELETE FROM public.entries       WHERE user_id = v_me;
-  DELETE FROM public.reflections   WHERE user_id = v_me;
-  DELETE FROM public.friends       WHERE v_me IN (user_id, friend_id);
-  DELETE FROM public.blocks        WHERE v_me IN (blocker_id, blocked_id);
-  DELETE FROM public.reports       WHERE reporter_id = v_me;
-  DELETE FROM public.messages      WHERE v_me IN (sender_id, receiver_id);
-  DELETE FROM public.conversations WHERE v_me IN (user_a_id, user_b_id);
-  DELETE FROM public.group_members WHERE user_id = v_me;
-  DELETE FROM public.groups        WHERE created_by = v_me;
-  DELETE FROM public.ai_usage      WHERE user_id = v_me;
-  DELETE FROM public.habit_logs    WHERE user_id = v_me;
-  DELETE FROM public.habits        WHERE user_id = v_me;
-  DELETE FROM public.checkins      WHERE user_id = v_me;
-  DELETE FROM public.user_settings WHERE user_id = v_me;
-  DELETE FROM public.profiles      WHERE user_id = v_me;
-  DELETE FROM auth.users           WHERE id = auth.uid();
-END;
-$$;
-REVOKE EXECUTE ON FUNCTION public.delete_my_account() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
+CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON public.user_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_habit_logs_updated_at BEFORE UPDATE ON public.habit_logs
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_checkins_updated_at BEFORE UPDATE ON public.checkins
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
 
