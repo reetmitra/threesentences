@@ -8,6 +8,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/config/supabase';
+import { getAllHabits } from '@/store/habits';
+import { getAllTracking } from '@/store/checkins';
+import { buildJsonExport, buildTxtExport } from '@/utils/exportFormat';
 import {
   Entry,
   Draft,
@@ -535,7 +538,7 @@ export async function exportEntries(
 
   switch (format) {
     case 'json':
-      return JSON.stringify(entries, null, 2);
+      return buildJsonExport(entries, await getAllHabits(), await getAllTracking());
 
     case 'csv': {
       const header = 'Date,Content,Submitted At,Timezone\n';
@@ -545,13 +548,10 @@ export async function exportEntries(
       return header + rows.join('\n');
     }
 
-    case 'txt': {
-      return entries.map((e) =>
-        `--- ${e.date} ---\n${e.content}\n`
-      ).join('\n');
-    }
+    case 'txt':
+      return buildTxtExport(entries, await getAllHabits(), await getAllTracking());
 
     default:
-      return JSON.stringify(entries, null, 2);
+      return buildJsonExport(entries, await getAllHabits(), await getAllTracking());
   }
 }

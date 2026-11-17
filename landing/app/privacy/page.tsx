@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           body: [
             "Account: your email address, name, username and password (stored hashed by our authentication provider; we never see it).",
             "Profile (optional): age, bio and interests. If you add a profile photo, the image stays on your device.",
-            "Your content: journal entries, AI reflections you generate, friend connections, direct messages, and any blocks or reports you make.",
+            "Your content: journal entries, daily mood and habit check-ins, AI reflections you generate, friend connections, direct messages, and any blocks or reports you make.",
             "Service limits: a daily count of AI reflections per account, used only to prevent abuse.",
             "We do not collect your location, contacts or advertising identifiers. We have no ads, no third-party analytics and no cross-app tracking.",
           ],
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
         {
           heading: "Who can see your entries",
           body: [
-            "Only you. Journal entries and reflections are never shown to friends or other users. Direct messages are visible to you and the person you're talking to.",
+            "Only you. Journal entries, reflections, and your daily mood and habit check-ins are private to you and never shown to friends or other users. Direct messages are visible to you and the person you're talking to.",
             "Your entries are not end-to-end encrypted. We don't read them, except where needed to investigate a report, fix a problem you ask us to fix, or comply with the law.",
           ],
         },

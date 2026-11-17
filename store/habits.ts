@@ -37,6 +37,21 @@ export async function getActiveHabits(): Promise<Habit[]> {
   }
 }
 
+/** All habits including archived (for export). */
+export async function getAllHabits(): Promise<Habit[]> {
+  try {
+    const { data, error } = await supabase
+      .from('habits')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as DbHabit[]).map(mapToHabit);
+  } catch (error) {
+    console.error('Failed to load all habits:', error);
+    return [];
+  }
+}
+
 export async function addHabit(rawName: string): Promise<Habit> {
   const v = validateHabitName(rawName);
   if (!v.ok) throw new Error(v.error);
