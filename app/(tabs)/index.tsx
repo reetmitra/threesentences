@@ -143,9 +143,10 @@ export default function TodayScreen() {
   const profileLoaded = useRef(false);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContent = useRef<string>('');
-  // True while the user is re-editing an already-submitted entry (same-day grace):
-  // resubmits shouldn't re-fire the streak toast or milestone celebration.
-  const isEditingSubmitted = useRef(false);
+  // Logical date of the submitted entry being re-edited (same-day grace); null
+  // when not editing. Resubmits skip the streak toast and milestone; the lock
+  // guard and edit drafts use this entry's own day.
+  const editingDate = useRef<string | null>(null);
   // Logical date of the last loadData; null until the first load.
   const loadedDate = useRef<string | null>(null);
 
@@ -159,7 +160,7 @@ export default function TodayScreen() {
     // belong to a locked day. Same-day loads (and the first) keep what's there.
     if (loadedDate.current && loadedDate.current !== date) {
       setContent('');
-      isEditingSubmitted.current = false;
+      editingDate.current = null;
     }
     loadedDate.current = date;
     setIsLoading(true);
@@ -215,8 +216,9 @@ export default function TodayScreen() {
     if (entryForToday) return;
     // Dated when typed, not when the timer fires: a timer still pending when the
     // app was suspended fires on resume and must not file last night's text
-    // under the new day (getDraft would then restore it).
-    const date = getTodayDateString();
+    // under the new day (getDraft would then restore it). An edit draft carries
+    // the edited entry's day, so it expires with that day.
+    const date = editingDate.current ?? getTodayDateString();
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(async () => {
       if (content !== lastSavedContent.current && content.trim()) {
@@ -231,10 +233,11 @@ export default function TodayScreen() {
     if (!canSubmit || submissionStatus !== 'idle' || !userId) return;
     setShowConfirmation(false);
 
-    // Re-editing last night's entry and the day rolled over: it's locked, and
-    // saveEntry would file the text under the new day. loadData sees the stale
-    // loadedDate and clears the text and edit mode. Fresh drafts still submit.
-    if (isEditingSubmitted.current && loadedDate.current !== getTodayDateString()) {
+    // Re-editing an entry whose day has since rolled over: it's locked, and
+    // saveEntry would file the text under the new day. Fresh drafts still submit.
+    if (editingDate.current !== null && isStaleDate(editingDate.current)) {
+      editingDate.current = null;
+      setContent('');
       showToast('info', "That day's entry is locked now.");
       loadData();
       return;
@@ -250,8 +253,8 @@ export default function TodayScreen() {
       const entry = await saveEntry(userId, content);
       setSubmissionStatus('success');
 
-      if (isEditingSubmitted.current) {
-        isEditingSubmitted.current = false;
+      if (editingDate.current !== null) {
+        editingDate.current = null;
         showToast('success', `UPDATED · LOCKS AT ${formatRolloverLabel(getDayRolloverHour()).toUpperCase()}`);
         setTimeout(() => {
           setTodayEntry(entry);
@@ -369,7 +372,7 @@ export default function TodayScreen() {
                   return;
                 }
                 setContent(entryForToday.content);
-                isEditingSubmitted.current = true;
+                editingDate.current = entryForToday.date;
                 setTodayEntry(null);
                 setSubmissionStatus('idle');
               }}
