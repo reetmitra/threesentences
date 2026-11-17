@@ -124,6 +124,7 @@ export default function PatternsScreen() {
   const refreshAll = useCallback(async () => {
     if (!isLoaded) return;
     const [rangeOk, monthOk] = await Promise.all([loadRange(), loadMonth(), loadExtras()]);
+    setLoaded(true); // only after a real cycle, never on the pre-auth early return
     if (!rangeOk || !monthOk) showToast('error', LOAD_ERROR);
   }, [isLoaded, loadRange, loadMonth, loadExtras, showToast]);
 
@@ -134,7 +135,7 @@ export default function PatternsScreen() {
     setSelectedDate(null);
     setSelectedEntry(null);
     selectedRef.current = null;
-    refreshAll().finally(() => setLoaded(true));
+    refreshAll();
   }, [refreshAll]));
 
   const onRefresh = useCallback(async () => {
@@ -190,6 +191,9 @@ export default function PatternsScreen() {
 
   // A day known to have an entry must not flash "No entry" while it loads (or offline).
   const entryPending = !selectedEntry && !!selectedDay?.hasEntry;
+
+  // Range data is ready once a real load cycle finished or cache supplied days.
+  const rangeReady = loaded || rangeDays.length > 0;
 
   const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
@@ -269,7 +273,7 @@ export default function PatternsScreen() {
             <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
               Mood
             </Text>
-            <MoodChart days={rangeDays} range={range} />
+            {rangeReady ? <MoodChart days={rangeDays} range={range} /> : <SkeletonCard style={styles.cardSkeleton} />}
           </View>
         )}
 
@@ -278,7 +282,7 @@ export default function PatternsScreen() {
             <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
               Habits
             </Text>
-            {habitsLoaded ? (
+            {habitsLoaded && rangeReady ? (
               <HabitGrid habits={habits} days={rangeDays} range={range} />
             ) : (
               <SkeletonCard style={styles.cardSkeleton} />
