@@ -231,6 +231,15 @@ export default function TodayScreen() {
     if (!canSubmit || submissionStatus !== 'idle' || !userId) return;
     setShowConfirmation(false);
 
+    // Re-editing last night's entry and the day rolled over: it's locked, and
+    // saveEntry would file the text under the new day. loadData sees the stale
+    // loadedDate and clears the text and edit mode. Fresh drafts still submit.
+    if (isEditingSubmitted.current && loadedDate.current !== getTodayDateString()) {
+      showToast('info', "That day's entry is locked now.");
+      loadData();
+      return;
+    }
+
     if (!isConnected) {
       showToast('error', 'No internet connection — please try again');
       return;
@@ -276,7 +285,7 @@ export default function TodayScreen() {
       showToast('error', 'Failed to save entry — please try again');
       setSubmissionStatus('idle');
     }
-  }, [content, canSubmit, submissionStatus, userId, isConnected]);
+  }, [content, canSubmit, submissionStatus, userId, isConnected, loadData]);
 
   const formatTodayDate = () =>
     parseDateString(today).toLocaleDateString('en-US', {
