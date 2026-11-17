@@ -14,6 +14,7 @@ import { hydrateSettingsFromCache, loadSettings } from '@/store/settings';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 
 const FIRST_LAUNCH_LOADING_TIME = 2500; // 2.5s branded experience
+const SETTINGS_LOAD_TIMEOUT = 3000;     // max boot wait for settings fetch
 const RETURNING_LOADING_TIME = 800;     // 0.8s fast return
 
 export default function Index() {
@@ -39,7 +40,11 @@ export default function Index() {
         // Apply cached day-rollover hour first so it's right even offline
         await hydrateSettingsFromCache();
         if (isSignedIn && userId) {
-          await loadSettings();
+          // Login/signup route back through '/', and this effect re-fires on
+          // userId change, so each signed-in user loads their own settings.
+          // Bounded so a stalled network can't hold the splash; on timeout we
+          // keep the cached settings (the in-flight load still applies later).
+          await Promise.race([loadSettings(), new Promise<void>((r) => setTimeout(r, SETTINGS_LOAD_TIMEOUT))]);
           // Check onboarding state
           const completed = await hasCompletedOnboarding();
           setShouldShowOnboarding(!completed);
