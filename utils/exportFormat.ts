@@ -3,19 +3,26 @@
  */
 
 import { Entry } from '@/types/entry';
-import { Habit, HabitAnswers, MOOD_LABELS, MoodValue } from '@/types/tracking';
+import { Habit, HabitAnswers, MOOD_LABELS, MoodValue, UserSettings } from '@/types/tracking';
 
 export interface DayTracking {
   mood: MoodValue | null;
   answers: HabitAnswers;
 }
 
+/** A habit as exported: includes archived ones and fields the UI doesn't use. */
+export interface ExportHabit extends Habit {
+  archivedAt: string | null;
+  link: string | null;
+}
+
 export function buildJsonExport(
   entries: Entry[],
-  habits: Habit[],
+  habits: ExportHabit[],
   days: Record<string, DayTracking>,
+  settings: UserSettings,
 ): string {
-  return JSON.stringify({ entries, habits, days }, null, 2);
+  return JSON.stringify({ entries, habits, days, settings }, null, 2);
 }
 
 function trackingLine(habits: Habit[], day: DayTracking | undefined): string | null {
@@ -29,15 +36,19 @@ function trackingLine(habits: Habit[], day: DayTracking | undefined): string | n
   return parts.length ? parts.join(' · ') : null;
 }
 
+/** Every day with an entry or tracking, newest first (like getAllEntries). */
 export function buildTxtExport(
   entries: Entry[],
   habits: Habit[],
   days: Record<string, DayTracking>,
 ): string {
-  return entries
-    .map((e) => {
-      const line = trackingLine(habits, days[e.date]);
-      return `--- ${e.date} ---\n${e.content}\n${line ? `${line}\n` : ''}`;
+  const contentByDate = new Map(entries.map((e) => [e.date, e.content]));
+  const dates = [...new Set([...contentByDate.keys(), ...Object.keys(days)])].sort().reverse();
+  return dates
+    .map((date) => {
+      const content = contentByDate.get(date);
+      const line = trackingLine(habits, days[date]);
+      return `--- ${date} ---\n${content !== undefined ? `${content}\n` : ''}${line ? `${line}\n` : ''}`;
     })
     .join('\n');
 }

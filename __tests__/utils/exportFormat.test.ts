@@ -1,6 +1,6 @@
-import { buildJsonExport, buildTxtExport, DayTracking } from '@/utils/exportFormat';
+import { buildJsonExport, buildTxtExport, DayTracking, ExportHabit } from '@/utils/exportFormat';
 import { Entry } from '@/types/entry';
-import { Habit } from '@/types/tracking';
+import { DEFAULT_SETTINGS } from '@/types/tracking';
 
 const entry = (date: string, content: string): Entry => ({
   id: date,
@@ -9,10 +9,18 @@ const entry = (date: string, content: string): Entry => ({
   submittedAt: `${date}T22:00:00Z`,
   timezone: 'UTC',
 });
-const habits: Habit[] = [
-  { id: 'h1', name: 'In bed by 1am', position: 0, createdAt: '2026-11-01T00:00:00Z' },
-  { id: 'h2', name: 'No alcohol', position: 1, createdAt: '2026-11-01T00:00:00Z' },
-  { id: 'h3', name: 'Read 10 pages', position: 2, createdAt: '2026-11-01T00:00:00Z' },
+const habit = (id: string, name: string, position: 0 | 1 | 2): ExportHabit => ({
+  id,
+  name,
+  position,
+  createdAt: '2026-11-01T00:00:00Z',
+  archivedAt: null,
+  link: null,
+});
+const habits: ExportHabit[] = [
+  habit('h1', 'In bed by 1am', 0),
+  habit('h2', 'No alcohol', 1),
+  { ...habit('h3', 'Read 10 pages', 2), archivedAt: '2026-11-10T00:00:00Z' },
 ];
 const days: Record<string, DayTracking> = {
   '2026-11-17': { mood: 4, answers: { h1: true, h2: false } },
@@ -26,15 +34,26 @@ describe('buildTxtExport', () => {
     );
   });
   it('renders no tracking line for an untracked day', () => {
-    const out = buildTxtExport([entry('2026-11-16', 'Quiet.')], habits, days);
+    const out = buildTxtExport([entry('2026-11-16', 'Quiet.')], habits, {});
     expect(out).toBe('--- 2026-11-16 ---\nQuiet.\n');
+  });
+  it('keeps a day with tracking but no entry, newest first', () => {
+    const out = buildTxtExport([entry('2026-11-16', 'Quiet.')], habits, days);
+    expect(out).toBe(
+      '--- 2026-11-17 ---\nMood: good · In bed by 1am ✓ · No alcohol —\n' +
+        '\n--- 2026-11-16 ---\nQuiet.\n',
+    );
   });
 });
 
 describe('buildJsonExport', () => {
-  it('has entries, habits, days', () => {
-    const parsed = JSON.parse(buildJsonExport([entry('2026-11-17', 'x')], habits, days));
-    expect(Object.keys(parsed)).toEqual(['entries', 'habits', 'days']);
+  it('has entries, habits, days, settings', () => {
+    const parsed = JSON.parse(
+      buildJsonExport([entry('2026-11-17', 'x')], habits, days, DEFAULT_SETTINGS),
+    );
+    expect(Object.keys(parsed)).toEqual(['entries', 'habits', 'days', 'settings']);
     expect(parsed.days['2026-11-17'].mood).toBe(4);
+    expect(parsed.habits[2]).toMatchObject({ archivedAt: '2026-11-10T00:00:00Z', link: null });
+    expect(parsed.settings).toEqual(DEFAULT_SETTINGS);
   });
 });

@@ -38,38 +38,36 @@ export async function setMood(date: string, mood: MoodValue | null): Promise<voi
   }
 }
 
-/** Every habit answer and mood for the signed-in user, merged per date (for export). */
+/**
+ * Every habit answer and mood for the signed-in user, merged per date
+ * (export only). Throws, so a failed read fails the export.
+ */
 export async function getAllTracking(): Promise<Record<string, DayTracking>> {
-  try {
-    const [logs, checkins] = await Promise.all([
-      fetchAllPages<{ habit_id: string; date: string; done: boolean }>((from, to) =>
-        supabase
-          .from('habit_logs')
-          .select('habit_id, date, done')
-          .order('date', { ascending: true })
-          .order('habit_id', { ascending: true })
-          .range(from, to),
-      ),
-      fetchAllPages<{ date: string; mood: unknown }>((from, to) =>
-        supabase
-          .from('checkins')
-          .select('date, mood')
-          .order('date', { ascending: true })
-          .range(from, to),
-      ),
-    ]);
+  const [logs, checkins] = await Promise.all([
+    fetchAllPages<{ habit_id: string; date: string; done: boolean }>((from, to) =>
+      supabase
+        .from('habit_logs')
+        .select('habit_id, date, done')
+        .order('date', { ascending: true })
+        .order('habit_id', { ascending: true })
+        .range(from, to),
+    ),
+    fetchAllPages<{ date: string; mood: unknown }>((from, to) =>
+      supabase
+        .from('checkins')
+        .select('date, mood')
+        .order('date', { ascending: true })
+        .range(from, to),
+    ),
+  ]);
 
-    const days: Record<string, DayTracking> = {};
-    const day = (date: string): DayTracking => (days[date] ??= { mood: null, answers: {} });
-    for (const r of logs) {
-      day(r.date).answers[r.habit_id] = r.done;
-    }
-    for (const r of checkins) {
-      if (isMoodValue(r.mood)) day(r.date).mood = r.mood;
-    }
-    return days;
-  } catch (error) {
-    console.error('Failed to load tracking for export:', error);
-    return {};
+  const days: Record<string, DayTracking> = {};
+  const day = (date: string): DayTracking => (days[date] ??= { mood: null, answers: {} });
+  for (const r of logs) {
+    day(r.date).answers[r.habit_id] = r.done;
   }
+  for (const r of checkins) {
+    if (isMoodValue(r.mood)) day(r.date).mood = r.mood;
+  }
+  return days;
 }
