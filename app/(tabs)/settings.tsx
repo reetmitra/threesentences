@@ -14,12 +14,15 @@ import {
   Switch,
   TouchableOpacity,
   Platform,
+  Linking,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Download, Trash2, LogOut, Lightbulb, Vibrate } from 'lucide-react-native';
+import { Download, Trash2, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '@/constants/links';
 import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
@@ -31,13 +34,9 @@ import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
 import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/store/entries';
-import {
-  clearAllData,
-  getPreferences,
-  updatePreferences,
-} from '@/store/onboarding';
+import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
-import { getProfile } from '@/store/profile';
+import { getProfile, deleteAccount } from '@/store/profile';
 import { refreshHapticsPreference } from '@/utils/haptics';
 import {
   requestNotificationPermission,
@@ -132,7 +131,7 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [reminderHour, setReminderHour] = useState(20);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteData' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteAccount' | null>(null);
   const [showExportSheet, setShowExportSheet] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string } | null>(null);
 
@@ -265,14 +264,22 @@ export default function SettingsScreen() {
     showToast('success', 'All reflections deleted.');
   };
 
-  const handleDeleteData = () => setConfirmAction('deleteData');
+  const handleDeleteAccount = () => setConfirmAction('deleteAccount');
 
-  const confirmDeleteData = async () => {
+  const confirmDeleteAccount = async () => {
     setConfirmAction(null);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    await clearAllData();
-    showToast('success', 'All data has been removed.');
-    loadData();
+    try {
+      await deleteAccount();
+      router.replace('/(auth)/login');
+      showToast('success', 'Your account and data have been deleted.');
+    } catch (error) {
+      showToast('error', (error as Error).message);
+    }
+  };
+
+  const openLink = (url: string) => {
+    WebBrowser.openBrowserAsync(url).catch(() => showToast('error', 'Could not open the page.'));
   };
 
   const CONFIRM_CONFIG = {
@@ -290,11 +297,11 @@ export default function SettingsScreen() {
       onConfirm: confirmDeleteReflections,
       destructive: true,
     },
-    deleteData: {
-      title: 'Delete all data?',
-      message: 'This permanently deletes all your journal entries, reflections, and settings.',
-      confirmLabel: 'Delete Everything',
-      onConfirm: confirmDeleteData,
+    deleteAccount: {
+      title: 'Delete your account?',
+      message: 'This permanently deletes your account, journal entries, reflections, friends, and messages. It cannot be undone.',
+      confirmLabel: 'Delete Account',
+      onConfirm: confirmDeleteAccount,
       destructive: true,
     },
   } as const;
@@ -444,7 +451,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Icon name="lock" size={22} color={c.textSecondary} />}
               title="Encryption"
-              subtitle="Entries encrypted at rest"
+              subtitle="Encrypted in transit and at rest"
               showChevron={false}
             />
             {aiEnabled && reflectionCount > 0 && (
@@ -479,15 +486,38 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* About Section */}
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>About</Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<Shield size={22} color={c.textPrimary} />}
+              title="Privacy Policy"
+              onPress={() => openLink(PRIVACY_URL)}
+            />
+            <SettingsRow
+              icon={<FileText size={22} color={c.textPrimary} />}
+              title="Terms of Use"
+              onPress={() => openLink(TERMS_URL)}
+            />
+            <SettingsRow
+              icon={<Mail size={22} color={c.textPrimary} />}
+              title="Contact Support"
+              subtitle={SUPPORT_EMAIL}
+              onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => showToast('info', `Email us at ${SUPPORT_EMAIL}`))}
+            />
+          </View>
+        </View>
+
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Danger Zone</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Trash2 size={22} color={c.warn} />}
-              title="Delete All Data"
-              subtitle="Permanently remove everything"
-              onPress={handleDeleteData}
+              title="Delete Account"
+              subtitle="Permanently delete your account and all data"
+              onPress={handleDeleteAccount}
               destructive
               showChevron={false}
             />

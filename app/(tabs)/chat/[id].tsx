@@ -46,6 +46,10 @@ import {
 } from '@/store/chat';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/config/supabase';
+import { blockUser, reportUser } from '@/store/friends';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { useToast } from '@/contexts/ToastContext';
 
 // ─── DB row types ─────────────────────────────────────────────────────────────
 
@@ -76,8 +80,12 @@ export default function ChatScreen() {
     const activeColors = colors.dark;
     const { userId, isLoaded } = useAuth();
 
+    const { showToast } = useToast();
+
     // State
     const [otherUser, setOtherUser] = useState<UserInfo | null>(null);
+    const [showSafetyMenu, setShowSafetyMenu] = useState(false);
+    const [safetyAction, setSafetyAction] = useState<'report' | 'block' | null>(null);
     // Descending order: newest first (index 0). Required for inverted FlatList.
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
@@ -329,6 +337,40 @@ export default function ChatScreen() {
         opacity: headerOpacity.value,
     }));
 
+    // ─── Safety: report / block ───────────────────────────────────────────────
+
+    const confirmSafetyAction = async () => {
+        const action = safetyAction;
+        setSafetyAction(null);
+        if (!otherUser || !action) return;
+        try {
+            if (action === 'report') {
+                await reportUser(otherUser.id, id ?? null, 'Reported from chat');
+                showToast('success', "Thanks. We'll review this within 24 hours.");
+            } else {
+                await blockUser(otherUser.id);
+                showToast('success', `@${otherUser.username.replace(/^@+/, '')} is blocked.`);
+                router.back();
+            }
+        } catch (error) {
+            showToast('error', (error as Error).message);
+        }
+    };
+
+    const otherHandle = otherUser ? `@${otherUser.username.replace(/^@+/, '')}` : 'this user';
+    const SAFETY_CONFIG = {
+        report: {
+            title: `Report ${otherHandle}?`,
+            message: "We'll review this conversation within 24 hours and act on anything that breaks our terms.",
+            confirmLabel: 'Report',
+        },
+        block: {
+            title: `Block ${otherHandle}?`,
+            message: "They won't be able to message you or send you friend requests. They aren't notified.",
+            confirmLabel: 'Block',
+        },
+    } as const;
+
     // ─── Render message ───────────────────────────────────────────────────────
 
     const renderMessage = useCallback(
@@ -444,7 +486,53 @@ export default function ChatScreen() {
                         </>
                     )}
                 </View>
+
+                {otherUser && (
+                    <Pressable
+                        onPress={() => setShowSafetyMenu(true)}
+                        style={styles.menuButton}
+                        accessibilityRole="button"
+                        accessibilityLabel="Report or block"
+                    >
+                        <Icon name="more" size={24} color={activeColors.textPrimary} />
+                    </Pressable>
+                )}
             </Animated.View>
+
+            <BottomSheet visible={showSafetyMenu} onClose={() => setShowSafetyMenu(false)} maxHeight={0.28}>
+                <View style={styles.safetySheet}>
+                    <Pressable
+                        style={styles.safetyOption}
+                        onPress={() => { setShowSafetyMenu(false); setSafetyAction('report'); }}
+                        accessibilityRole="button"
+                    >
+                        <Text family="sansSemibold" variant="base" style={{ color: activeColors.textPrimary }}>
+                            Report {otherHandle}
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        style={styles.safetyOption}
+                        onPress={() => { setShowSafetyMenu(false); setSafetyAction('block'); }}
+                        accessibilityRole="button"
+                    >
+                        <Text family="sansSemibold" variant="base" style={{ color: activeColors.warn }}>
+                            Block {otherHandle}
+                        </Text>
+                    </Pressable>
+                </View>
+            </BottomSheet>
+
+            {safetyAction && (
+                <ConfirmationModal
+                    visible
+                    title={SAFETY_CONFIG[safetyAction].title}
+                    message={SAFETY_CONFIG[safetyAction].message}
+                    confirmLabel={SAFETY_CONFIG[safetyAction].confirmLabel}
+                    destructive
+                    onCancel={() => setSafetyAction(null)}
+                    onConfirm={confirmSafetyAction}
+                />
+            )}
 
             {/* Messages */}
             <KeyboardAvoidingView
@@ -537,6 +625,22 @@ const styles = StyleSheet.create({
     },
     headerText: {
         flex: 1,
+    },
+    menuButton: {
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    safetySheet: {
+        paddingHorizontal: spacing[5],
+        paddingTop: spacing[2],
+    },
+    safetyOption: {
+        minHeight: 52,
+        justifyContent: 'center',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.dark.border,
     },
     typingText: {
         fontSize: 12,

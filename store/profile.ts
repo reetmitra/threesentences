@@ -5,6 +5,7 @@
  * Handles profile creation, updates, and validation.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/config/supabase';
 import {
   UserProfile,
@@ -428,4 +429,20 @@ export async function getProfilesByInterest(
   }
 
   return (data as DbProfile[]).map(mapToUserProfile);
+}
+
+/**
+ * Permanently delete the signed-in user's account and all their server data
+ * (entries, reflections, friends, messages, profile, auth user), then wipe
+ * this device. Throws if the server delete fails so the UI can say so.
+ */
+export async function deleteAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) {
+    console.error('Failed to delete account:', error);
+    throw new Error('Could not delete your account. Please try again.');
+  }
+  await AsyncStorage.clear();
+  // The auth user no longer exists server-side; only drop the local session.
+  await supabase.auth.signOut({ scope: 'local' });
 }

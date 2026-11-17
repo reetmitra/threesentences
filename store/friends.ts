@@ -633,3 +633,33 @@ export async function clearFriendsData(userId: string): Promise<void> {
     .delete()
     .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
 }
+
+// ============================================
+// Safety: block + report (App Store guideline 1.2)
+// ============================================
+
+/** Block a user: they can no longer message you or send you friend requests. */
+export async function blockUser(blockedId: string): Promise<void> {
+  const { error } = await supabase
+    .from('blocks')
+    .upsert({ blocked_id: blockedId }, { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true });
+  if (error) {
+    console.error('Failed to block user:', error);
+    throw new Error('Could not block this user. Please try again.');
+  }
+}
+
+/** Report a user for review. Reports are only readable by the app owner. */
+export async function reportUser(
+  reportedUserId: string,
+  conversationId: string | null,
+  reason: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('reports')
+    .insert({ reported_user_id: reportedUserId, conversation_id: conversationId, reason });
+  if (error) {
+    console.error('Failed to report user:', error);
+    throw new Error('Could not send your report. Please try again.');
+  }
+}
