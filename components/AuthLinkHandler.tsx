@@ -33,9 +33,9 @@ export function AuthLinkHandler() {
       .then(({ data, error }) => {
         if (error) throw error;
         // auth-js returns redirectType at runtime but its public type omits it.
-        if ('redirectType' in data && data.redirectType === 'PASSWORD_RECOVERY') {
-          router.replace('/(auth)/reset-password');
-        }
+        const recovery = 'redirectType' in data && data.redirectType === 'PASSWORD_RECOVERY';
+        // Any other email link (sign-up confirmation) has just signed you in: '/' routes onward.
+        router.replace(recovery ? '/(auth)/reset-password' : '/');
       })
       .catch(() => showToast('error', LINK_FAILED, 6000));
   }, [url, navReady, showToast]);
