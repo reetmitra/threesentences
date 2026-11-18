@@ -13,10 +13,10 @@ describe('parseAuthLink', () => {
     expect(parseAuthLink('threesentences://?code=a%2Bb')).toEqual({ kind: 'code', code: 'a+b' });
   });
 
-  it('ignores raw session tokens: only a code bound to this phone is accepted', () => {
+  it('never accepts raw session tokens; an old-style recovery link gets the failure message', () => {
     expect(
       parseAuthLink('threesentences://#access_token=at&refresh_token=rt&token_type=bearer&type=recovery'),
-    ).toBeNull();
+    ).toEqual({ kind: 'error', message: LINK_FAILED });
   });
 
   it('turns an expired link into our own message, never the URL text', () => {
@@ -24,7 +24,11 @@ describe('parseAuthLink', () => {
       parseAuthLink(
         'threesentences://#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
       ),
-    ).toEqual({ kind: 'error', message: 'That reset link has expired or was already used. Request a new one.' });
+    ).toEqual({ kind: 'error', message: 'That link has expired or was already used. Request a new one.' });
+  });
+
+  it('keeps "=" inside a value and reads the scheme-only form', () => {
+    expect(parseAuthLink('threesentences:?code=ab==')).toEqual({ kind: 'code', code: 'ab==' });
   });
 
   it('reads other errors from the query string with the generic message', () => {

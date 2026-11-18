@@ -25,12 +25,11 @@ import {
 import { colors } from '@/theme/colors';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { configureNotificationHandler } from '@/services/notifications';
-import { supabase } from '@/config/supabase';
-import { router } from 'expo-router';
 import { AuthLinkHandler } from '@/components/AuthLinkHandler';
 
 // Hermes has no WebCrypto, so supabase-js uses PKCE's 'plain' challenge on
-// "Forgot password?". Still device-bound (the verifier never leaves the phone).
+// "Forgot password?". Still device-bound: the verifier is known only to this
+// phone and Supabase (sent over TLS), never in the email or the link.
 LogBox.ignoreLogs(['WebCrypto API is not supported']);
 
 export default function RootLayout() {
@@ -49,13 +48,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     configureNotificationHandler();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        router.replace('/(auth)/reset-password');
-      }
-    });
-    return () => subscription.unsubscribe();
+    // Password-recovery links are routed by AuthLinkHandler (PKCE code exchange).
   }, []);
 
   if (!fontsLoaded) return null;

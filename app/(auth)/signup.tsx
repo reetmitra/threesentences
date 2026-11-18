@@ -59,7 +59,7 @@ export default function SignupScreen() {
       if (data.session) {
         router.replace('/');
       } else {
-        showToast('info', `Confirmation link sent to ${email}. Click it, then sign in.`, 6000);
+        showToast('info', `Confirmation link sent to ${email}. Open it on this phone to sign in.`, 6000);
         router.replace('/(auth)/login');
       }
     } catch (error: any) {

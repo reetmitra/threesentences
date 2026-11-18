@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, StyleSheet, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -14,6 +14,8 @@ import { spacing, edgePadding } from '@/theme/spacing';
 import { supabase } from '@/config/supabase';
 import { useToast } from '@/contexts/ToastContext';
 
+const RESET_COOLDOWN_MS = 60_000;
+
 export default function LoginScreen() {
   const c = colors.dark;
   const { showToast } = useToast();
@@ -21,6 +23,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  // Each request replaces this phone's reset key, so an earlier email's link
+  // stops working. Hold the button after a send (Supabase allows one a minute).
+  const [resetSent, setResetSent] = useState(false);
+
+  useEffect(() => {
+    if (!resetSent) return;
+    const timer = setTimeout(() => setResetSent(false), RESET_COOLDOWN_MS);
+    return () => clearTimeout(timer);
+  }, [resetSent]);
 
   const handleForgotPassword = useCallback(async () => {
     if (!email) {
@@ -33,7 +44,8 @@ export default function LoginScreen() {
         redirectTo: 'threesentences://reset-password',
       });
       if (error) throw error;
-      showToast('success', `Reset link sent to ${email}. Open it on this phone.`, 6000);
+      setResetSent(true);
+      showToast('success', `Reset link sent to ${email}. Open the newest email on this phone.`, 6000);
     } catch (error: any) {
       showToast('error', error.message || 'Could not send reset email');
     } finally {
@@ -93,9 +105,9 @@ export default function LoginScreen() {
             />
             <View style={{ height: spacing[6] }} />
             <Button title="Sign in" onPress={handleLogin} loading={loading} />
-            <TouchableOpacity onPress={handleForgotPassword} disabled={resetLoading} style={{ marginTop: spacing[4], alignItems: 'center' }}>
+            <TouchableOpacity onPress={handleForgotPassword} disabled={resetLoading || resetSent} style={{ marginTop: spacing[4], alignItems: 'center' }}>
               <Text family="mono" variant="xs" style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
-                {resetLoading ? 'Sending…' : 'Forgot password?'}
+                {resetLoading ? 'Sending…' : resetSent ? 'Reset link sent — check your email' : 'Forgot password?'}
               </Text>
             </TouchableOpacity>
           </View>
