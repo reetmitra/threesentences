@@ -38,6 +38,7 @@ import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile, deleteAccount } from '@/store/profile';
 import { resetSettingsCache, getCachedSettings, updateSettings } from '@/store/settings';
+import { clearPatternsCache } from '@/store/patterns';
 import { SettingsPatch, UserSettings } from '@/types/tracking';
 import { useCheckIn } from '@/hooks/useCheckIn';
 import { HabitSetupSheet } from '@/components/HabitSetupSheet';
@@ -207,6 +208,7 @@ export default function SettingsScreen() {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await signOut();
     await resetSettingsCache();
+    await clearPatternsCache();
     router.replace('/(auth)/login');
   };
 
@@ -433,7 +435,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Lightbulb size={22} color={c.textPrimary} />}
               title="Daily Writing Prompt"
-              subtitle={promptEnabled ? 'Shown on Insights tab' : 'Disabled'}
+              subtitle={promptEnabled ? "Shown as today's prompt" : 'Disabled'}
               showChevron={false}
               rightElement={
                 <Switch

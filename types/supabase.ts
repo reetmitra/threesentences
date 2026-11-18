@@ -353,6 +353,7 @@ export interface Database {
             is_blocked_with: { Args: { p_other: string }; Returns: boolean }
             bump_ai_usage: { Args: Record<string, never>; Returns: number }
             delete_my_account: { Args: Record<string, never>; Returns: undefined }
+            get_patterns: { Args: { p_from: string; p_to: string }; Returns: { date: string; has_entry: boolean; mood: number | null; habit_answers: Json }[] }
         }
         Enums: {
             friend_status: 'pending' | 'accepted' | 'blocked'

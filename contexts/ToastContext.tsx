@@ -22,6 +22,12 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [visible, setVisible] = useState(false);
+  // Ref mirror keeps showToast's identity stable so consumers don't re-run effects on every toast.
+  const visibleRef = useRef(false);
+  const setVisibleSync = useCallback((v: boolean) => {
+    visibleRef.current = v;
+    setVisible(v);
+  }, []);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showToast = useCallback((type: ToastType, message: string, duration?: number) => {
@@ -31,21 +37,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
 
     // If already visible, quickly hide then show new one
-    if (visible) {
-      setVisible(false);
+    if (visibleRef.current) {
+      setVisibleSync(false);
       timeoutRef.current = setTimeout(() => {
         setToast({ type, message, duration });
-        setVisible(true);
+        setVisibleSync(true);
       }, 350);
     } else {
       setToast({ type, message, duration });
-      setVisible(true);
+      setVisibleSync(true);
     }
-  }, [visible]);
+  }, [setVisibleSync]);
 
   const handleDismiss = useCallback(() => {
-    setVisible(false);
-  }, []);
+    setVisibleSync(false);
+  }, [setVisibleSync]);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
