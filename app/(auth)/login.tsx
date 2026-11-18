@@ -33,7 +33,7 @@ export default function LoginScreen() {
         redirectTo: 'threesentences://reset-password',
       });
       if (error) throw error;
-      showToast('success', `Password reset link sent to ${email}`, 5000);
+      showToast('success', `Reset link sent to ${email}. Open it on this phone.`, 6000);
     } catch (error: any) {
       showToast('error', error.message || 'Could not send reset email');
     } finally {

@@ -3,7 +3,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
+import { LogBox, Platform, View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -27,6 +27,11 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { configureNotificationHandler } from '@/services/notifications';
 import { supabase } from '@/config/supabase';
 import { router } from 'expo-router';
+import { AuthLinkHandler } from '@/components/AuthLinkHandler';
+
+// Hermes has no WebCrypto, so supabase-js uses PKCE's 'plain' challenge on
+// "Forgot password?". Still device-bound (the verifier never leaves the phone).
+LogBox.ignoreLogs(['WebCrypto API is not supported']);
 
 export default function RootLayout() {
   const activeColors = colors.dark;
@@ -77,6 +82,7 @@ export default function RootLayout() {
             </Stack>
           </View>
         </View>
+        <AuthLinkHandler />
       </ToastProvider>
     </SafeAreaProvider>
   );
