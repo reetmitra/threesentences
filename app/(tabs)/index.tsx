@@ -147,7 +147,8 @@ export default function TodayScreen() {
   // when not editing. Resubmits skip the streak toast and milestone; the lock
   // guard and edit drafts use this entry's own day.
   const editingDate = useRef<string | null>(null);
-  // Logical date of the last loadData; null until the first load.
+  // Logical date the screen's state belongs to: set by each loadData and when
+  // an edit starts; null until the first load.
   const loadedDate = useRef<string | null>(null);
 
   const sentenceCount = countSentences(content);
@@ -179,8 +180,14 @@ export default function TodayScreen() {
         setInterests(profile.interests);
       }
       if (existing) {
-        setTodayEntry(existing);
-        setContent('');
+        // Still re-editing this entry (tab switch mid-edit): keep the text on
+        // screen. Otherwise show it done and drop any edit mode left over, so
+        // it can't date a later fresh draft or trip the lock guard.
+        if (editingDate.current !== existing.date) {
+          editingDate.current = null;
+          setTodayEntry(existing);
+          setContent('');
+        }
       } else {
         const draft = await getDraft();
         if (draft) {
@@ -373,6 +380,10 @@ export default function TodayScreen() {
                 }
                 setContent(entryForToday.content);
                 editingDate.current = entryForToday.date;
+                // The entry may have been submitted after a rollover that no
+                // load saw; without this a tab switch would treat the edit as
+                // a locked day's and discard it.
+                loadedDate.current = entryForToday.date;
                 setTodayEntry(null);
                 setSubmissionStatus('idle');
               }}
