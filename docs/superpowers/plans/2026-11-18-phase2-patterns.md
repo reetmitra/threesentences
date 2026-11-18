@@ -40,7 +40,7 @@
 1. **Range edges** — 7/30/90-day ranges ending on the logical today must cross month/year boundaries and DST nights with exactly N days, no gaps or duplicates. Pinned in Task 2 (`buildRange` tests under the suite's America/New_York TZ).
 2. **A brand-new user (no data at all)** — every section renders a quiet empty state; no `NaN`/`Infinity` in chart geometry. Pinned in Task 2 (`moodPoints` / `habitStats` empty tests) and Task 3.
 3. **Habits that changed** — answers for archived or unknown habit ids must not crash the grid or skew counts. Pinned in Task 2 (`habitStats ignores answers for other habits`).
-4. **Opening Patterns offline** — the last cached range shows instantly; a failed refresh keeps it and shows one toast, never a blank screen. Pinned in Task 2 (`getPatterns returns cache when the RPC fails`).
+4. **Opening Patterns offline** — with a cache for the same range on the same day, the cached data shows silently (no toast: `getPatterns` returns the cache when the RPC fails, Ruling 7). With no cache, one toast and the quiet empty states, never a blank screen or a stuck skeleton. The cache is per user (another account on the device never sees it). Pinned in Task 2 (`getPatterns returns cache when the RPC fails`, `never serves one user's cache to another`).
 5. **Coming back from Today** — a mood/habit tap made on Today must show on Patterns when the tab regains focus. Pinned in Task 5 (refetch on focus) + simulator step.
 
 ---
@@ -119,7 +119,7 @@ GRANT EXECUTE ON FUNCTION public.get_patterns(DATE, DATE) TO authenticated;
   - `moodSegments(points): { x1; y1; x2; y2 }[]` — lines only between points on **consecutive** dates.
   - `summarizeMood(days: PatternDay[], range: RangeDays): string` — e.g. `"Mood over 30 days: mostly okay, 2 rough days."`; no moods → `"No mood logged in the last 30 days."`.
   - `summarizeHabit(name: string, stats: { done: number; answered: number }, range: RangeDays): string` — `"In bed by 1am: 4 of 7 days"` (denominator = days **answered**, matching the spec's "5 of 7 this week" without counting unanswered days against the user); no answers → `"In bed by 1am: not checked in yet"`.
-- Produces (`store/patterns.ts`): `getPatterns(from: string, to: string): Promise<PatternDay[]>` — calls the RPC, writes cache key `@threesentences/patterns/${from}_${to}`; on RPC error returns the cached value if any, else throws `Error("Couldn't load your patterns.")`. `getCachedPatterns(from: string, to: string): Promise<PatternDay[] | null>`.
+- Produces (`store/patterns.ts`): `getPatterns(from: string, to: string): Promise<PatternDay[]>` — calls the RPC, writes `{ from, to, days }` under the per-user slot key `@threesentences/patterns/${userId}/${slot}` (slot `r7`|`r30`|`r90` or `mYYYY-MM`; no session → no cache), and a cached value counts only when its from/to match; on RPC error returns the cached value if any, else throws `Error("Couldn't load your patterns.")`. `getCachedPatterns(from: string, to: string): Promise<PatternDay[] | null>`.
 
 - [ ] **Step 1: Write failing tests** (`patterns.test.ts`) — the suite runs in America/New_York (jest.config.js):
   - `buildRange('2026-03-10', 7)` → `{ from: '2026-03-04', to: '2026-03-10' }` (crosses US DST start 2026-03-08); `buildRange('2027-01-02', 7)` → from `'2026-12-27'`; for 30 and 90, the inclusive count of dates from→to equals N.
@@ -169,8 +169,8 @@ GRANT EXECUTE ON FUNCTION public.get_patterns(DATE, DATE) TO authenticated;
 **Interfaces:**
 - Consumes: Task 2 store/helpers, Task 3 components; existing `getEntryForDate(userId, date)` (store/entries.ts), `getEntryStats(userId)`, `StreakCounter({ currentStreak, longestStreak, totalEntries })`, `getActiveHabits()` (store/habits.ts), `getPreferences()` (`aiReflectionEnabled`), `getTodayDateString`.
 
-- [ ] **Step 1: Screen layout (top → bottom)** per spec §9 sketch: header "Patterns" + `RangeSelector`; **calendar card** (month nav as in History; data from `getPatterns(monthRange(...))`; `entryDates` = days with `hasEntry`; `fullHabitDates` = `isFullHabitDay`) with `DayDetail` below when a date is selected; **MOOD** eyebrow + `MoodChart` (only if `trackers.mood`); **HABITS** eyebrow + `HabitGrid` (only if `trackers.habits`); the existing **AI Reflection** card from guide.tsx (same copy and `router.push('/(tabs)/reflect')`); **363 PROGRESS** (`StreakCounter`); **ABOUT THE PRACTICE** — the two cards from guide.tsx ("The 363 Way", "Presence Over Perfection") verbatim.
-- [ ] **Step 2: Data flow.** Range data via `getPatterns(buildRange(getTodayDateString(), range))`; on mount and on `useFocusEffect`, first render `getCachedPatterns` (instant), then refresh; on failure keep what's shown and `showToast('error', "Couldn't load your patterns.")` once. Month data the same way for the calendar month on screen. Default month = the month of the **logical** today (fixes the Phase 1 parked `history.tsx:22` item). `trackers` from `getCachedSettings()` at render.
+- [ ] **Step 1: Screen layout (top → bottom)** per spec §9 sketch: header "Patterns" + `RangeSelector`; **calendar card** (month nav as in History; data from `getPatterns(monthRange(...))`; `entryDates` = days with `hasEntry`; `fullHabitDates` = `isFullHabitDay`) with `DayDetail` below when a date is selected; **MOOD** eyebrow + `MoodChart` (tracker off → the eyebrow stays with one quiet secondary line, "Turn on Mood in Settings", spec §9 / Ruling 11); **HABITS** eyebrow + `HabitGrid` (tracker off → "Turn on Habits in Settings"); the existing **AI Reflection** card from guide.tsx (same copy and `router.push('/(tabs)/reflect')`); **363 PROGRESS** (`StreakCounter`); **ABOUT THE PRACTICE** — the two cards from guide.tsx ("The 363 Way", "Presence Over Perfection") verbatim.
+- [ ] **Step 2: Data flow.** Range data via `getPatterns(buildRange(getTodayDateString(), range))`; on mount and on `useFocusEffect`, first render `getCachedPatterns` (instant), then refresh; a failed refresh with a same-day cache keeps the cached data silently (Ruling 7); with no cache, `showToast('error', "Couldn't load your patterns.")` once per refresh cycle. Month data the same way for the calendar month on screen. Default month = the month of the **logical** today (fixes the Phase 1 parked `history.tsx:22` item). `trackers` from `getCachedSettings()` at render.
 - [ ] **Step 3: Delete** `history.tsx` and `guide.tsx`; grep the repo for `(tabs)/history`, `(tabs)/guide`, `'history'`, `'guide'` route references and fix any.
 - [ ] **Step 4: Checks** — `npx tsc --noEmit -p .`, full `npx jest`, and (since the web build is part of the product) `npx expo export --platform web --output-dir /tmp/three-web-check` must succeed.
 - [ ] **Step 5: Commit** — `feat(journal): Patterns tab replaces History and Insights`
@@ -212,7 +212,7 @@ GRANT EXECUTE ON FUNCTION public.get_patterns(DATE, DATE) TO authenticated;
 2. New account: every Patterns section shows its quiet empty state; no crash.
 3. Log mood + habits on Today → Patterns (focus) shows today's dot and squares; tap today on the calendar → panel + "Open Today".
 4. Range 7 / 30 / 90 switches; 90 shows thin bars, no overflow at iPhone SE width.
-5. Turn Mood off in Settings → MOOD section hides on Patterns.
-6. Airplane mode → reopen Patterns: cached data shows, one toast.
+5. Turn Mood off in Settings → Patterns keeps the MOOD eyebrow with one quiet line, "Turn on Mood in Settings" (same for Habits).
+6. Airplane mode → reopen Patterns: with a cache from earlier today, the cached data shows and no toast; with no cache (e.g. a range not opened today), one toast and the empty states.
 7. VoiceOver reads the chart summaries.
 8. Daily prompt on → Today placeholder shows the prompt.
