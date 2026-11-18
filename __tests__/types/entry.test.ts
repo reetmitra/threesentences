@@ -10,6 +10,12 @@ import {
   parseDateString,
   getCurrentTimezone,
   generateId,
+  getLogicalDateString,
+  setDayRolloverHour,
+  getDayRolloverHour,
+  formatRolloverLabel,
+  isStaleDate,
+  DEFAULT_DAY_ROLLOVER_HOUR,
 } from '@/types/entry';
 
 describe('entry type utilities', () => {
@@ -19,12 +25,6 @@ describe('entry type utilities', () => {
       expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
-    it('returns correct current date', () => {
-      const result = getTodayDateString();
-      const now = new Date();
-      const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      expect(result).toBe(expected);
-    });
   });
 
   describe('formatDateString', () => {
@@ -137,5 +137,46 @@ describe('entry type utilities', () => {
       const id = generateId();
       expect(id.length).toBe(36); // 32 hex chars + 4 hyphens
     });
+  });
+});
+
+describe('logical day', () => {
+  afterEach(() => setDayRolloverHour(DEFAULT_DAY_ROLLOVER_HOUR));
+
+  it('returns the previous day before the rollover hour', () => {
+    expect(getLogicalDateString(new Date(2026, 10, 18, 2, 30), 4)).toBe('2026-11-17');
+  });
+  it('returns the same day at and after the rollover hour', () => {
+    expect(getLogicalDateString(new Date(2026, 10, 18, 4, 0), 4)).toBe('2026-11-18');
+    expect(getLogicalDateString(new Date(2026, 10, 18, 23, 59), 4)).toBe('2026-11-18');
+  });
+  it('rollover 0 is the calendar date', () => {
+    expect(getLogicalDateString(new Date(2026, 10, 18, 0, 5), 0)).toBe('2026-11-18');
+  });
+  it('crosses month and year boundaries', () => {
+    expect(getLogicalDateString(new Date(2027, 0, 1, 3, 0), 4)).toBe('2026-12-31');
+  });
+  it('getTodayDateString uses the configured rollover', () => {
+    setDayRolloverHour(6);
+    expect(getTodayDateString(new Date(2026, 10, 18, 5, 0))).toBe('2026-11-17');
+  });
+  it('ignores invalid rollover values', () => {
+    setDayRolloverHour(7); setDayRolloverHour(-1); setDayRolloverHour(2.5);
+    expect(getDayRolloverHour()).toBe(4);
+  });
+  it('formats rollover labels', () => {
+    expect(formatRolloverLabel(0)).toBe('midnight');
+    expect(formatRolloverLabel(4)).toBe('4am');
+  });
+  // A check-in tap on a screen loaded before the rollover must not write.
+  it('isStaleDate flips at the rollover hour, not at midnight', () => {
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 3, 59))).toBe(false);
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 4, 0))).toBe(true);
+    setDayRolloverHour(0);
+    expect(isStaleDate('2026-11-17', new Date(2026, 10, 18, 0, 0))).toBe(true);
+  });
+  it('isStaleDate is true for a later day after the rollover moves back', () => {
+    setDayRolloverHour(6);
+    expect(isStaleDate('2026-11-18', new Date(2026, 10, 18, 5, 0))).toBe(true);
   });
 });

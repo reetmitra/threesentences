@@ -299,18 +299,73 @@ CREATE POLICY messages_insert_dm ON public.messages FOR INSERT
     )
   );
 
--- Get or create the canonical conversation between two users
+-- Launch safety fixes (2026-11-17)
+-- 1. Blocks + reports (App Store guideline 1.2)
+-- 2. DM RPCs: caller must be the participant they claim to be; blocked pairs can't talk
+-- 3. Per-user daily AI reflection cap (stops Anthropic bill abuse)
+-- 4. delete_my_account() (App Store guideline 5.1.1(v))
+
+-- ============ Blocks ============
+CREATE TABLE IF NOT EXISTS public.blocks (
+  blocker_id TEXT NOT NULL DEFAULT (auth.uid())::text,
+  blocked_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (blocker_id, blocked_id),
+  CHECK (blocker_id <> blocked_id)
+);
+ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY blocks_select ON public.blocks FOR SELECT USING ((auth.uid())::text = blocker_id);
+CREATE POLICY blocks_insert ON public.blocks FOR INSERT WITH CHECK ((auth.uid())::text = blocker_id);
+CREATE POLICY blocks_delete ON public.blocks FOR DELETE USING ((auth.uid())::text = blocker_id);
+
+-- True when the caller and p_other have blocked each other in either direction.
+CREATE OR REPLACE FUNCTION public.is_blocked_with(p_other TEXT)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.blocks
+    WHERE (blocker_id = (auth.uid())::text AND blocked_id = p_other)
+       OR (blocker_id = p_other AND blocked_id = (auth.uid())::text)
+  );
+$$;
+
+-- Blocked users can't send friend requests either.
+DROP POLICY IF EXISTS "friends_insert" ON public.friends;
+CREATE POLICY "friends_insert" ON public.friends FOR INSERT
+  WITH CHECK ((auth.uid())::text = user_id AND NOT public.is_blocked_with(friend_id));
+
+-- ============ Reports ============
+-- Insert-only for users; the owner reviews rows in the Supabase dashboard.
+CREATE TABLE IF NOT EXISTS public.reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  reporter_id TEXT NOT NULL DEFAULT (auth.uid())::text,
+  reported_user_id TEXT NOT NULL,
+  conversation_id UUID,
+  reason TEXT NOT NULL CHECK (char_length(reason) BETWEEN 1 AND 500),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY reports_insert ON public.reports FOR INSERT WITH CHECK ((auth.uid())::text = reporter_id);
+
+-- ============ DM RPCs: verify the caller ============
 CREATE OR REPLACE FUNCTION public.get_or_create_conversation(p_user_id_1 TEXT, p_user_id_2 TEXT)
 RETURNS public.conversations
-LANGUAGE plpgsql
-SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
+  v_me TEXT := (auth.uid())::text;
   v_user_a TEXT;
   v_user_b TEXT;
   v_conversation public.conversations;
 BEGIN
-  -- Canonical ordering: smaller string = user_a
+  IF v_me IS NULL OR v_me NOT IN (p_user_id_1, p_user_id_2) THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+  IF public.is_blocked_with(CASE WHEN v_me = p_user_id_1 THEN p_user_id_2 ELSE p_user_id_1 END) THEN
+    RAISE EXCEPTION 'blocked' USING ERRCODE = '42501';
+  END IF;
+
   IF p_user_id_1 < p_user_id_2 THEN
     v_user_a := p_user_id_1; v_user_b := p_user_id_2;
   ELSE
@@ -329,18 +384,18 @@ BEGIN
 END;
 $$;
 
--- Atomically insert a DM and update the conversation summary.
--- Sets receiver_id from the conversation so the legacy message_target
--- CHECK (receiver_id XOR group_id) is satisfied.
 CREATE OR REPLACE FUNCTION public.send_dm(p_conversation_id UUID, p_sender_id TEXT, p_content TEXT)
 RETURNS public.messages
-LANGUAGE plpgsql
-SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
   v_message public.messages;
   v_receiver_id TEXT;
 BEGIN
+  IF (auth.uid())::text IS DISTINCT FROM p_sender_id THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+
   SELECT CASE WHEN user_a_id = p_sender_id THEN user_b_id ELSE user_a_id END
     INTO v_receiver_id
   FROM public.conversations
@@ -349,6 +404,9 @@ BEGIN
 
   IF v_receiver_id IS NULL THEN
     RAISE EXCEPTION 'Sender % is not a participant of conversation %', p_sender_id, p_conversation_id;
+  END IF;
+  IF public.is_blocked_with(v_receiver_id) THEN
+    RAISE EXCEPTION 'blocked' USING ERRCODE = '42501';
   END IF;
 
   INSERT INTO public.messages (conversation_id, sender_id, receiver_id, content)
@@ -360,15 +418,8 @@ BEGIN
     last_message_content   = p_content,
     last_message_at        = NOW(),
     last_message_sender_id = p_sender_id,
-    -- Increment unread for the recipient only
-    unread_count_a = CASE
-      WHEN user_b_id = p_sender_id THEN unread_count_a + 1
-      ELSE unread_count_a
-    END,
-    unread_count_b = CASE
-      WHEN user_a_id = p_sender_id THEN unread_count_b + 1
-      ELSE unread_count_b
-    END,
+    unread_count_a = CASE WHEN user_b_id = p_sender_id THEN unread_count_a + 1 ELSE unread_count_a END,
+    unread_count_b = CASE WHEN user_a_id = p_sender_id THEN unread_count_b + 1 ELSE unread_count_b END,
     updated_at = NOW()
   WHERE id = p_conversation_id;
 
@@ -376,13 +427,15 @@ BEGIN
 END;
 $$;
 
--- Reset the caller's unread counter and mark incoming messages read
 CREATE OR REPLACE FUNCTION public.mark_conversation_read(p_conversation_id UUID, p_user_id TEXT)
 RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
+  IF (auth.uid())::text IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501';
+  END IF;
+
   UPDATE public.conversations
   SET
     unread_count_a = CASE WHEN user_a_id = p_user_id THEN 0 ELSE unread_count_a END,
@@ -398,6 +451,157 @@ BEGIN
     AND is_read = FALSE;
 END;
 $$;
+
+-- ============ AI usage cap ============
+-- No policies: only bump_ai_usage() (security definer) touches it.
+CREATE TABLE IF NOT EXISTS public.ai_usage (
+  user_id TEXT NOT NULL,
+  day DATE NOT NULL DEFAULT CURRENT_DATE,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);
+ALTER TABLE public.ai_usage ENABLE ROW LEVEL SECURITY;
+
+-- Increments and returns the caller's reflection count for today (UTC).
+CREATE OR REPLACE FUNCTION public.bump_ai_usage()
+RETURNS INTEGER
+LANGUAGE sql SECURITY DEFINER SET search_path = public
+AS $$
+  INSERT INTO public.ai_usage (user_id, day, count)
+  VALUES ((auth.uid())::text, CURRENT_DATE, 1)
+  ON CONFLICT (user_id, day) DO UPDATE SET count = public.ai_usage.count + 1
+  RETURNING count;
+$$;
+
+-- ============ Account deletion ============
+-- user_id columns have no FK to auth.users, so delete app rows explicitly.
+-- Reports filed AGAINST this user are kept for moderation.
+CREATE OR REPLACE FUNCTION public.delete_my_account()
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_me TEXT := (auth.uid())::text;
+BEGIN
+  IF v_me IS NULL THEN
+    RAISE EXCEPTION 'not signed in' USING ERRCODE = '42501';
+  END IF;
+
+  DELETE FROM public.entries       WHERE user_id = v_me;
+  DELETE FROM public.reflections   WHERE user_id = v_me;
+  DELETE FROM public.friends       WHERE v_me IN (user_id, friend_id);
+  DELETE FROM public.blocks        WHERE v_me IN (blocker_id, blocked_id);
+  DELETE FROM public.reports       WHERE reporter_id = v_me;
+  DELETE FROM public.messages      WHERE v_me IN (sender_id, receiver_id);
+  DELETE FROM public.conversations WHERE v_me IN (user_a_id, user_b_id);
+  DELETE FROM public.group_members WHERE user_id = v_me;
+  DELETE FROM public.groups        WHERE created_by = v_me;
+  DELETE FROM public.ai_usage      WHERE user_id = v_me;
+  -- Phase 1 tables are defined further down in this file (plpgsql resolves at call time).
+  DELETE FROM public.habit_logs    WHERE user_id = v_me;
+  DELETE FROM public.habits        WHERE user_id = v_me;
+  DELETE FROM public.checkins      WHERE user_id = v_me;
+  DELETE FROM public.user_settings WHERE user_id = v_me;
+  DELETE FROM public.profiles      WHERE user_id = v_me;
+  DELETE FROM auth.users           WHERE id = auth.uid();
+END;
+$$;
+
+-- ============ Grants: signed-in users only ============
+REVOKE EXECUTE ON FUNCTION public.get_or_create_conversation(TEXT, TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.send_dm(UUID, TEXT, TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.mark_conversation_read(UUID, TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.is_blocked_with(TEXT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.bump_ai_usage() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.delete_my_account() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_or_create_conversation(TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.send_dm(UUID, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mark_conversation_read(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_blocked_with(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.bump_ai_usage() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_my_account() TO authenticated;
+
+-- Close direct-write bypasses (2026-11-17)
+-- DMs, conversation creation and read receipts all go through the SECURITY DEFINER
+-- RPCs (send_dm, get_or_create_conversation, mark_conversation_read), which check
+-- the caller and blocks. Direct table writes skipped those checks:
+--  * a blocked user could INSERT messages straight into the table
+--  * a participant could UPDATE a conversation's last_message_content preview
+--  * a receiver could UPDATE the content of messages sent to them
+
+DROP POLICY IF EXISTS messages_insert_dm ON public.messages;
+DROP POLICY IF EXISTS messages_insert ON public.messages;
+DROP POLICY IF EXISTS messages_update ON public.messages;
+-- Only group messages may be inserted directly, and only by group members.
+CREATE POLICY messages_insert ON public.messages FOR INSERT WITH CHECK (
+  (auth.uid())::text = sender_id
+  AND group_id IS NOT NULL
+  AND conversation_id IS NULL
+  AND EXISTS (
+    SELECT 1 FROM public.group_members gm
+    WHERE gm.group_id = messages.group_id AND gm.user_id = (auth.uid())::text
+  )
+);
+
+DROP POLICY IF EXISTS conversations_insert ON public.conversations;
+DROP POLICY IF EXISTS conversations_update ON public.conversations;
+
+-- Phase 1: nightly check-in (habits + mood) and private user settings.
+
+CREATE TABLE public.user_settings (
+  user_id           TEXT PRIMARY KEY DEFAULT (auth.uid())::text,
+  day_rollover_hour SMALLINT NOT NULL DEFAULT 4 CHECK (day_rollover_hour BETWEEN 0 AND 6),
+  trackers          JSONB NOT NULL DEFAULT '{"habits":true,"mood":true}',
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE public.habits (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     TEXT NOT NULL DEFAULT (auth.uid())::text,
+  name        TEXT NOT NULL CHECK (char_length(btrim(name)) BETWEEN 1 AND 40),
+  position    SMALLINT NOT NULL CHECK (position BETWEEN 0 AND 2),
+  link        TEXT CHECK (link IN ('workout', 'sleep')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  archived_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX habits_active_slot ON public.habits (user_id, position) WHERE archived_at IS NULL;
+CREATE TABLE public.habit_logs (
+  habit_id   UUID NOT NULL REFERENCES public.habits(id) ON DELETE CASCADE,
+  user_id    TEXT NOT NULL DEFAULT (auth.uid())::text,
+  date       DATE NOT NULL,
+  done       BOOLEAN NOT NULL,
+  source     TEXT NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'workout', 'health')),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (habit_id, date)
+);
+CREATE TABLE public.checkins (
+  user_id    TEXT NOT NULL DEFAULT (auth.uid())::text,
+  date       DATE NOT NULL,
+  mood       SMALLINT CHECK (mood BETWEEN 1 AND 5),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, date)
+);
+
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.habits        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.habit_logs    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.checkins      ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_settings_owner ON public.user_settings FOR ALL
+  USING ((auth.uid())::text = user_id) WITH CHECK ((auth.uid())::text = user_id);
+CREATE POLICY habits_owner ON public.habits FOR ALL
+  USING ((auth.uid())::text = user_id) WITH CHECK ((auth.uid())::text = user_id);
+CREATE POLICY checkins_owner ON public.checkins FOR ALL
+  USING ((auth.uid())::text = user_id) WITH CHECK ((auth.uid())::text = user_id);
+CREATE POLICY habit_logs_owner ON public.habit_logs FOR ALL
+  USING ((auth.uid())::text = user_id)
+  WITH CHECK ((auth.uid())::text = user_id AND EXISTS (
+    SELECT 1 FROM public.habits h WHERE h.id = habit_logs.habit_id AND h.user_id = (auth.uid())::text));
+
+CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON public.user_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_habit_logs_updated_at BEFORE UPDATE ON public.habit_logs
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_checkins_updated_at BEFORE UPDATE ON public.checkins
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
 

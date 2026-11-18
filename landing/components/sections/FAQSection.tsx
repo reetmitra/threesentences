@@ -27,7 +27,7 @@ const items = [
   },
   {
     q: 'What is "The Circle"?',
-    a: 'An optional feature — up to eight people you trust with your practice. No feeds, no public profiles, no follower counts. Just encrypted messages between people who actually know each other.',
+    a: 'An optional feature — up to eight people you trust with your practice. No feeds, no public profiles, no follower counts. Just private messages between people who actually know each other.',
   },
   {
     q: 'Is the AI reflection safe?',
@@ -39,7 +39,7 @@ const items = [
   },
   {
     q: 'How is my journal protected?',
-    a: "End-to-end encrypted. Your entries are yours — not ours. We cannot read them, we cannot sell them, and we will not. The business model is a simple subscription, not your data.",
+    a: "Your entries are yours — not ours. They're encrypted in transit and at rest, visible only to you in the app, never sold, and never used to train AI. They only reach an AI model if you turn on AI Reflection and ask for one. The business model is a simple subscription, not your data.",
   },
 ];
 

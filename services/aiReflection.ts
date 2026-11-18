@@ -203,6 +203,12 @@ export async function generateReflection(
       },
     });
 
+    if (fnError?.context?.status === 429) {
+      return {
+        success: false,
+        error: "You've reached today's reflection limit. Try again tomorrow.",
+      };
+    }
     if (fnError || !data?.content) {
       throw new Error(fnError?.message || 'Empty response from AI service');
     }

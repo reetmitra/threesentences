@@ -837,7 +837,7 @@ function SocialCircleView() {
           textTransform: "uppercase",
         }}
       >
-        End-to-end encrypted
+        Private by default
       </div>
     </div>
   );
@@ -1329,7 +1329,7 @@ const FEATURES = [
   {
     tab: "The Circle",
     headline: "Small by design.",
-    body: "Up to eight close friends. End-to-end encrypted messages. No feeds, no likes, no following. Just people you trust with your practice.",
+    body: "Up to eight close friends. Private messages. No feeds, no likes, no following. Just people you trust with your practice.",
     phone: <PhoneSocialPreview />,
   },
 ] as const;

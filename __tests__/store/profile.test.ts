@@ -32,6 +32,7 @@ const mockSupabaseDelete = jest.fn();
 const mockSupabaseEq = jest.fn();
 const mockSupabaseSingle = jest.fn();
 const mockSupabaseMaybeSingle = jest.fn();
+const mockSupabaseUpsert = jest.fn();
 
 jest.mock('@/config/supabase', () => ({
   supabase: {
@@ -56,6 +57,7 @@ jest.mock('@/config/supabase', () => ({
             }),
           }),
         }),
+        upsert: (data: unknown, options: unknown) => mockSupabaseUpsert(data, options),
         insert: (data: unknown) => ({
           select: () => ({
             single: () => mockSupabaseInsert(data),
@@ -135,7 +137,8 @@ const mockDbProfile = {
 describe('profile store', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSupabaseSingle.mockResolvedValue({ data: mockDbProfile, error: null });
+    mockSupabaseMaybeSingle.mockResolvedValue({ data: mockDbProfile, error: null });
+    mockSupabaseUpsert.mockResolvedValue({ error: null });
     mockSupabaseInsert.mockResolvedValue({ data: mockDbProfile, error: null });
     mockSupabaseUpdate.mockResolvedValue({ data: mockDbProfile, error: null });
     mockSupabaseDelete.mockResolvedValue({ error: null });
@@ -143,7 +146,7 @@ describe('profile store', () => {
 
   describe('getProfile', () => {
     it('returns null for non-existent profile', async () => {
-      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseMaybeSingle.mockResolvedValue({ data: null, error: null });
 
       const profile = await getProfile('nonexistent');
       expect(profile).toBeNull();
@@ -177,33 +180,62 @@ describe('profile store', () => {
       const profile = await createProfile(testUserId, 'John');
 
       expect(profile.userId).toBe(testUserId);
-      expect(mockSupabaseInsert).not.toHaveBeenCalled();
+      expect(mockSupabaseUpsert).not.toHaveBeenCalled();
     });
 
-    it('creates new profile when none exists', async () => {
-      mockSupabaseSingle.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
-      mockSupabaseInsert.mockResolvedValue({ data: mockDbProfile, error: null });
+    it('creates new profile when none exists (upsert, then re-read)', async () => {
+      // First read: no row. Upsert succeeds. Re-read returns the new row.
+      mockSupabaseMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
       const profile = await createProfile(testUserId, 'New User');
 
-      expect(mockSupabaseInsert).toHaveBeenCalled();
-      expect(profile).not.toBeNull();
+      expect(mockSupabaseUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({ user_id: testUserId, name: 'New User' }),
+        { onConflict: 'user_id', ignoreDuplicates: true }
+      );
+      expect(profile.userId).toBe(testUserId);
     });
 
     it('initializes profile with default values', async () => {
-      mockSupabaseSingle.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
       const newProfile = {
         ...mockDbProfile,
         interests: [],
         is_complete: false,
-        username: '',
+        username: '_testuser123',
       };
-      mockSupabaseInsert.mockResolvedValue({ data: newProfile, error: null });
+      mockSupabaseMaybeSingle
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: newProfile, error: null });
 
       const profile = await createProfile(testUserId);
 
+      const [sent] = mockSupabaseUpsert.mock.calls[0] as [Record<string, unknown>];
+      expect(sent.interests).toEqual([]);
+      expect(sent.is_complete).toBe(false);
+      expect(sent.username).toBe('_testuser123');
       expect(profile.interests).toEqual([]);
       expect(profile.isComplete).toBe(false);
+    });
+
+    it('treats a username key conflict (23505) from a concurrent create as success', async () => {
+      // Two onboarding screens create the same profile at once: the loser's upsert
+      // hits the unique username key, and the re-read finds the winner's row.
+      mockSupabaseMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSupabaseUpsert.mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate key' } });
+
+      const profile = await createProfile(testUserId);
+
+      expect(profile.userId).toBe(testUserId);
+    });
+
+    it('throws on any other create error', async () => {
+      mockSupabaseMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+      mockSupabaseUpsert.mockResolvedValueOnce({ error: { code: '42501', message: 'denied' } });
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(createProfile(testUserId)).rejects.toThrow('Failed to create profile');
+      expect(errorSpy).toHaveBeenCalled();
+      errorSpy.mockRestore();
     });
   });
 
@@ -222,13 +254,13 @@ describe('profile store', () => {
 
   describe('completeProfileSetup', () => {
     it('throws error if profile not found', async () => {
-      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseMaybeSingle.mockResolvedValue({ data: null, error: null });
 
       await expect(completeProfileSetup('nonexistent')).rejects.toThrow('Profile not found');
     });
 
     it('throws error if minimum interests not met', async () => {
-      mockSupabaseSingle.mockResolvedValue({
+      mockSupabaseMaybeSingle.mockResolvedValue({
         data: { ...mockDbProfile, interests: [], is_complete: false },
         error: null,
       });
@@ -253,7 +285,7 @@ describe('profile store', () => {
     });
 
     it('returns false for incomplete profile', async () => {
-      mockSupabaseSingle.mockResolvedValue({
+      mockSupabaseMaybeSingle.mockResolvedValue({
         data: { ...mockDbProfile, is_complete: false },
         error: null,
       });
@@ -263,7 +295,7 @@ describe('profile store', () => {
     });
 
     it('returns false if profile not found', async () => {
-      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseMaybeSingle.mockResolvedValue({ data: null, error: null });
 
       const isComplete = await isProfileComplete('nonexistent');
       expect(isComplete).toBe(false);
@@ -280,7 +312,7 @@ describe('profile store', () => {
     });
 
     it('returns null for non-existent profile', async () => {
-      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseMaybeSingle.mockResolvedValue({ data: null, error: null });
 
       const summary = await getProfileSummary('nonexistent');
       expect(summary).toBeNull();
@@ -303,7 +335,7 @@ describe('profile store', () => {
     });
 
     it('returns null for non-existent profile', async () => {
-      mockSupabaseSingle.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+      mockSupabaseMaybeSingle.mockResolvedValue({ data: null, error: null });
 
       const exported = await exportProfile('nonexistent');
       expect(exported).toBeNull();

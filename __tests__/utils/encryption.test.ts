@@ -10,8 +10,8 @@ import {
 } from '@/utils/encryption';
 import * as SecureStore from 'expo-secure-store';
 
-// Use Node's built-in crypto as a drop-in for react-native-quick-crypto in tests
-jest.mock('react-native-quick-crypto', () => require('crypto'));
+// AES-GCM comes from @noble/ciphers (pure JS) and random bytes from expo-crypto,
+// which jest.setup.js mocks globally — no native crypto module to stub.
 
 // Stateful SecureStore mock so encrypt/decrypt reuse the same key within a test
 // Variable must be prefixed with "mock" to be accessible inside jest.mock() factory

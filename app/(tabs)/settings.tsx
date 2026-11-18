@@ -14,12 +14,15 @@ import {
   Switch,
   TouchableOpacity,
   Platform,
+  Linking,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Download, Trash2, LogOut, Lightbulb, Vibrate } from 'lucide-react-native';
+import { Download, Trash2, ListChecks, SmilePlus, Moon, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '@/constants/links';
 import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/Text';
@@ -31,13 +34,15 @@ import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
 import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/store/entries';
-import {
-  clearAllData,
-  getPreferences,
-  updatePreferences,
-} from '@/store/onboarding';
+import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
-import { getProfile } from '@/store/profile';
+import { getProfile, deleteAccount } from '@/store/profile';
+import { resetSettingsCache, getCachedSettings, updateSettings } from '@/store/settings';
+import { SettingsPatch, UserSettings } from '@/types/tracking';
+import { useCheckIn } from '@/hooks/useCheckIn';
+import { HabitSetupSheet } from '@/components/HabitSetupSheet';
+import { suggestHabits } from '@/types/tracking';
+import { DAY_ROLLOVER_OPTIONS, formatRolloverLabel, getTodayDateString } from '@/types/entry';
 import { refreshHapticsPreference } from '@/utils/haptics';
 import {
   requestNotificationPermission,
@@ -132,9 +137,13 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [reminderHour, setReminderHour] = useState(20);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteData' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteAccount' | null>(null);
   const [showExportSheet, setShowExportSheet] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ name?: string; profileImage?: string; interests?: string[] } | null>(null);
+  const [settings, setSettings] = useState<UserSettings>(() => getCachedSettings());
+  const [showHabitSetup, setShowHabitSetup] = useState(false);
+  const [showRolloverSheet, setShowRolloverSheet] = useState(false);
+  const checkIn = useCheckIn(getTodayDateString());
 
   const loadData = useCallback(async () => {
     if (!userId) return;
@@ -167,9 +176,29 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // loadSettings may have landed after mount (boot-timeout path).
+      setSettings(getCachedSettings());
       loadData();
-    }, [loadData])
+      checkIn.reload();
+    }, [loadData, checkIn.reload])
   );
+
+  const saveSettings = async (patch: SettingsPatch, successMessage?: string) => {
+    try {
+      await updateSettings(patch);
+      if (successMessage) showToast('success', successMessage);
+    } catch (error) {
+      showToast('error', error instanceof Error ? error.message : 'Could not save your settings. Please try again.');
+    }
+    // The cache, not this call's result: another save may have settled since.
+    setSettings(getCachedSettings());
+  };
+
+  const handleRolloverSelect = (hour: number) => {
+    setShowRolloverSheet(false);
+    if (hour === settings.dayRolloverHour) return;
+    saveSettings({ dayRolloverHour: hour }, `Your day now ends at ${formatRolloverLabel(hour)}.`);
+  };
 
   const handleSignOut = () => setConfirmAction('signOut');
 
@@ -177,6 +206,7 @@ export default function SettingsScreen() {
     setConfirmAction(null);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await signOut();
+    await resetSettingsCache();
     router.replace('/(auth)/login');
   };
 
@@ -265,14 +295,22 @@ export default function SettingsScreen() {
     showToast('success', 'All reflections deleted.');
   };
 
-  const handleDeleteData = () => setConfirmAction('deleteData');
+  const handleDeleteAccount = () => setConfirmAction('deleteAccount');
 
-  const confirmDeleteData = async () => {
+  const confirmDeleteAccount = async () => {
     setConfirmAction(null);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    await clearAllData();
-    showToast('success', 'All data has been removed.');
-    loadData();
+    try {
+      await deleteAccount();
+      router.replace('/(auth)/login');
+      showToast('success', 'Your account and data have been deleted.');
+    } catch (error) {
+      showToast('error', (error as Error).message);
+    }
+  };
+
+  const openLink = (url: string) => {
+    WebBrowser.openBrowserAsync(url).catch(() => showToast('error', 'Could not open the page.'));
   };
 
   const CONFIRM_CONFIG = {
@@ -290,11 +328,11 @@ export default function SettingsScreen() {
       onConfirm: confirmDeleteReflections,
       destructive: true,
     },
-    deleteData: {
-      title: 'Delete all data?',
-      message: 'This permanently deletes all your journal entries, reflections, and settings.',
-      confirmLabel: 'Delete Everything',
-      onConfirm: confirmDeleteData,
+    deleteAccount: {
+      title: 'Delete your account?',
+      message: 'This permanently deletes your account, journal entries, reflections, friends, and messages. It cannot be undone.',
+      confirmLabel: 'Delete Account',
+      onConfirm: confirmDeleteAccount,
       destructive: true,
     },
   } as const;
@@ -431,6 +469,57 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Trackers Section */}
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Trackers</Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<ListChecks size={22} color={c.textPrimary} />}
+              title="Habits"
+              subtitle={settings.trackers.habits ? 'Shown in your nightly check-in' : 'Off'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={settings.trackers.habits}
+                  onValueChange={(value) => saveSettings({ trackers: { habits: value } })}
+                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
+                  thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
+                />
+              }
+            />
+            <SettingsRow
+              icon={<SmilePlus size={22} color={c.textPrimary} />}
+              title="Mood"
+              subtitle={settings.trackers.mood ? 'Shown in your nightly check-in' : 'Off'}
+              showChevron={false}
+              rightElement={
+                <Switch
+                  value={settings.trackers.mood}
+                  onValueChange={(value) => saveSettings({ trackers: { mood: value } })}
+                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
+                  thumbColor={c.textPrimary}
+                  {...WEB_SWITCH_PROPS}
+                />
+              }
+            />
+            {settings.trackers.habits && (
+              <SettingsRow
+                icon={<Icon name="edit" size={22} color={c.textPrimary} />}
+                title="Edit habits"
+                subtitle={`${checkIn.habits.length} active`}
+                onPress={() => setShowHabitSetup(true)}
+              />
+            )}
+            <SettingsRow
+              icon={<Moon size={22} color={c.textPrimary} />}
+              title="Day ends at"
+              subtitle={formatRolloverLabel(settings.dayRolloverHour)}
+              onPress={() => setShowRolloverSheet(true)}
+            />
+          </View>
+        </View>
+
         {/* Your Data Section */}
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Your Data</Text>
@@ -444,7 +533,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Icon name="lock" size={22} color={c.textSecondary} />}
               title="Encryption"
-              subtitle="Entries encrypted at rest"
+              subtitle="Encrypted in transit and at rest"
               showChevron={false}
             />
             {aiEnabled && reflectionCount > 0 && (
@@ -479,15 +568,38 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* About Section */}
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>About</Text>
+          <View style={styles.sectionContent}>
+            <SettingsRow
+              icon={<Shield size={22} color={c.textPrimary} />}
+              title="Privacy Policy"
+              onPress={() => openLink(PRIVACY_URL)}
+            />
+            <SettingsRow
+              icon={<FileText size={22} color={c.textPrimary} />}
+              title="Terms of Use"
+              onPress={() => openLink(TERMS_URL)}
+            />
+            <SettingsRow
+              icon={<Mail size={22} color={c.textPrimary} />}
+              title="Contact Support"
+              subtitle={SUPPORT_EMAIL}
+              onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => showToast('info', `Email us at ${SUPPORT_EMAIL}`))}
+            />
+          </View>
+        </View>
+
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Danger Zone</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Trash2 size={22} color={c.warn} />}
-              title="Delete All Data"
-              subtitle="Permanently remove everything"
-              onPress={handleDeleteData}
+              title="Delete Account"
+              subtitle="Permanently delete your account and all data"
+              onPress={handleDeleteAccount}
               destructive
               showChevron={false}
             />
@@ -520,6 +632,44 @@ export default function SettingsScreen() {
           onConfirm={CONFIRM_CONFIG[confirmAction].onConfirm}
         />
       )}
+
+      <HabitSetupSheet
+        visible={showHabitSetup}
+        onClose={() => setShowHabitSetup(false)}
+        habits={checkIn.habits}
+        suggestions={suggestHabits(userProfile?.interests ?? [], checkIn.habits.map((h) => h.name))}
+        onAdd={checkIn.addHabit}
+        onRemove={checkIn.removeHabit}
+      />
+
+      {/* Scrolls so the seven options never clip (667pt screens, large Dynamic Type). */}
+      <BottomSheet visible={showRolloverSheet} onClose={() => setShowRolloverSheet(false)} maxHeight={0.75}>
+        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.exportSheet}>
+          <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
+            Day ends at
+          </Text>
+          <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+            Entries lock and a new day begins at this hour.
+          </Text>
+          {DAY_ROLLOVER_OPTIONS.map((hour) => {
+            const selected = hour === settings.dayRolloverHour;
+            const label = formatRolloverLabel(hour);
+            return (
+              <Pressable
+                key={hour}
+                style={styles.rolloverOption}
+                onPress={() => handleRolloverSelect(hour)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Day ends at ${label}`}
+              >
+                <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, flex: 1 }}>{label}</Text>
+                {selected && <Icon name="check" size={20} color={c.textPrimary} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </BottomSheet>
 
       <BottomSheet visible={showExportSheet} onClose={() => setShowExportSheet(false)} maxHeight={0.32}>
         <View style={styles.exportSheet}>
@@ -570,6 +720,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[6],
     paddingTop: spacing[2],
   },
+  sheetScroll: {
+    flex: 1,
+  },
   exportOption: {
     height: 52,
     borderRadius: 999,
@@ -577,6 +730,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
+  },
+
+  rolloverOption: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   // Profile header card

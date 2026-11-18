@@ -16,6 +16,7 @@ import { spacing, edgePadding } from '@/theme/spacing';
 import { getEntryStats, hasEntryForToday } from '@/store/entries';
 import { getPreferences } from '@/store/onboarding';
 import { getDailyPrompt } from '@/constants/prompts';
+import { getTodayDateString } from '@/types/entry';
 
 export default function InsightsScreen() {
   const c = colors.dark;
@@ -29,7 +30,7 @@ export default function InsightsScreen() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [promptEnabled, setPromptEnabled] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDateString();
   const dailyPrompt = getDailyPrompt(today);
 
   const loadData = useCallback(async () => {
@@ -169,7 +170,7 @@ export default function InsightsScreen() {
               Presence Over Perfection
             </Text>
             <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
-              Three sentences, locked at midnight. No deletions. Your words stand as written, capturing how you felt in the moment.
+              Three sentences, locked when your day ends. No deletions. Your words stand as written, capturing how you felt in the moment.
             </Text>
           </View>
         </Animated.View>

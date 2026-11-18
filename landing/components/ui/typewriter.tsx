@@ -53,7 +53,7 @@ export function Typewriter({
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
-    let rafId: number;
+    let rafId = 0;
 
     const scheduleTimeout = (fn: () => void, ms: number) => {
       timeoutId = setTimeout(fn, ms);

@@ -12,10 +12,12 @@ import {
   Hairline,
 } from "@/components/lp";
 
+const LEGAL_HREFS: Record<string, string> = { 'Privacy Policy': '/privacy', 'Terms of Service': '/terms' };
+
 const columns = [
   { title: 'Product', links: ['How it works', 'The Circle', 'AI Reflection', 'Privacy & Security', 'iOS App'] },
   { title: 'Company', links: ['About 363', 'Manifesto', 'Blog', 'Careers', 'Contact'] },
-  { title: 'Legal', links: ['Privacy Policy', 'Terms of Service', 'Journal Policy', 'Cookie Policy'] },
+  { title: 'Legal', links: ['Privacy Policy', 'Terms of Service'] },
 ];
 
 export function FooterSection({ onCTAClick }: { onCTAClick: () => void }) {
@@ -38,7 +40,7 @@ export function FooterSection({ onCTAClick }: { onCTAClick: () => void }) {
                 {col.links.map((l) => (
                   <a
                     key={l}
-                    href="#"
+                    href={LEGAL_HREFS[l] ?? '#'}
                     style={{ fontFamily: LP_SANS, fontSize: 14, color: LP_INK_DIM, textDecoration: 'none', transition: 'color 180ms' }}
                     onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = LP_INK}
                     onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = LP_INK_DIM}

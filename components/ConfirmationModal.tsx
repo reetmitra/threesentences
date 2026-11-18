@@ -24,7 +24,7 @@ export function ConfirmationModal({
   onConfirm,
   loading,
   title = 'Submit entry?',
-  message = 'You can refine your three sentences until midnight. After that, they stand as written.',
+  message = 'You can refine your three sentences until your day ends. After that, they stand as written.',
   confirmLabel = 'Submit',
   cancelLabel = 'Cancel',
   destructive = false,

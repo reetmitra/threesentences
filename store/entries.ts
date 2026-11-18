@@ -8,11 +8,16 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/config/supabase';
+import { getAllHabits } from '@/store/habits';
+import { getAllTracking } from '@/store/checkins';
+import { getCachedSettings } from '@/store/settings';
+import { buildJsonExport, buildTxtExport } from '@/utils/exportFormat';
 import {
   Entry,
   Draft,
   getTodayDateString,
   formatDateString,
+  parseDateString,
   getCurrentTimezone,
   generateId,
 } from '@/types/entry';
@@ -290,8 +295,7 @@ export async function getEntryStats(userId: string): Promise<{
     let longestStreak = 0;
     let streak = 0;
 
-    const today = new Date();
-    const checkDate = new Date(today);
+    const checkDate = parseDateString(getTodayDateString());
 
     // Check current streak — if today has no entry, back up one day before counting
     if (!dates.has(formatDateString(checkDate))) {
@@ -501,7 +505,7 @@ export async function getEntriesForReflection(
   days: number = 7
 ): Promise<Entry[]> {
   try {
-    const startDate = new Date();
+    const startDate = parseDateString(getTodayDateString());
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = formatDateString(startDate);
 
@@ -535,7 +539,7 @@ export async function exportEntries(
 
   switch (format) {
     case 'json':
-      return JSON.stringify(entries, null, 2);
+      return buildJsonExport(entries, await getAllHabits(), await getAllTracking(), getCachedSettings());
 
     case 'csv': {
       const header = 'Date,Content,Submitted At,Timezone\n';
@@ -545,13 +549,10 @@ export async function exportEntries(
       return header + rows.join('\n');
     }
 
-    case 'txt': {
-      return entries.map((e) =>
-        `--- ${e.date} ---\n${e.content}\n`
-      ).join('\n');
-    }
+    case 'txt':
+      return buildTxtExport(entries, await getAllHabits(), await getAllTracking());
 
     default:
-      return JSON.stringify(entries, null, 2);
+      return buildJsonExport(entries, await getAllHabits(), await getAllTracking(), getCachedSettings());
   }
 }

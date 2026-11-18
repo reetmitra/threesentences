@@ -1,8 +1,15 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.3'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
+
+// Cost guards: the anon key ships in the app, so a valid JWT alone proves nothing.
+const DAILY_LIMIT_PER_USER = 10
+const MAX_ENTRIES = 90
+const MAX_CHARS_PER_ENTRY = 1000
+const TIME_RANGES = [7, 30, 90]
 
 const SYSTEM_PROMPT = `You are a gentle, observational reflection assistant for a journaling app.
 
@@ -52,11 +59,42 @@ serve(async (req) => {
   }
 
   try {
+    // Must be a real signed-in user, not just the public anon key.
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return new Response('Unauthorized', { status: 401, headers: CORS_HEADERS })
+    }
+
     const { entries, timeRange } = await req.json()
 
     if (!entries || !Array.isArray(entries) || entries.length === 0) {
       return new Response(JSON.stringify({ error: 'No entries provided' }), {
         status: 400,
+        headers: JSON_HEADERS,
+      })
+    }
+    if (entries.length > MAX_ENTRIES || !TIME_RANGES.includes(timeRange)) {
+      return new Response(JSON.stringify({ error: 'Invalid request' }), {
+        status: 400,
+        headers: JSON_HEADERS,
+      })
+    }
+
+    // Counts this call against today's quota (counted before the AI call, so failed calls count too).
+    const { data: usedToday, error: usageError } = await supabase.rpc('bump_ai_usage')
+    if (usageError) {
+      console.error('bump_ai_usage failed:', usageError)
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: JSON_HEADERS,
+      })
+    }
+    if (usedToday > DAILY_LIMIT_PER_USER) {
+      return new Response(JSON.stringify({ error: 'daily_limit' }), {
+        status: 429,
         headers: JSON_HEADERS,
       })
     }
@@ -71,7 +109,8 @@ serve(async (req) => {
     }
 
     const entriesText = entries
-      .map((e: { date: string; content: string }) => `[${e.date}]: ${e.content}`)
+      .map((e: { date: string; content: string }) =>
+        `[${String(e.date).slice(0, 10)}]: ${String(e.content).slice(0, MAX_CHARS_PER_ENTRY)}`)
       .join('\n\n')
 
     const userPrompt = `Please provide a gentle reflection on my journal entries from the past ${timeRange} days.\n\nHere are my entries (${entries.length} total):\n\n${entriesText}\n\nRemember to use observational language and avoid any diagnostic statements.`

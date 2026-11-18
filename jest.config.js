@@ -1,3 +1,8 @@
+// Run every test in a DST timezone so date tests (logicalDate.dst.test.ts)
+// exercise real offset changes. Setting TZ inside a test file is too late:
+// the worker's timezone is already fixed by then.
+process.env.TZ = 'America/New_York';
+
 module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
@@ -6,7 +11,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|lucide-react-native)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|lucide-react-native|@noble/.*)',
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
