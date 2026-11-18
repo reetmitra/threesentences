@@ -10,16 +10,15 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { radius, spacing } from '@/theme/spacing';
-import { habitStats, PatternDay, RangeDays, summarizeHabit } from '@/types/patterns';
+import { habitStats, PatternDay, summarizeHabit } from '@/types/patterns';
 import { Habit } from '@/types/tracking';
 
 interface HabitGridProps {
   habits: Habit[];
   days: PatternDay[];
-  range: RangeDays;
 }
 
-export function HabitGrid({ habits, days, range }: HabitGridProps) {
+export function HabitGrid({ habits, days }: HabitGridProps) {
   if (habits.length === 0) {
     return (
       <Text variant="sm" style={styles.empty}>
@@ -36,7 +35,7 @@ export function HabitGrid({ habits, days, range }: HabitGridProps) {
           <View
             key={habit.id}
             accessible
-            accessibilityLabel={summarizeHabit(habit.name, stats, range)}
+            accessibilityLabel={summarizeHabit(habit.name, stats)}
           >
             <View style={styles.header}>
               <Text variant="sm" numberOfLines={1} style={styles.name}>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -65,13 +65,16 @@ export default function PatternsScreen() {
   const year = monthStart.getFullYear();
   const month = monthStart.getMonth() + 1;
 
-  const [rangeDays, setRangeDays] = useState<PatternDay[]>([]);
+  // Days plus the range they cover: a chip tap must not show the old range's days under the new label.
+  const [rangeData, setRangeData] = useState<{ range: RangeDays; days: PatternDay[] } | null>(null);
   const [monthDays, setMonthDays] = useState<PatternDay[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [stats, setStats] = useState({ totalEntries: 0, currentStreak: 0, longestStreak: 0 });
   const [aiEnabled, setAiEnabled] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  // Date whose entry fetch finished (getEntryForDate returns null on failure, never throws).
+  const [entryFetchedFor, setEntryFetchedFor] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -87,7 +90,12 @@ export default function PatternsScreen() {
     const r = buildRange(getTodayDateString(), range);
     rangeKey.current = `${r.from}:${r.to}`;
     const key = rangeKey.current;
-    return loadWithCache(r, (d) => { if (rangeKey.current === key) setRangeDays(d); });
+    const ok = await loadWithCache(r, (days) => { if (rangeKey.current === key) setRangeData({ range, days }); });
+    // Nothing at all for a newly picked range (offline, no cache): show its empty state, not the old range's days.
+    if (!ok && rangeKey.current === key) {
+      setRangeData((prev) => (prev?.range === range ? prev : { range, days: [] }));
+    }
+    return ok;
   }, [range]);
 
   const loadMonth = useCallback(async (): Promise<boolean> => {
@@ -149,13 +157,13 @@ export default function PatternsScreen() {
     selectedRef.current = date;
     setSelectedDate(date);
     setSelectedEntry(null);
-    try {
-      const entry = await getEntryForDate(userId, date);
-      if (selectedRef.current === date) setSelectedEntry(entry);
-    } catch {
-      if (selectedRef.current === date) showToast('error', 'Could not load entry');
+    setEntryFetchedFor(null);
+    const entry = await getEntryForDate(userId, date);
+    if (selectedRef.current === date) {
+      setSelectedEntry(entry);
+      setEntryFetchedFor(date);
     }
-  }, [userId, showToast]);
+  }, [userId]);
 
   const clearSelection = () => {
     selectedRef.current = null;
@@ -189,11 +197,16 @@ export default function PatternsScreen() {
     ? monthDays.find((d) => d.date === selectedDate) ?? null
     : null;
 
-  // A day known to have an entry must not flash "No entry" while it loads (or offline).
-  const entryPending = !selectedEntry && !!selectedDay?.hasEntry;
+  // A day known to have an entry shows a skeleton until its fetch finishes; a failed
+  // fetch then reads "Couldn't load this entry." (DayDetail), never a stuck skeleton.
+  const entryPending = !!selectedDay?.hasEntry && entryFetchedFor !== selectedDate;
 
-  // Range data is ready once a real load cycle finished or cache supplied days.
-  const rangeReady = loaded || rangeDays.length > 0;
+  // Range data shows once it belongs to the picked range and a real load cycle
+  // finished or cache supplied days.
+  const shownRange =
+    rangeData && rangeData.range === range && (loaded || rangeData.days.length > 0) ? rangeData : null;
+  const calendarReady = loaded || monthDays.length > 0;
+  const aiAction = aiEnabled ? 'Generate reflection' : 'Learn more';
 
   const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
@@ -214,35 +227,41 @@ export default function PatternsScreen() {
           </View>
         </View>
 
-        <View style={styles.monthNav}>
-          <Pressable
-            onPress={goToPreviousMonth}
-            style={[styles.navButton, { backgroundColor: c.surface, borderColor: c.frame }]}
-            accessibilityLabel="Previous month"
-          >
-            <Icon name="arrowL" size={20} color={c.textPrimary} />
-          </Pressable>
+        {/* SkeletonCalendar draws its own month nav until the first load. */}
+        {calendarReady && (
+          <View style={styles.monthNav}>
+            <Pressable
+              onPress={goToPreviousMonth}
+              style={[styles.navButton, { backgroundColor: c.surface, borderColor: c.frame }]}
+              accessibilityRole="button"
+              accessibilityLabel="Previous month"
+            >
+              <Icon name="arrowL" size={20} color={c.textPrimary} />
+            </Pressable>
 
-          <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary }}>
-            {monthLabel}
-          </Text>
+            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary }}>
+              {monthLabel}
+            </Text>
 
-          <Pressable
-            onPress={goToNextMonth}
-            style={[
-              styles.navButton,
-              { backgroundColor: c.surface, borderColor: c.frame },
-              !canGoNext && styles.navButtonDisabled,
-            ]}
-            disabled={!canGoNext}
-            accessibilityLabel="Next month"
-          >
-            <Icon name="caret" size={20} color={canGoNext ? c.textPrimary : c.textTertiary} />
-          </Pressable>
-        </View>
+            <Pressable
+              onPress={goToNextMonth}
+              style={[
+                styles.navButton,
+                { backgroundColor: c.surface, borderColor: c.frame },
+                !canGoNext && styles.navButtonDisabled,
+              ]}
+              disabled={!canGoNext}
+              accessibilityRole="button"
+              accessibilityLabel="Next month"
+              accessibilityState={{ disabled: !canGoNext }}
+            >
+              <Icon name="caret" size={20} color={canGoNext ? c.textPrimary : c.textTertiary} />
+            </Pressable>
+          </View>
+        )}
 
         <View style={[styles.calendarContainer, { backgroundColor: c.surface, borderColor: c.frame }]}>
-          {loaded || monthDays.length > 0 ? (
+          {calendarReady ? (
             <Calendar
               year={year}
               month={month}
@@ -268,33 +287,43 @@ export default function PatternsScreen() {
           />
         )}
 
-        {trackers.mood && (
-          <View style={styles.section}>
-            <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
-              Mood
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
+            Mood
+          </Text>
+          {!trackers.mood ? (
+            <Text variant="sm" style={styles.quiet}>
+              Turn on Mood in Settings
             </Text>
-            {rangeReady ? <MoodChart days={rangeDays} range={range} /> : <SkeletonCard style={styles.cardSkeleton} />}
-          </View>
-        )}
+          ) : shownRange ? (
+            <MoodChart days={shownRange.days} range={shownRange.range} />
+          ) : (
+            <SkeletonCard style={styles.cardSkeleton} />
+          )}
+        </View>
 
-        {trackers.habits && (
-          <View style={styles.section}>
-            <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
-              Habits
+        <View style={styles.section}>
+          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
+            Habits
+          </Text>
+          {!trackers.habits ? (
+            <Text variant="sm" style={styles.quiet}>
+              Turn on Habits in Settings
             </Text>
-            {habitsLoaded && rangeReady ? (
-              <HabitGrid habits={habits} days={rangeDays} range={range} />
-            ) : (
-              <SkeletonCard style={styles.cardSkeleton} />
-            )}
-          </View>
-        )}
+          ) : habitsLoaded && shownRange ? (
+            <HabitGrid habits={habits} days={shownRange.days} />
+          ) : (
+            <SkeletonCard style={styles.cardSkeleton} />
+          )}
+        </View>
 
         {/* Always visible so the feature is discoverable pre-opt-in; the Reflect
             screen itself shows the enable-in-settings state when disabled. */}
         <Pressable
           style={[styles.card, { backgroundColor: c.surface, borderColor: c.frame }]}
           onPress={() => router.push('/(tabs)/reflect')}
+          accessibilityRole="button"
+          accessibilityLabel={prefsLoaded ? `AI Reflection, ${aiAction}` : 'AI Reflection'}
         >
           <View style={styles.cardHeader}>
             <Icon name="spark" size={18} color={c.textSecondary} strokeWidth={1.5} />
@@ -311,7 +340,7 @@ export default function PatternsScreen() {
               </Text>
               <View style={styles.cardAction}>
                 <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>
-                  {aiEnabled ? 'Generate reflection' : 'Learn more'}
+                  {aiAction}
                 </Text>
                 <ArrowRight size={14} color={c.textBright} />
               </View>
@@ -376,6 +405,7 @@ const styles = StyleSheet.create({
   cardSkeleton: { height: 80 },
   section: { marginTop: spacing[5] },
   eyebrow: { letterSpacing: 1.5, marginBottom: spacing[3] },
+  quiet: { color: colors.dark.textSecondary },
   card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginTop: spacing[5] },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginBottom: spacing[3] },
   cardAction: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },

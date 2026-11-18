@@ -140,7 +140,9 @@ export function Calendar({
               ? { color: activeColors.textBright }
               : cell.hasEntry
               ? { color: activeColors.textPrimary }
-              : { color: activeColors.textTertiary },
+              : cell.isFuture
+              ? { color: activeColors.textTertiary } // disabled
+              : { color: activeColors.textSecondary }, // tappable past day
           ]}
         >
           {cell.day}
@@ -156,6 +158,8 @@ export function Calendar({
             }}
           />
         ) : (
+          // Decorative placeholder (keeps rows aligned); "no entry" is told by the
+          // missing filled dot and the accessibility label, so it stays faint.
           <View
             style={{
               width: 4,

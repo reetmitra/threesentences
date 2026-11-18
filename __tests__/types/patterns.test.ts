@@ -34,6 +34,9 @@ describe('buildRange', () => {
   it('crosses the DST start', () => {
     expect(buildRange('2026-03-10', 7)).toEqual({ from: '2026-03-04', to: '2026-03-10' });
   });
+  it('crosses the DST end (fall-back night, Nov 1)', () => {
+    expect(buildRange('2026-11-03', 7)).toEqual({ from: '2026-10-28', to: '2026-11-03' });
+  });
   it('crosses a year boundary', () => {
     expect(buildRange('2027-01-02', 7).from).toBe('2026-12-27');
   });
@@ -143,9 +146,9 @@ describe('summarizeMood', () => {
 
 describe('summarizeHabit', () => {
   it('uses days answered as denominator', () => {
-    expect(summarizeHabit('In bed by 1am', { done: 4, answered: 7 }, 7)).toBe('In bed by 1am: 4 of 7 days');
+    expect(summarizeHabit('In bed by 1am', { done: 4, answered: 7 })).toBe('In bed by 1am: 4 of 7 days');
   });
   it('handles no answers', () => {
-    expect(summarizeHabit('In bed by 1am', { done: 0, answered: 0 }, 7)).toBe('In bed by 1am: not checked in yet');
+    expect(summarizeHabit('In bed by 1am', { done: 0, answered: 0 })).toBe('In bed by 1am: not checked in yet');
   });
 });

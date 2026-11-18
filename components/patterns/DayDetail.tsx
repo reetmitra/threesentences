@@ -38,11 +38,12 @@ export function DayDetail({ date, entry, day, habits, isToday, onOpenToday }: Da
         {dateLabel}
       </Text>
 
+      {/* No entry on a day known to have one: its fetch failed (e.g. offline). */}
       {entry ? (
         <EntryCard entry={entry} />
       ) : (
         <Text variant="sm" style={styles.secondary}>
-          No entry this day.
+          {day?.hasEntry ? "Couldn't load this entry." : 'No entry this day.'}
         </Text>
       )}
 

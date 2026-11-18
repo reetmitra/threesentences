@@ -124,12 +124,7 @@ export function summarizeMood(days: PatternDay[], range: RangeDays): string {
   return `Mood over ${range} days: mostly ${MOOD_LABELS[top]}${roughPart}.`;
 }
 
-export function summarizeHabit(
-  name: string,
-  stats: { done: number; answered: number },
-  // range kept for call-site symmetry with summarizeMood
-  _range: RangeDays,
-): string {
+export function summarizeHabit(name: string, stats: { done: number; answered: number }): string {
   if (stats.answered === 0) return `${name}: not checked in yet`;
   return `${name}: ${stats.done} of ${stats.answered} ${stats.answered === 1 ? 'day' : 'days'}`;
 }
