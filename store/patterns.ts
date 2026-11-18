@@ -32,13 +32,14 @@ function slotFor(from: string, to: string): string | null {
   return days ? `r${days}` : null;
 }
 
-/** Per-user key, so another account on this device never sees it. Null when signed out. */
-async function cacheKey(from: string, to: string): Promise<string | null> {
+/**
+ * Per-user key, so another account on this device never sees it. Null when signed out.
+ * userId comes from the caller (useAuth), not getSession(): offline with an expired
+ * token, getSession() retries a refresh for ~25s and returns null, which would hide the cache.
+ */
+function cacheKey(userId: string | null, from: string, to: string): string | null {
   const slot = slotFor(from, to);
-  if (!slot) return null;
-  const { data } = await supabase.auth.getSession();
-  const userId = data.session?.user.id;
-  return userId ? `${PREFIX}${userId}/${slot}` : null;
+  return userId && slot ? `${PREFIX}${userId}/${slot}` : null;
 }
 
 async function readCache(key: string | null, from: string, to: string): Promise<PatternDay[] | null> {
@@ -55,14 +56,18 @@ async function readCache(key: string | null, from: string, to: string): Promise<
   }
 }
 
-export async function getCachedPatterns(from: string, to: string): Promise<PatternDay[] | null> {
-  return readCache(await cacheKey(from, to), from, to);
+export async function getCachedPatterns(
+  userId: string | null,
+  from: string,
+  to: string,
+): Promise<PatternDay[] | null> {
+  return readCache(cacheKey(userId, from, to), from, to);
 }
 
-export async function getPatterns(from: string, to: string): Promise<PatternDay[]> {
+export async function getPatterns(userId: string | null, from: string, to: string): Promise<PatternDay[]> {
   // Key taken before the request: a reply that lands after an account switch
   // still files under the account that asked.
-  const key = await cacheKey(from, to);
+  const key = cacheKey(userId, from, to);
   const { data, error } = await supabase.rpc('get_patterns', { p_from: from, p_to: to });
   if (error || !Array.isArray(data)) {
     console.error('get_patterns failed', error);

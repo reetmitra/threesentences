@@ -37,13 +37,14 @@ const LOAD_ERROR = "Couldn't load your patterns.";
 
 /** Shows cached data instantly, then refreshes. Resolves false when the refresh failed. */
 async function loadWithCache(
+  userId: string | null,
   range: { from: string; to: string },
   apply: (days: PatternDay[]) => void,
 ): Promise<boolean> {
-  const cached = await getCachedPatterns(range.from, range.to);
+  const cached = await getCachedPatterns(userId, range.from, range.to);
   if (cached) apply(cached);
   try {
-    apply(await getPatterns(range.from, range.to));
+    apply(await getPatterns(userId, range.from, range.to));
     return true;
   } catch {
     return false;
@@ -90,20 +91,20 @@ export default function PatternsScreen() {
     const r = buildRange(getTodayDateString(), range);
     rangeKey.current = `${r.from}:${r.to}`;
     const key = rangeKey.current;
-    const ok = await loadWithCache(r, (days) => { if (rangeKey.current === key) setRangeData({ range, days }); });
+    const ok = await loadWithCache(userId, r, (days) => { if (rangeKey.current === key) setRangeData({ range, days }); });
     // Nothing at all for a newly picked range (offline, no cache): show its empty state, not the old range's days.
     if (!ok && rangeKey.current === key) {
       setRangeData((prev) => (prev?.range === range ? prev : { range, days: [] }));
     }
     return ok;
-  }, [range]);
+  }, [range, userId]);
 
   const loadMonth = useCallback(async (): Promise<boolean> => {
     const r = monthRange(year, month);
     monthKey.current = `${r.from}:${r.to}`;
     const key = monthKey.current;
-    return loadWithCache(r, (d) => { if (monthKey.current === key) setMonthDays(d); });
-  }, [year, month]);
+    return loadWithCache(userId, r, (d) => { if (monthKey.current === key) setMonthDays(d); });
+  }, [year, month, userId]);
 
   const loadExtras = useCallback(async () => {
     if (!userId) return;
