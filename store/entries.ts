@@ -11,7 +11,7 @@ import { supabase } from '@/config/supabase';
 import { getAllHabits } from '@/store/habits';
 import { getAllTracking } from '@/store/checkins';
 import { getCachedSettings } from '@/store/settings';
-import { buildJsonExport, buildTxtExport } from '@/utils/exportFormat';
+import { buildJsonExport, buildTxtExport, fetchAllPages } from '@/utils/exportFormat';
 import {
   Entry,
   Draft,
@@ -54,26 +54,19 @@ function mapToEntry(dbEntry: DbEntry): Entry {
 }
 
 /**
- * Get all entries from Supabase (decrypted)
+ * Every entry, newest first, paged past the API's row cap.
+ * Throws on failure: its caller is export, which must not share an empty file.
  */
 export async function getAllEntries(userId: string): Promise<Entry[]> {
-  try {
-    const { data, error } = await supabase
+  const rows = await fetchAllPages<DbEntry>((from, to) =>
+    supabase
       .from('entries')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
-
-    if (error) {
-      console.error('Failed to fetch entries:', error);
-      return [];
-    }
-
-    return (data as DbEntry[]).map(mapToEntry);
-  } catch (error) {
-    console.error('Failed to load entries:', error);
-    return [];
-  }
+      .order('date', { ascending: false })
+      .range(from, to),
+  );
+  return rows.map(mapToEntry);
 }
 
 /**

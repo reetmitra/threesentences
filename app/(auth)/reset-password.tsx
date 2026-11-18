@@ -35,12 +35,18 @@ export default function ResetPasswordScreen() {
     }
     try {
       setLoading(true);
+      // The reset link signs you in; without it there is nothing to update.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        showToast('error', 'Open the reset link from your email on this phone first.', 5000);
+        return;
+      }
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      showToast('success', 'Password updated — sign in with your new password', 5000);
-      router.replace('/(auth)/login');
-    } catch (error: any) {
-      showToast('error', error.message || 'Could not update password');
+      showToast('success', 'Password updated', 4000);
+      router.replace('/'); // already signed in; '/' routes to the app
+    } catch (error) {
+      showToast('error', error instanceof Error && error.message ? error.message : 'Could not update password');
     } finally {
       setLoading(false);
     }

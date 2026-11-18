@@ -23,6 +23,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        // Email links come back as ?code=… that only this device can redeem
+        // (components/AuthLinkHandler). Password sign-in is unaffected.
+        flowType: 'pkce',
     },
 });
 
