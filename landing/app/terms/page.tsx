@@ -7,12 +7,12 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Use"
-      updated="17 November 2026"
+      updated="19 November 2026"
       sections={[
         {
           heading: "Using Three",
           body: [
-            "By creating an account you agree to these Terms and our Privacy Policy. You must be at least 13 (16 in the EEA and UK) to use Three.",
+            "By creating an account you agree to these Terms and our Privacy Policy. You must be 18 or older to use Three.",
             "Keep your password safe; you're responsible for activity on your account.",
           ],
         },

@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      updated="17 November 2026"
+      updated="19 November 2026"
       sections={[
         {
           heading: "Who we are",
@@ -37,6 +37,7 @@ export default function PrivacyPage() {
           heading: "Who processes your data",
           body: [
             "Supabase hosts our database and sign-in (servers in Singapore). Data is encrypted in transit (TLS) and at rest.",
+            "Resend delivers account emails (sign-up confirmations and password resets) and sees only your email address and the message.",
             "Anthropic (Claude) generates AI reflections, only if you turn on AI Reflection, and only with the entries from the period you choose, at the moment you request a reflection. Anthropic does not use this data to train its models.",
             "We may disclose data if the law requires it, or to protect someone's safety.",
           ],
@@ -69,9 +70,9 @@ export default function PrivacyPage() {
           ],
         },
         {
-          heading: "Children",
+          heading: "Age",
           body: [
-            "Three is not for children under 13 (or under 16 in the EEA and UK). If you believe a child has created an account, contact us and we will delete it.",
+            "Three is for adults 18 and over. We don't knowingly collect data from anyone younger; if you believe someone under 18 has created an account, contact us and we will delete it.",
           ],
         },
         {
