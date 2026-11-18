@@ -40,10 +40,10 @@ export function AIReflectionSection() {
   const r = reads[range];
 
   return (
-    <section style={{ background: LP_PAPER, padding: "180px 0" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
+    <section className="lp-section" style={{ background: LP_PAPER, padding: "180px 0" }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
         <div
-          style={{
+          className="lp-grid" style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: 80,

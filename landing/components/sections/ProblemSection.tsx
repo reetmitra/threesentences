@@ -18,8 +18,8 @@ import {
 
 export function ProblemSection() {
   return (
-    <section id="problem" style={{ background: LP_PAPER, padding: '180px 0' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+    <section id="problem" className="lp-section" style={{ background: LP_PAPER, padding: '180px 0' }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <Reveal>
           <div style={{ textAlign: 'center', maxWidth: 900, margin: '0 auto' }}>
             <Eyebrow>The problem with journaling apps</Eyebrow>
@@ -40,7 +40,7 @@ export function ProblemSection() {
         <div style={{ height: 100 }} />
 
         <Reveal delay={200}>
-          <div style={{
+          <div className="lp-grid" style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0,
             border: `1px solid ${LP_FRAME}`, borderRadius: 24,
             overflow: 'hidden', maxWidth: 1000, margin: '0 auto',

@@ -17,13 +17,13 @@ import {
 const steps = [
   { n: '01', title: 'Open the app.', body: 'Just you, the date, and a quiet writing surface. No streak nags, no scrolling feed.' },
   { n: '02', title: 'Write three sentences.', body: 'The counter watches as you go. Submit unlocks the moment you reach exactly three.' },
-  { n: '03', title: 'Close it. Return tomorrow.', body: 'Your work is done before nine. Watch the calendar quietly fill, day by day.' },
+  { n: '03', title: 'Close it. Return tomorrow.', body: 'Ten more seconds if you like: how today felt and the habits you kept. Then watch the calendar quietly fill, day by day.' },
 ];
 
 export function HowSection() {
   return (
-    <section style={{ background: LP_PAPER, padding: '180px 0' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+    <section className="lp-section" style={{ background: LP_PAPER, padding: '180px 0' }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 100 }}>
             <Eyebrow>The daily loop</Eyebrow>
@@ -32,7 +32,7 @@ export function HowSection() {
           </div>
         </Reveal>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+        <div className="lp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
           {steps.map((s, i) => (
             <Reveal key={s.n} delay={i * 150}>
               <div style={{

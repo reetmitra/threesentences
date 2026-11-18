@@ -18,12 +18,16 @@ const items = [
     a: "Three is the sweet spot between too little and too much. One sentence feels like a tweet. Five starts to feel like homework. Three forces you to choose what actually mattered — and it's short enough that you'll do it even on your worst days.",
   },
   {
-    q: "Why can't I edit my entries?",
-    a: 'Because the words you write in the moment are true in a way that edited words are not. The slight roughness of an unedited entry is the point. Three Sentences is a record of who you were, not who you wish you had been.',
+    q: "Can I edit my entries?",
+    a: 'Until your day ends (4am by default, or whenever you set it). After that, they stand as written, because the words you write in the moment are true in a way that edited words are not. Three Sentences is a record of who you were, not who you wish you had been.',
   },
   {
     q: 'What does "363/365" mean?',
     a: "Two days of grace, built in. We don't track streaks as shame — we track them as a record of relentlessness. Miss a day. Miss two. Return on the third and keep going. Empty days are not failures.",
+  },
+  {
+    q: 'What are the mood and habit check-ins?',
+    a: 'An optional ten seconds after your three sentences: how was today, in one word (rough, low, okay, good or great), and up to three habits you choose, answered yes or no. Patterns shows them over 7, 30 or 90 days next to your calendar. They are private to you, never shown to friends, and either can be switched off in Settings.',
   },
   {
     q: 'What is "The Circle"?',
@@ -32,6 +36,10 @@ const items = [
   {
     q: 'Is the AI reflection safe?',
     a: 'The AI reflection is off by default. You opt in, and you can opt out at any time. It reads across your entries to find themes and patterns — it never rewrites your words, never shares them, and never uses them to train anything.',
+  },
+  {
+    q: 'Who is Three for?',
+    a: 'Adults, 18 and over. Three is a private journal with an optional small circle of friends, built for people trying to put some shape back into their days.',
   },
   {
     q: 'When does it launch?',
@@ -47,8 +55,8 @@ export function FAQSection() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section id="faq" style={{ background: '#060608', padding: '160px 0' }}>
-      <div style={{ maxWidth: 840, margin: '0 auto', padding: '0 64px' }}>
+    <section id="faq" className="lp-section" style={{ background: '#060608', padding: '160px 0' }}>
+      <div className="lp-wrap" style={{ maxWidth: 840, margin: '0 auto', padding: '0 64px' }}>
         <Reveal>
           <div style={{ marginBottom: 72 }}>
             <Eyebrow>Frequently asked</Eyebrow>

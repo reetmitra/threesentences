@@ -24,7 +24,7 @@ export function FooterSection({ onCTAClick }: { onCTAClick: () => void }) {
   return (
     <footer style={{ background: '#060608', borderTop: `1px solid ${LP_FRAME}`, padding: '72px 64px 48px' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 64, marginBottom: 64 }}>
+        <div className="lp-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 64, marginBottom: 64 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
               <Mark size={26} />

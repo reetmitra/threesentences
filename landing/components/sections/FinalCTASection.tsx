@@ -13,7 +13,7 @@ import {
 
 export function FinalCTASection({ onCTAClick }: { onCTAClick: () => void }) {
   return (
-    <section style={{
+    <section className="lp-section" style={{
       background: '#0e0e10',
       padding: '200px 0',
       overflow: 'hidden',
@@ -27,7 +27,7 @@ export function FinalCTASection({ onCTAClick }: { onCTAClick: () => void }) {
         pointerEvents: 'none',
         zIndex: 0,
       }} />
-      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 900, margin: '0 auto', padding: '0 64px' }}>
+      <div className="lp-wrap" style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 900, margin: '0 auto', padding: '0 64px' }}>
         <Reveal>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
             <Mark size={52} />

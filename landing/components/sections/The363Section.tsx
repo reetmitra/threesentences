@@ -33,8 +33,8 @@ export function The363Section() {
   }, [inView]);
 
   return (
-    <section style={{ background: LP_PAPER, padding: "200px 0" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
+    <section className="lp-section" style={{ background: LP_PAPER, padding: "200px 0" }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
         <div ref={ref} style={{ textAlign: "center", position: "relative" }}>
           {/* Giant watermark */}
           <div

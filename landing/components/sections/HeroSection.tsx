@@ -20,7 +20,7 @@ function Nav({ onCTA }: { onCTA: () => void }) {
   const y = useScrollY();
   const elevated = y > 40;
   return (
-    <nav style={{
+    <nav className="lp-nav" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: elevated ? '14px 48px' : '24px 48px',
@@ -37,7 +37,7 @@ function Nav({ onCTA }: { onCTA: () => void }) {
           <span style={{ fontFamily: LP_MONO, fontSize: 9, color: LP_INK_DIM, letterSpacing: 2.2, textTransform: 'uppercase' }}>by 363™</span>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+      <div className="lp-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         {[['why', '#problem'], ['how', '#rule'], ['inside', '#features'], ['faq', '#faq']].map(([l, h]) => (
           <a key={h} href={h} style={{
             fontFamily: LP_MONO, fontSize: 11, color: LP_INK_DIM,
