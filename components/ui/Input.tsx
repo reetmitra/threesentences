@@ -28,10 +28,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     <View style={containerStyle}>
       {label && (
         <Text
-          family="mono"
-          variant="xs"
-          uppercase
-          style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: spacing[2] }}
+          family="sansSemibold"
+          variant="sm"
+          style={{ color: c.textSecondary, marginBottom: spacing[2] }}
         >
           {label}
         </Text>

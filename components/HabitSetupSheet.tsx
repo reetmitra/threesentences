@@ -83,7 +83,7 @@ export function HabitSetupSheet({
               accessibilityRole="button"
               accessibilityLabel={`Remove ${habit.name}`}
             >
-              <Text family="mono" variant="xs" uppercase style={styles.removeText}>
+              <Text variant="sm" style={styles.removeText}>
                 Remove
               </Text>
             </Pressable>
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   habitName: { flex: 1, color: c.textPrimary },
   removeButton: { minHeight: 44, minWidth: 44, paddingHorizontal: spacing[2], justifyContent: 'center' },
-  removeText: { color: c.textSecondary, letterSpacing: 1.5 },
+  removeText: { color: c.textSecondary },
   addRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: spacing[4] },
   inputContainer: { flex: 1 },
   addButton: { width: 88 },

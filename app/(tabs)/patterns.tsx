@@ -314,7 +314,7 @@ export default function PatternsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
+          <Text family="sansSemibold" variant="sm" style={[styles.eyebrow, { color: c.textSecondary }]}>
             Mood
           </Text>
           {!trackers.mood ? (
@@ -329,7 +329,7 @@ export default function PatternsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
+          <Text family="sansSemibold" variant="sm" style={[styles.eyebrow, { color: c.textSecondary }]}>
             Habits
           </Text>
           {!trackers.habits ? (
@@ -353,8 +353,8 @@ export default function PatternsScreen() {
         >
           <View style={styles.cardHeader}>
             <Icon name="spark" size={18} color={c.textSecondary} strokeWidth={1.5} />
-            <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
-              AI Reflection
+            <Text family="sansSemibold" variant="sm" style={[styles.eyebrow, { color: c.textSecondary }]}>
+              AI reflection
             </Text>
           </View>
           {prefsLoaded ? (
@@ -377,8 +377,8 @@ export default function PatternsScreen() {
         </Pressable>
 
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
-            363 Progress
+          <Text family="sansSemibold" variant="sm" style={[styles.eyebrow, { color: c.textSecondary }]}>
+            363 progress
           </Text>
           {statsLoaded ? (
             <StreakCounter
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   entrySkeleton: { height: 120, marginBottom: spacing[4] },
   cardSkeleton: { height: 80 },
   section: { marginTop: spacing[5] },
-  eyebrow: { letterSpacing: 1.5, marginBottom: spacing[3] },
+  eyebrow: { marginBottom: spacing[3] },
   quiet: { color: colors.dark.textSecondary },
   card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginTop: spacing[5] },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginBottom: spacing[3] },

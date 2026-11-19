@@ -311,8 +311,8 @@ export default function TodayScreen() {
     <>
       {checkIn.trackers.mood && (
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={styles.eyebrow}>
-            How was today
+          <Text family="sansSemibold" variant="sm" style={styles.eyebrow}>
+            How was today?
           </Text>
           <MoodPicker value={checkIn.mood} onChange={checkIn.chooseMood} />
         </View>
@@ -368,7 +368,7 @@ export default function TodayScreen() {
           </View>
           <EntryCard entry={entryForToday} />
           <View style={styles.submittedMessage}>
-            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+            <Text variant="sm" centered style={{ color: c.textSecondary }}>
               {`Locks at ${lockLabel} · edit until then`}
             </Text>
             <TouchableOpacity
@@ -390,8 +390,8 @@ export default function TodayScreen() {
                 setSubmissionStatus('idle');
               }}
             >
-              <Text family="mono" variant="xs" style={{ color: c.textSecondary, textDecorationLine: 'underline', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                edit entry
+              <Text variant="sm" style={{ color: c.textSecondary, textDecorationLine: 'underline' }}>
+                Edit entry
               </Text>
             </TouchableOpacity>
           </View>
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   // Matches EntryInput's own minHeight so the input never overflows its container.
   inputContainer: { flex: 1, minHeight: 200, marginBottom: spacing[4] },
   section: { marginTop: spacing[6] },
-  eyebrow: { color: colors.dark.textSecondary, letterSpacing: 1.5, marginBottom: spacing[3] },
+  eyebrow: { color: colors.dark.textSecondary, marginBottom: spacing[3] },
   footer: { paddingTop: spacing[4], paddingBottom: spacing[6] },
   submitButton: { height: 52, borderRadius: componentRadius.button, alignItems: 'center', justifyContent: 'center', width: '100%' },
   submittedMessage: { marginTop: spacing[6], alignItems: 'center', gap: spacing[3] },

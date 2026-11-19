@@ -51,10 +51,10 @@ export function MoodChart({ days, range, height = HEIGHT }: MoodChartProps) {
       accessibilityLabel={summarizeMood(days, range)}
     >
       <View style={styles.axis}>
-        <Text family="mono" variant="xs" style={styles.axisLabel}>
+        <Text variant="xs" style={styles.axisLabel}>
           {MOOD_LABELS[5]}
         </Text>
-        <Text family="mono" variant="xs" style={styles.axisLabel}>
+        <Text variant="xs" style={styles.axisLabel}>
           {MOOD_LABELS[1]}
         </Text>
       </View>

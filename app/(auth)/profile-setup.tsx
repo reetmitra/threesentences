@@ -212,7 +212,7 @@ export default function ProfileSetupScreen() {
         >
           {/* Header */}
           <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+            <Text family="sansSemibold" variant="sm" style={{ color: c.textSecondary }}>
               Profile setup
             </Text>
             <Text family="sansSemibold" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[2] }}>
@@ -225,9 +225,8 @@ export default function ProfileSetupScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
                 <Text
-                  family="mono"
+                  family="sansSemibold"
                   variant="sm"
-                  uppercase
                   style={[styles.inputLabel, { color: c.textSecondary }]}
                 >
                   Username *
@@ -270,9 +269,8 @@ export default function ProfileSetupScreen() {
             {/* Age Input */}
             <View style={styles.inputGroup}>
               <Text
-                family="mono"
+                family="sansSemibold"
                 variant="sm"
-                uppercase
                 style={[styles.inputLabel, { color: c.textSecondary }]}
               >
                 Age (optional)
@@ -301,9 +299,8 @@ export default function ProfileSetupScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
                 <Text
-                  family="mono"
+                  family="sansSemibold"
                   variant="sm"
-                  uppercase
                   style={[styles.inputLabel, { color: c.textSecondary }]}
                 >
                   Bio (optional)
@@ -378,8 +375,6 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     marginLeft: spacing[1],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   usernameContainer: {
     flexDirection: 'row',

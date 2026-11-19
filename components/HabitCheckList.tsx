@@ -31,7 +31,7 @@ export function HabitCheckList({ habits, answers, onAnswer, onEdit }: HabitCheck
         accessibilityRole="button"
         accessibilityLabel="Your three. Edit habits"
       >
-        <Text family="mono" variant="xs" uppercase style={styles.eyebrow}>
+        <Text family="sansSemibold" variant="sm" style={styles.eyebrow}>
           Your three
         </Text>
       </Pressable>
@@ -105,7 +105,7 @@ function AnswerButton({
 
 const styles = StyleSheet.create({
   eyebrowButton: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
-  eyebrow: { color: c.textSecondary, letterSpacing: 1.5 },
+  eyebrow: { color: c.textSecondary },
   emptyRow: { minHeight: 44, justifyContent: 'center' },
   emptyText: { color: c.textSecondary, textDecorationLine: 'underline' },
   row: {

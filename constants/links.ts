@@ -5,4 +5,5 @@
 export const SITE_URL = 'https://three63.com';
 export const PRIVACY_URL = `${SITE_URL}/privacy`;
 export const TERMS_URL = `${SITE_URL}/terms`;
-export const SUPPORT_EMAIL = 'support@example.com';
+// Forwarded to the owner's inbox at the registrar; keep that alias alive.
+export const SUPPORT_EMAIL = 'support@three63.com';

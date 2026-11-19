@@ -47,7 +47,7 @@ export function WeekReview({ days, today, showHabits, showMood }: WeekReviewProp
         <Text variant="xs" style={styles.questionLabel}>
           To think about
         </Text>
-        <Text family="serifItalic" variant="lg" style={styles.questionText}>
+        <Text family="serif" variant="lg" style={styles.questionText}>
           {questionForWeek(today)}
         </Text>
       </View>

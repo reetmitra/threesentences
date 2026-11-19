@@ -10,7 +10,7 @@ type FontFamily =
   | 'serif'              // Newsreader_400Regular — reading-mode entries (upright)
   | 'serifItalic'        // Newsreader_400Regular_Italic — wordmark, display numerals ≥ 40px ONLY
   | 'serifSemiboldItalic' // Newsreader_600SemiBold_Italic — milestone numbers
-  | 'mono'               // IBMPlexMono_400Regular — metadata, eyebrows
+  | 'mono'               // IBMPlexMono_400Regular — time and counts only (dateline, timestamps, figures)
   | 'monoMedium';        // IBMPlexMono_500Medium — counters
 
 interface TextProps extends RNTextProps {

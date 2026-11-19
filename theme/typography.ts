@@ -65,8 +65,6 @@ export const TypeStyle = {
   readingLg:    { fontFamily: 'Newsreader_400Regular',        fontSize: 18, letterSpacing: -0.1, lineHeight: 28.8 },
   eyebrow:      { fontFamily: 'IBMPlexMono_500Medium',        fontSize: 11, letterSpacing: 1.4,  lineHeight: 11, textTransform: 'uppercase' as const },
   eyebrowLoud:  { fontFamily: 'IBMPlexMono_500Medium',        fontSize: 12, letterSpacing: 3.0,  lineHeight: 12, textTransform: 'uppercase' as const },
-  meta:         { fontFamily: 'IBMPlexMono_500Medium',        fontSize: 10, letterSpacing: 1.2,  lineHeight: 10, textTransform: 'uppercase' as const },
-  metaSm:       { fontFamily: 'IBMPlexMono_500Medium',        fontSize: 9,  letterSpacing: 0.8,  lineHeight: 14.4, textTransform: 'uppercase' as const },
 } as const;
 
 export function getScaledFontSizes(): { xs: number; sm: number; base: number; lg: number; xl: number; '2xl': number; '3xl': number; display: number; hero: number } {

@@ -454,11 +454,11 @@ export default function SettingsScreen() {
 
         {/* Preferences Section */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Preferences</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>Preferences</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Icon name="spark" size={22} color={c.textPrimary} />}
-              title="AI Reflection"
+              title="AI reflection"
               subtitle={aiEnabled ? 'Enabled' : 'Disabled'}
               showChevron={false}
               rightElement={
@@ -471,7 +471,7 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon={<Vibrate size={22} color={c.textPrimary} />}
-              title="Haptic Feedback"
+              title="Haptic feedback"
               subtitle={hapticsEnabled ? 'Enabled' : 'Disabled'}
               showChevron={false}
               rightElement={
@@ -484,7 +484,7 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon={<Lightbulb size={22} color={c.textPrimary} />}
-              title="Daily Writing Prompt"
+              title="Daily writing prompt"
               subtitle={promptEnabled ? "Shown as today's prompt" : 'Disabled'}
               showChevron={false}
               rightElement={
@@ -497,7 +497,7 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon={<Icon name="bell" size={22} color={c.textPrimary} />}
-              title="Daily Reminder"
+              title="Daily reminder"
               subtitle={notificationsEnabled ? `Reminder at ${reminderHour}:00` : 'Disabled'}
               showChevron={false}
               rightElement={
@@ -513,7 +513,7 @@ export default function SettingsScreen() {
 
         {/* Trackers Section */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Trackers</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>Trackers</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<ListChecks size={22} color={c.textPrimary} />}
@@ -583,11 +583,11 @@ export default function SettingsScreen() {
 
         {/* Your Data Section */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Your Data</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>Your data</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Download size={22} color={c.textPrimary} />}
-              title="Export Entries"
+              title="Export entries"
               subtitle="Download as text or JSON"
               onPress={showExportOptions}
             />
@@ -600,7 +600,7 @@ export default function SettingsScreen() {
             {aiEnabled && reflectionCount > 0 && (
               <SettingsRow
                 icon={<Trash2 size={22} color={c.warn} />}
-                title="Delete All Reflections"
+                title="Delete all reflections"
                 subtitle={`${reflectionCount} reflection${reflectionCount !== 1 ? 's' : ''}`}
                 onPress={handleDeleteReflections}
                 destructive
@@ -612,16 +612,16 @@ export default function SettingsScreen() {
 
         {/* Account Section */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Account</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>Account</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Icon name="edit" size={22} color={c.textPrimary} />}
-              title="Edit Profile"
+              title="Edit profile"
               onPress={() => router.push('/(tabs)/profile')}
             />
             <SettingsRow
               icon={<LogOut size={22} color={c.warn} />}
-              title="Sign Out"
+              title="Sign out"
               onPress={handleSignOut}
               destructive
               showChevron={false}
@@ -631,7 +631,7 @@ export default function SettingsScreen() {
 
         {/* About Section */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>About</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>About</Text>
           <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
             <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
               The 363 Way
@@ -651,17 +651,17 @@ export default function SettingsScreen() {
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Shield size={22} color={c.textPrimary} />}
-              title="Privacy Policy"
+              title="Privacy policy"
               onPress={() => openLink(PRIVACY_URL)}
             />
             <SettingsRow
               icon={<FileText size={22} color={c.textPrimary} />}
-              title="Terms of Use"
+              title="Terms of use"
               onPress={() => openLink(TERMS_URL)}
             />
             <SettingsRow
               icon={<Mail size={22} color={c.textPrimary} />}
-              title="Contact Support"
+              title="Contact support"
               subtitle={SUPPORT_EMAIL}
               onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => showToast('info', `Email us at ${SUPPORT_EMAIL}`))}
             />
@@ -670,11 +670,11 @@ export default function SettingsScreen() {
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>Danger Zone</Text>
+          <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>Danger zone</Text>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Trash2 size={22} color={c.warn} />}
-              title="Delete Account"
+              title="Delete account"
               subtitle="Permanently delete your account and all data"
               onPress={handleDeleteAccount}
               destructive
@@ -687,8 +687,8 @@ export default function SettingsScreen() {
         <Pressable style={styles.footer} onPress={() => {
           showToast('info', 'ThreeSixtyThree™ v1.0.0 — "Show up. Do the work. Let go of perfection."', 5000);
         }}>
-          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>Three Sentences · v1.0.0</Text>
-          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>Be better. Do better.</Text>
+          <Text variant="xs" centered style={{ color: c.textSecondary }}>Three Sentences · v1.0.0</Text>
+          <Text variant="xs" centered style={{ color: c.textSecondary, marginTop: spacing[1] }}>Be better. Do better.</Text>
         </Pressable>
       </ScrollView>
 
@@ -878,7 +878,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: spacing[2],
     marginLeft: spacing[1],
-    letterSpacing: 1,
   },
   sectionContent: {
     borderRadius: 12,

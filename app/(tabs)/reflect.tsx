@@ -252,8 +252,8 @@ export default function ReflectScreen() {
         {/* Latest reflection */}
         {latestReflection && !showCrisisResources && (
           <View style={styles.section}>
-            <Text variant="sm" family="mono" color="secondary" style={[styles.sectionTitle, { textTransform: 'uppercase' }]}>
-              LATEST REFLECTION
+            <Text variant="sm" family="sansSemibold" color="secondary" style={styles.sectionTitle}>
+              Latest reflection
             </Text>
             <ReflectionCard reflection={latestReflection} />
           </View>
@@ -317,7 +317,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: spacing[2],
     marginLeft: spacing[1],
-    letterSpacing: 1,
   },
   generateSection: {
     borderRadius: 12,

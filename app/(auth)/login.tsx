@@ -79,7 +79,7 @@ export default function LoginScreen() {
             <Text family="serifItalic" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[4] }}>
               Three Sentences
             </Text>
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>
+            <Text variant="sm" style={{ color: c.textSecondary, marginTop: spacing[1] }}>
               Welcome back
             </Text>
           </View>
@@ -106,7 +106,7 @@ export default function LoginScreen() {
             <View style={{ height: spacing[6] }} />
             <Button title="Sign in" onPress={handleLogin} loading={loading} />
             <TouchableOpacity onPress={handleForgotPassword} disabled={resetLoading || resetSent} style={{ marginTop: spacing[4], alignItems: 'center' }}>
-              <Text family="mono" variant="xs" style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
+              <Text variant="sm" style={{ color: c.textSecondary }}>
                 {resetLoading ? 'Sending…' : resetSent ? 'Reset link sent — check your email' : 'Forgot password?'}
               </Text>
             </TouchableOpacity>
@@ -114,9 +114,9 @@ export default function LoginScreen() {
 
           <View style={styles.footer}>
             <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-              <Text family="mono" variant="xs" centered style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
+              <Text variant="sm" centered style={{ color: c.textSecondary }}>
                 No account?{' '}
-                <Text family="mono" variant="xs" style={{ color: c.textBright }}>
+                <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>
                   Sign up
                 </Text>
               </Text>
