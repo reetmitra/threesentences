@@ -128,3 +128,86 @@ export function summarizeHabit(name: string, stats: { done: number; answered: nu
   if (stats.answered === 0) return `${name}: not checked in yet`;
   return `${name}: ${stats.done} of ${stats.answered} ${stats.answered === 1 ? 'day' : 'days'}`;
 }
+
+/**
+ * The Patterns screen's one-line finding for the month on screen:
+ * "4 of 18 nights this month · every habit kept on 2". Counts only days up to
+ * `today`; empty string for a month that has not started. A month with no nights
+ * says so plainly instead of "0 of 31".
+ */
+export function summarizeMonth(
+  days: PatternDay[],
+  year: number,
+  month: number,
+  today: string,
+  showHabits: boolean,
+): string {
+  const { from, to } = monthRange(year, month);
+  if (from > today) return '';
+  const last = to < today ? to : today;
+  const elapsed = parseDateString(last).getDate();
+  const inScope = days.filter((d) => d.date >= from && d.date <= last);
+  const written = inScope.filter((d) => d.hasEntry).length;
+  const kept = showHabits ? inScope.filter(isFullHabitDay).length : 0;
+  const current = to >= today;
+  const monthName = parseDateString(from).toLocaleDateString('en-US', { month: 'long' });
+  // "Missed days are simply empty": an empty month is stated plainly, never as "0 of 31".
+  if (written === 0) return current ? 'No nights written yet this month' : `No nights written in ${monthName}`;
+  const nights = `${written} of ${elapsed} ${elapsed === 1 ? 'night' : 'nights'} ${current ? 'this month' : `in ${monthName}`}`;
+  return kept > 0 ? `${nights} · every habit kept on ${kept}` : nights;
+}
+
+/** Mood in words for a range with too few points to draw a line: "2 nights logged: good, okay". */
+export function describeFewMoods(days: PatternDay[]): string {
+  const moods = days.filter((d) => d.mood !== null).map((d) => MOOD_LABELS[d.mood as MoodValue]);
+  if (moods.length === 0) return 'No mood logged yet.';
+  return `${moods.length} ${moods.length === 1 ? 'night' : 'nights'} logged: ${moods.join(', ')}`;
+}
+
+export interface WeekSummary {
+  nights: number;
+  span: number;
+  kept: number;
+  answered: number;
+}
+
+/** Counts for the "Your week" card: nights written, and habit check-ins kept of those answered. */
+export function summarizeWeek(days: PatternDay[]): WeekSummary {
+  let kept = 0;
+  let answered = 0;
+  for (const d of days) {
+    for (const v of Object.values(d.answers)) {
+      answered++;
+      if (v) kept++;
+    }
+  }
+  return { nights: days.filter((d) => d.hasEntry).length, span: days.length, kept, answered };
+}
+
+/** One gentle question a week, for the "Your week" card. Reflective, never diagnostic. */
+export const WEEK_QUESTIONS: readonly string[] = [
+  'What gave you energy this week?',
+  'Which night felt most like you?',
+  'What did you keep showing up for?',
+  'What would make next week a little easier?',
+  'What helped you wind down this week?',
+  'What are you proud of that nobody saw?',
+  'What do you want to keep doing?',
+  'What do you want to let go of?',
+  'What surprised you this week?',
+  'Where did your time go, and was it where you wanted it?',
+  'Who did you want to talk to this week?',
+  'What is one small thing you have been putting off?',
+];
+
+/**
+ * The question for the Monday-to-Sunday week containing `today` (YYYY-MM-DD): the same all week,
+ * a new one each Monday. Counts whole days in UTC so a DST change can't shift the week.
+ */
+export function questionForWeek(today: string): string {
+  const [y, m, d] = today.split('-').map(Number);
+  const dayNumber = Math.floor(Date.UTC(y, m - 1, d) / 86_400_000);
+  // Day 0 (1 Jan 1970) was a Thursday; +3 makes each block of seven start on a Monday.
+  const week = Math.floor((dayNumber + 3) / 7);
+  return WEEK_QUESTIONS[week % WEEK_QUESTIONS.length];
+}

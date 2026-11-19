@@ -2,7 +2,7 @@
  * ThreeSixtyThree™ Three Sentences - Calendar Component
  * 
  * Monthly calendar grid showing entry dates.
- * Days with entries are marked with white dot.
+ * Nights you wrote are lit with a moonlight dot; all-habits days get a moonlight ring.
  */
 
 import React, { useMemo } from 'react';
@@ -13,6 +13,7 @@ import { radius, spacing } from '@/theme/spacing';
 import { getTodayDateString, formatDateString } from '@/types/entry';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DOT = 6;
 
 interface CalendarProps {
   year: number;
@@ -148,28 +149,11 @@ export function Calendar({
           {cell.day}
         </Text>
         {cell.hasEntry ? (
-          <View
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: activeColors.textPrimary,
-              marginTop: 3,
-            }}
-          />
+          <View style={styles.entryDot} />
         ) : (
           // Decorative placeholder (keeps rows aligned); "no entry" is told by the
           // missing filled dot and the accessibility label, so it stays faint.
-          <View
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              borderWidth: 1,
-              borderColor: activeColors.frame,
-              marginTop: 3,
-            }}
-          />
+          <View style={styles.noEntryDot} />
         )}
       </Pressable>
     );
@@ -181,7 +165,7 @@ export function Calendar({
       <View style={styles.weekdayRow}>
         {WEEKDAYS.map((day, index) => (
           <View key={`header-${index}`} style={styles.weekdayCell}>
-            <Text family="mono" variant="xs" style={{ color: activeColors.textTertiary, letterSpacing: 1 }}>
+            <Text family="mono" variant="xs" style={{ color: activeColors.textSecondary, letterSpacing: 1 }}>
               {day.toUpperCase()}
             </Text>
           </View>
@@ -199,9 +183,7 @@ export function Calendar({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing[2],
-  },
+  container: {},
   weekdayRow: {
     flexDirection: 'row',
     marginBottom: spacing[2],
@@ -220,9 +202,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
-    margin: 2,
+    // No minWidth: seven 44pt cells plus margins need 336pt, more than the card gives
+    // on any iPhone under ~430pt wide. Cells share the row (flex: 1) and stay 44pt tall.
+    margin: 0,
     minHeight: 44,
-    minWidth: 44,
   },
   todayCell: {
     borderWidth: 1,
@@ -234,8 +217,24 @@ const styles = StyleSheet.create({
     bottom: spacing[1],
     left: spacing[1],
     borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.dark.moon,
+  },
+  // Same size so a row's numerals sit on one baseline: lit (moonlight) = you wrote that night.
+  entryDot: {
+    width: DOT,
+    height: DOT,
+    borderRadius: DOT / 2,
+    backgroundColor: colors.dark.moon,
+    marginTop: 3,
+  },
+  noEntryDot: {
+    width: DOT,
+    height: DOT,
+    borderRadius: DOT / 2,
     borderWidth: 1,
-    borderColor: colors.dark.textSecondary,
+    borderColor: colors.dark.frame,
+    marginTop: 3,
   },
   dayText: {
     textAlign: 'center',

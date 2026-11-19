@@ -10,7 +10,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { componentRadius, edgePadding, spacing } from '@/theme/spacing';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -72,13 +72,7 @@ export function Toast({ type, message, visible, duration = 2400, onDismiss }: To
         ]}
       >
         <Pressable onPress={hide} hitSlop={8}>
-          <Text
-            family="monoMedium"
-            variant="sm"
-            fixedSize
-            uppercase
-            style={styles.message}
-          >
+          <Text family="sans" variant="sm" centered style={styles.message}>
             {message}
           </Text>
         </Pressable>
@@ -90,14 +84,16 @@ export function Toast({ type, message, visible, duration = 2400, onDismiss }: To
 const styles = StyleSheet.create({
   container: {
     alignSelf: 'center',
+    // Margins keep a long (two-line) message off the screen edges; a card radius
+    // keeps two lines from turning the pill into a stadium.
+    marginHorizontal: edgePadding.content,
     backgroundColor: colors.dark.surface,
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[2],
+    borderRadius: componentRadius.card,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   message: {
     color: colors.dark.textPrimary,
-    letterSpacing: 1.4,
   },
 });

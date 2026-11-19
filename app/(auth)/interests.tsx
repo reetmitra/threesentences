@@ -392,7 +392,7 @@ export default function InterestsScreen() {
           loading={loading}
           style={styles.continueButton}
         />
-        <Text family="mono" variant="xs" style={[styles.hint, { color: c.textTertiary, textAlign: 'center' }]}>
+        <Text family="mono" variant="xs" style={[styles.hint, { color: c.textSecondary, textAlign: 'center' }]}>
           You can always update these later
         </Text>
       </Animated.View>

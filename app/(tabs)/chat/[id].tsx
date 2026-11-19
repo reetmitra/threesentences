@@ -555,7 +555,7 @@ export default function ChatScreen() {
                             <View style={styles.loadingOlderContainer}>
                                 <ActivityIndicator
                                     size="small"
-                                    color={activeColors.textTertiary}
+                                    color={activeColors.textSecondary}
                                 />
                             </View>
                         ) : null

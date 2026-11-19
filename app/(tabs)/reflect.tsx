@@ -241,7 +241,7 @@ export default function ReflectScreen() {
                 <Text variant="sm" style={[styles.error, { color: activeColors.error }]}>
                   {error}
                 </Text>
-                <Text variant="sm" style={[styles.retryLink, { color: activeColors.textTertiary }]}>
+                <Text variant="sm" style={[styles.retryLink, { color: activeColors.textSecondary }]}>
                   Tap to retry
                 </Text>
               </TouchableOpacity>

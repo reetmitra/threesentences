@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Download, Trash2, ListChecks, SmilePlus, Moon, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
+import { BedDouble, Download, Trash2, ListChecks, SmilePlus, Moon, LogOut, Lightbulb, Vibrate, Shield, FileText, Mail } from 'lucide-react-native';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '@/constants/links';
 import { Icon } from '@/components/ui/Icon';
 import * as Haptics from 'expo-haptics';
@@ -33,7 +33,7 @@ import { SkeletonStatsCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
 import { spacing, edgePadding } from '@/theme/spacing';
-import { exportEntries, getEntryCount, getEntryStats, ExportFormat } from '@/store/entries';
+import { exportEntries, getEntryCount, ExportFormat } from '@/store/entries';
 import { getPreferences, updatePreferences } from '@/store/onboarding';
 import { deleteAllReflections, getReflectionCount } from '@/store/reflections';
 import { getProfile, deleteAccount } from '@/store/profile';
@@ -43,12 +43,14 @@ import { SettingsPatch, UserSettings } from '@/types/tracking';
 import { useCheckIn } from '@/hooks/useCheckIn';
 import { HabitSetupSheet } from '@/components/HabitSetupSheet';
 import { suggestHabits } from '@/types/tracking';
-import { DAY_ROLLOVER_OPTIONS, formatRolloverLabel, getTodayDateString } from '@/types/entry';
+import { DAY_ROLLOVER_OPTIONS, DEFAULT_WIND_DOWN_HOUR, formatHourLabel, formatRolloverLabel, getTodayDateString, WIND_DOWN_HOURS } from '@/types/entry';
 import { refreshHapticsPreference } from '@/utils/haptics';
 import {
   requestNotificationPermission,
   scheduleDailyReminder,
   cancelDailyReminder,
+  scheduleWindDown,
+  cancelWindDown,
 } from '@/services/notifications';
 
 // react-native-web's Switch colors its ON thumb with `activeThumbColor`
@@ -57,6 +59,17 @@ import {
 const WEB_SWITCH_PROPS = (
   Platform.OS === 'web' ? { activeThumbColor: colors.dark.paper } : {}
 ) as Record<string, unknown>;
+
+// ON: ivory track, dark thumb. OFF: quiet track, grey thumb. No hue, and the thumb
+// never disappears into the track (it did when both were near-white).
+function switchProps(value: boolean): Record<string, unknown> {
+  const c = colors.dark;
+  return {
+    trackColor: { false: c.surfaceHi, true: c.textPrimary },
+    thumbColor: value ? c.background : c.textSecondary,
+    ...WEB_SWITCH_PROPS,
+  };
+}
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -98,7 +111,7 @@ function SettingsRow({
       </View>
       {rightElement}
       {showChevron && !rightElement && (
-        <Icon name="caret" size={20} color={c.textTertiary} />
+        <Icon name="caret" size={20} color={c.textSecondary} />
       )}
     </>
   );
@@ -130,13 +143,15 @@ export default function SettingsScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [entryCount, setEntryCount] = useState(0);
-  const [currentStreak, setCurrentStreak] = useState(0);
   const [reflectionCount, setReflectionCount] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [promptEnabled, setPromptEnabled] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [reminderHour, setReminderHour] = useState(20);
+  const [windDownEnabled, setWindDownEnabled] = useState(false);
+  const [windDownHour, setWindDownHour] = useState<number>(DEFAULT_WIND_DOWN_HOUR);
+  const [showWindDownSheet, setShowWindDownSheet] = useState(false);
   const [showAIOptInModal, setShowAIOptInModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'signOut' | 'deleteReflections' | 'deleteAccount' | null>(null);
   const [showExportSheet, setShowExportSheet] = useState(false);
@@ -150,11 +165,10 @@ export default function SettingsScreen() {
     if (!userId) return;
     setIsLoading(true);
     try {
-      const [count, refCount, prefs, stats] = await Promise.all([
+      const [count, refCount, prefs] = await Promise.all([
         getEntryCount(userId),
         getReflectionCount(),
         getPreferences(),
-        getEntryStats(userId),
       ]);
       setEntryCount(count);
       setReflectionCount(refCount);
@@ -163,7 +177,8 @@ export default function SettingsScreen() {
       setPromptEnabled(prefs.dailyPromptEnabled);
       setNotificationsEnabled(prefs.notificationsEnabled);
       setReminderHour(prefs.reminderHour);
-      setCurrentStreak(stats.currentStreak);
+      setWindDownEnabled(prefs.windDownEnabled);
+      setWindDownHour(prefs.windDownHour);
       if (userId) {
         const profile = await getProfile(userId);
         setUserProfile(profile);
@@ -261,6 +276,53 @@ export default function SettingsScreen() {
       setNotificationsEnabled(false);
     }
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleWindDownToggle = async (value: boolean) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!value) {
+      await cancelWindDown();
+      await updatePreferences({ windDownEnabled: false });
+      setWindDownEnabled(false);
+      return;
+    }
+    try {
+      if (!(await requestNotificationPermission())) {
+        showToast('error', 'Please enable notifications in your device settings.');
+        return;
+      }
+      await scheduleWindDown(windDownHour);
+      await updatePreferences({ windDownEnabled: true });
+      setWindDownEnabled(true);
+      showToast('success', `Wind-down nudge set for ${formatHourLabel(windDownHour)}.`);
+    } catch (error) {
+      console.error('Wind-down reminder failed:', error);
+      showToast('error', 'Could not set the reminder. Please try again.');
+    }
+  };
+
+  const handleWindDownSelect = async (hour: number) => {
+    setShowWindDownSheet(false);
+    if (hour === windDownHour) return;
+    try {
+      await scheduleWindDown(hour);
+      await updatePreferences({ windDownHour: hour });
+      setWindDownHour(hour);
+      showToast('success', `Wind-down nudge moved to ${formatHourLabel(hour)}.`);
+    } catch (error) {
+      console.error('Wind-down reminder failed:', error);
+      showToast('error', 'Could not move the reminder. Please try again.');
+    }
+  };
+
+  // The nudge belongs to the habits tracker: turning habits off stops it too.
+  const handleHabitsToggle = async (value: boolean) => {
+    saveSettings({ trackers: { habits: value } });
+    if (!value && windDownEnabled) {
+      await cancelWindDown();
+      await updatePreferences({ windDownEnabled: false });
+      setWindDownEnabled(false);
+    }
   };
 
   const handleExport = async (format: ExportFormat) => {
@@ -379,16 +441,14 @@ export default function SettingsScreen() {
                 <Text family="sans" variant="sm" style={{ color: c.textSecondary }}>{displayEmail}</Text>
               )}
               <View style={styles.profileStats}>
-                <Icon name="flame" size={14} color={c.textBright} />
-                <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginLeft: 4 }}>
-                  {currentStreak} day streak
-                </Text>
-                <Text family="sans" variant="sm" style={{ color: c.textTertiary, marginLeft: spacing[3] }}>
-                  {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+                <Text family="sans" variant="sm" style={{ color: c.textSecondary }}>
+                  {entryCount === 0
+                    ? 'Your first night is waiting'
+                    : `${entryCount} ${entryCount === 1 ? 'night' : 'nights'} · ${Math.max(363 - entryCount, 0)} to go`}
                 </Text>
               </View>
             </View>
-            <Icon name="caret" size={20} color={c.textTertiary} />
+            <Icon name="caret" size={20} color={c.textSecondary} />
           </Pressable>
         )}
 
@@ -405,12 +465,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={aiEnabled}
                   onValueChange={handleAIToggle}
-                  trackColor={{
-                    false: c.surfaceHi,
-                    true: c.textBright,
-                  }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  {...switchProps(aiEnabled)}
                 />
               }
             />
@@ -423,12 +478,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={hapticsEnabled}
                   onValueChange={handleHapticsToggle}
-                  trackColor={{
-                    false: c.surfaceHi,
-                    true: c.textBright,
-                  }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  {...switchProps(hapticsEnabled)}
                 />
               }
             />
@@ -441,12 +491,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={promptEnabled}
                   onValueChange={handlePromptToggle}
-                  trackColor={{
-                    false: c.surfaceHi,
-                    true: c.textBright,
-                  }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  {...switchProps(promptEnabled)}
                 />
               }
             />
@@ -459,12 +504,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={notificationsEnabled}
                   onValueChange={handleNotificationsToggle}
-                  trackColor={{
-                    false: c.surfaceHi,
-                    true: c.textBright,
-                  }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  {...switchProps(notificationsEnabled)}
                 />
               }
             />
@@ -483,10 +523,8 @@ export default function SettingsScreen() {
               rightElement={
                 <Switch
                   value={settings.trackers.habits}
-                  onValueChange={(value) => saveSettings({ trackers: { habits: value } })}
-                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  onValueChange={handleHabitsToggle}
+                  {...switchProps(settings.trackers.habits)}
                 />
               }
             />
@@ -499,9 +537,7 @@ export default function SettingsScreen() {
                 <Switch
                   value={settings.trackers.mood}
                   onValueChange={(value) => saveSettings({ trackers: { mood: value } })}
-                  trackColor={{ false: c.surfaceHi, true: c.textBright }}
-                  thumbColor={c.textPrimary}
-                  {...WEB_SWITCH_PROPS}
+                  {...switchProps(settings.trackers.mood)}
                 />
               }
             />
@@ -511,6 +547,29 @@ export default function SettingsScreen() {
                 title="Edit habits"
                 subtitle={`${checkIn.habits.length} active`}
                 onPress={() => setShowHabitSetup(true)}
+              />
+            )}
+            {settings.trackers.habits && (
+              <SettingsRow
+                icon={<BedDouble size={22} color={c.textPrimary} />}
+                title="Wind-down nudge"
+                subtitle={windDownEnabled ? `A gentle nudge at ${formatHourLabel(windDownHour)}` : 'Off'}
+                showChevron={false}
+                rightElement={
+                  <Switch
+                    value={windDownEnabled}
+                    onValueChange={handleWindDownToggle}
+                    {...switchProps(windDownEnabled)}
+                  />
+                }
+              />
+            )}
+            {settings.trackers.habits && windDownEnabled && (
+              <SettingsRow
+                icon={<Icon name="bell" size={22} color={c.textPrimary} />}
+                title="Nudge time"
+                subtitle={formatHourLabel(windDownHour)}
+                onPress={() => setShowWindDownSheet(true)}
               />
             )}
             <SettingsRow
@@ -573,6 +632,22 @@ export default function SettingsScreen() {
         {/* About Section */}
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1.5 }]}>About</Text>
+          <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
+            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
+              The 363 Way
+            </Text>
+            <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
+              Commit to 363 days out of 365. Missed days are simply empty — not failures, not broken streaks. Return when you return, without shame.
+            </Text>
+          </View>
+          <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
+            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
+              Presence Over Perfection
+            </Text>
+            <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
+              Three sentences, locked when your day ends. No deletions. Your words stand as written, capturing how you felt in the moment.
+            </Text>
+          </View>
           <View style={styles.sectionContent}>
             <SettingsRow
               icon={<Shield size={22} color={c.textPrimary} />}
@@ -612,8 +687,8 @@ export default function SettingsScreen() {
         <Pressable style={styles.footer} onPress={() => {
           showToast('info', 'ThreeSixtyThree™ v1.0.0 — "Show up. Do the work. Let go of perfection."', 5000);
         }}>
-          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5 }}>Three Sentences · v1.0.0</Text>
-          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textTertiary, letterSpacing: 1.5, marginTop: spacing[1] }}>Be better. Do better.</Text>
+          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>Three Sentences · v1.0.0</Text>
+          <Text family="mono" variant="xs" centered uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>Be better. Do better.</Text>
         </Pressable>
       </ScrollView>
 
@@ -664,6 +739,34 @@ export default function SettingsScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`Day ends at ${label}`}
+              >
+                <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, flex: 1 }}>{label}</Text>
+                {selected && <Icon name="check" size={20} color={c.textPrimary} />}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </BottomSheet>
+
+      <BottomSheet visible={showWindDownSheet} onClose={() => setShowWindDownSheet(false)} maxHeight={0.5}>
+        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.exportSheet}>
+          <Text family="sansSemibold" variant="lg" style={{ color: c.textPrimary, marginBottom: spacing[1] }}>
+            Nudge time
+          </Text>
+          <Text family="sans" variant="sm" style={{ color: c.textSecondary, marginBottom: spacing[4] }}>
+            A gentle reminder to start winding down. Pick the hour that works for you.
+          </Text>
+          {WIND_DOWN_HOURS.map((hour) => {
+            const selected = hour === windDownHour;
+            const label = formatHourLabel(hour);
+            return (
+              <Pressable
+                key={hour}
+                style={styles.rolloverOption}
+                onPress={() => handleWindDownSelect(hour)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Nudge at ${label}`}
               >
                 <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, flex: 1 }}>{label}</Text>
                 {selected && <Icon name="check" size={20} color={c.textPrimary} />}
@@ -761,6 +864,7 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
   },
+  principleCard: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginBottom: spacing[3] },
   profileStats: {
     flexDirection: 'row',
     alignItems: 'center',

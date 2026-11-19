@@ -51,10 +51,12 @@ function SubmitButton({
   status,
   onPress,
   disabled,
+  label,
 }: {
   status: 'idle' | 'submitting' | 'success';
   onPress: () => void;
   disabled: boolean;
+  label: string;
 }) {
   const c = colors.dark;
   const [initialWidth, setInitialWidth] = useState<number | null>(null);
@@ -95,8 +97,8 @@ function SubmitButton({
           style={[
             styles.submitButton,
             {
-              backgroundColor: isEnabled ? c.textBright : c.frame,
-              opacity: disabled && status === 'idle' ? 0.4 : 1,
+              // Disabled stays readable: a quiet surface pill with dim words (>= 4.5:1).
+              backgroundColor: isEnabled ? c.textBright : c.surface,
             },
           ]}
         >
@@ -104,7 +106,7 @@ function SubmitButton({
             ? <ActivityIndicator color={c.paper} size="small" />
             : status === 'success'
             ? <Animated.View style={{ transform: [{ rotate: spin }] }}><Icon name="check" color={c.paper} size={22} /></Animated.View>
-            : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: c.paper }}>Submit</Text></Animated.View>
+            : <Animated.View style={{ opacity: fadeValue }}><Text family="sansSemibold" variant="base" style={{ color: isEnabled ? c.paper : c.textSecondary }}>{label}</Text></Animated.View>
           }
         </TouchableOpacity>
       </Animated.View>
@@ -262,7 +264,7 @@ export default function TodayScreen() {
 
       if (editingDate.current !== null) {
         editingDate.current = null;
-        showToast('success', `UPDATED · LOCKS AT ${formatRolloverLabel(getDayRolloverHour()).toUpperCase()}`);
+        showToast('success', `Updated · locks at ${formatRolloverLabel(getDayRolloverHour())}`);
         setTimeout(() => {
           setTodayEntry(entry);
           setContent('');
@@ -282,7 +284,7 @@ export default function TodayScreen() {
           setShowMilestone(true);
         }, 1500);
       } else {
-        showToast('success', `STREAK +${streak} · LOCKED`);
+        showToast('success', `Streak +${streak} · locked`);
         setTimeout(() => {
           setTodayEntry(entry);
           setContent('');
@@ -366,7 +368,7 @@ export default function TodayScreen() {
           </View>
           <EntryCard entry={entryForToday} />
           <View style={styles.submittedMessage}>
-            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textTertiary, letterSpacing: 1.5 }}>
+            <Text family="mono" variant="xs" uppercase centered style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
               {`Locks at ${lockLabel} · edit until then`}
             </Text>
             <TouchableOpacity
@@ -388,7 +390,7 @@ export default function TodayScreen() {
                 setSubmissionStatus('idle');
               }}
             >
-              <Text family="mono" variant="xs" style={{ color: c.textTertiary, textDecorationLine: 'underline', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              <Text family="mono" variant="xs" style={{ color: c.textSecondary, textDecorationLine: 'underline', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 edit entry
               </Text>
             </TouchableOpacity>
@@ -441,6 +443,7 @@ export default function TodayScreen() {
               status={submissionStatus}
               onPress={() => setShowConfirmation(true)}
               disabled={!canSubmit}
+              label={sentenceCount < 3 ? 'Write 3 sentences' : 'Submit'}
             />
           </View>
         </ScrollView>

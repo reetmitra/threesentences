@@ -10,38 +10,42 @@ import Svg, { Circle, Line } from 'react-native-svg';
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { moodPoints, moodSegments, PatternDay, RangeDays, summarizeMood } from '@/types/patterns';
+import { describeFewMoods, moodPoints, moodSegments, PatternDay, RangeDays, summarizeMood } from '@/types/patterns';
 import { MOOD_LABELS } from '@/types/tracking';
 
 const HEIGHT = 120;
 // Inset so dots on great/rough aren't clipped at the edges.
 const INSET = spacing[2];
 const MAX_DOT_RADIUS = 3;
+const MIN_POINTS = 3;
 
 interface MoodChartProps {
   days: PatternDay[];
   range: RangeDays;
+  /** Plot height in points (default 120); the week card uses a compact one. */
+  height?: number;
 }
 
-export function MoodChart({ days, range }: MoodChartProps) {
+export function MoodChart({ days, range, height = HEIGHT }: MoodChartProps) {
   const [width, setWidth] = useState(0);
 
-  if (!days.some((d) => d.mood !== null)) {
+  // Under three points a line has nothing to say; a sentence is more honest than a mostly empty plot.
+  if (days.filter((d) => d.mood !== null).length < MIN_POINTS) {
     return (
       <Text variant="sm" style={styles.empty}>
-        No mood logged yet.
+        {describeFewMoods(days)}
       </Text>
     );
   }
 
-  const points = width > 0 ? moodPoints(days, width, HEIGHT - INSET * 2) : [];
+  const points = width > 0 ? moodPoints(days, width, height - INSET * 2) : [];
   const segments = moodSegments(points);
   // Shrink dots so 90 days still fit side by side.
   const r = Math.min(MAX_DOT_RADIUS, width / days.length / 2);
 
   return (
     <View
-      style={styles.row}
+      style={[styles.row, { height }]}
       accessible
       accessibilityRole="image"
       accessibilityLabel={summarizeMood(days, range)}
@@ -56,7 +60,7 @@ export function MoodChart({ days, range }: MoodChartProps) {
       </View>
       <View style={styles.plot} onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
         {width > 0 && (
-          <Svg width={width} height={HEIGHT}>
+          <Svg width={width} height={height}>
             {segments.map((s, i) => (
               <Line
                 key={`s${i}`}

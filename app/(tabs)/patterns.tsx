@@ -13,6 +13,7 @@ import { RangeSelector } from '@/components/patterns/RangeSelector';
 import { MoodChart } from '@/components/patterns/MoodChart';
 import { HabitGrid } from '@/components/patterns/HabitGrid';
 import { DayDetail } from '@/components/patterns/DayDetail';
+import { WeekReview } from '@/components/patterns/WeekReview';
 import { SkeletonCalendar, SkeletonCard } from '@/components/ui/Skeleton';
 import { useToast } from '@/contexts/ToastContext';
 import { colors } from '@/theme/colors';
@@ -30,6 +31,7 @@ import {
   buildRange,
   monthRange,
   isFullHabitDay,
+  summarizeMonth,
 } from '@/types/patterns';
 import { Habit } from '@/types/tracking';
 
@@ -69,6 +71,7 @@ export default function PatternsScreen() {
   // Days plus the range they cover: a chip tap must not show the old range's days under the new label.
   const [rangeData, setRangeData] = useState<{ range: RangeDays; days: PatternDay[] } | null>(null);
   const [monthDays, setMonthDays] = useState<PatternDay[]>([]);
+  const [weekDays, setWeekDays] = useState<PatternDay[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [stats, setStats] = useState({ totalEntries: 0, currentStreak: 0, longestStreak: 0 });
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -86,6 +89,7 @@ export default function PatternsScreen() {
   // Drop results from a superseded range/month so a slow response can't overwrite a newer one.
   const rangeKey = useRef('');
   const monthKey = useRef('');
+  const weekKey = useRef('');
 
   const loadRange = useCallback(async (): Promise<boolean> => {
     const r = buildRange(getTodayDateString(), range);
@@ -105,6 +109,14 @@ export default function PatternsScreen() {
     const key = monthKey.current;
     return loadWithCache(userId, r, (d) => { if (monthKey.current === key) setMonthDays(d); });
   }, [year, month, userId]);
+
+  // The "Your week" card: always the last seven days, whatever range is picked below.
+  const loadWeek = useCallback(async (): Promise<boolean> => {
+    const r = buildRange(getTodayDateString(), 7);
+    weekKey.current = `${r.from}:${r.to}`;
+    const key = weekKey.current;
+    return loadWithCache(userId, r, (d) => { if (weekKey.current === key) setWeekDays(d); });
+  }, [userId]);
 
   const loadExtras = useCallback(async () => {
     if (!userId) return;
@@ -132,10 +144,10 @@ export default function PatternsScreen() {
   /** Refreshes range + month together; toasts at most once per cycle. */
   const refreshAll = useCallback(async () => {
     if (!isLoaded) return;
-    const [rangeOk, monthOk] = await Promise.all([loadRange(), loadMonth(), loadExtras()]);
+    const [rangeOk, monthOk, weekOk] = await Promise.all([loadRange(), loadMonth(), loadWeek(), loadExtras()]);
     setLoaded(true); // only after a real cycle, never on the pre-auth early return
-    if (!rangeOk || !monthOk) showToast('error', LOAD_ERROR);
-  }, [isLoaded, loadRange, loadMonth, loadExtras, showToast]);
+    if (!rangeOk || !monthOk || !weekOk) showToast('error', LOAD_ERROR);
+  }, [isLoaded, loadRange, loadMonth, loadWeek, loadExtras, showToast]);
 
   // Mount + every focus.
   // Also re-runs when range/month change identity: one cycle, one toast.
@@ -210,6 +222,8 @@ export default function PatternsScreen() {
   const aiAction = aiEnabled ? 'Generate reflection' : 'Learn more';
 
   const monthLabel = monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  // The screen's finding, shown once the month has loaded (never a "0 of 18" flash).
+  const monthSummary = calendarReady ? summarizeMonth(monthDays, year, month, today, trackers.habits) : '';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
@@ -223,10 +237,17 @@ export default function PatternsScreen() {
           <Text family="sansBold" variant="2xl" style={{ color: c.textPrimary }}>
             Patterns
           </Text>
-          <View style={styles.rangeWrap}>
-            <RangeSelector value={range} onChange={setRange} />
-          </View>
+          {monthSummary !== '' && (
+            <Text variant="sm" style={[styles.finding, { color: c.textSecondary }]}>
+              {monthSummary}
+            </Text>
+          )}
         </View>
+
+        {/* Nothing to review until a night is written; an empty week shows no card, not a zero. */}
+        {weekDays.some((d) => d.hasEntry) && (
+          <WeekReview days={weekDays} today={today} showHabits={trackers.habits} showMood={trackers.mood} />
+        )}
 
         {/* SkeletonCalendar draws its own month nav until the first load. */}
         {calendarReady && (
@@ -287,6 +308,10 @@ export default function PatternsScreen() {
             onOpenToday={() => router.push('/(tabs)')}
           />
         )}
+
+        <View style={styles.rangeWrap}>
+          <RangeSelector value={range} onChange={setRange} />
+        </View>
 
         <View style={styles.section}>
           <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
@@ -365,28 +390,6 @@ export default function PatternsScreen() {
             <SkeletonCard style={styles.cardSkeleton} />
           )}
         </View>
-
-        <View style={styles.section}>
-          <Text family="mono" variant="xs" uppercase style={[styles.eyebrow, { color: c.textSecondary }]}>
-            About the practice
-          </Text>
-          <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
-            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
-              The 363 Way
-            </Text>
-            <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
-              Commit to 363 days out of 365. Missed days are simply empty — not failures, not broken streaks. Return when you return, without shame.
-            </Text>
-          </View>
-          <View style={[styles.principleCard, { backgroundColor: c.surface, borderColor: c.frame }]}>
-            <Text family="sansSemibold" variant="base" style={{ color: c.textPrimary, marginBottom: spacing[2] }}>
-              Presence Over Perfection
-            </Text>
-            <Text serif variant="sm" style={{ color: c.textSecondary, lineHeight: 22 }}>
-              Three sentences, locked when your day ends. No deletions. Your words stand as written, capturing how you felt in the moment.
-            </Text>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -397,11 +400,13 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: edgePadding.content, paddingTop: spacing[4], paddingBottom: spacing[8] },
   header: { marginBottom: spacing[5] },
-  rangeWrap: { marginTop: spacing[3] },
+  finding: { marginTop: spacing[1] },
+  rangeWrap: { marginTop: spacing[5] },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing[4] },
   navButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   navButtonDisabled: { opacity: 0.4 },
-  calendarContainer: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[3], marginBottom: spacing[4] },
+  // Tight sides: the seven calendar cells share this card's width, and 44pt-wide cells need it.
+  calendarContainer: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, paddingVertical: spacing[3], paddingHorizontal: spacing[2], marginBottom: spacing[4] },
   entrySkeleton: { height: 120, marginBottom: spacing[4] },
   cardSkeleton: { height: 80 },
   section: { marginTop: spacing[5] },
@@ -410,5 +415,4 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginTop: spacing[5] },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginBottom: spacing[3] },
   cardAction: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
-  principleCard: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: spacing[4], marginBottom: spacing[3] },
 });

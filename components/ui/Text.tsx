@@ -57,7 +57,7 @@ export function Text({
       primary: activeColors.textPrimary,
       bright: activeColors.textBright,
       secondary: activeColors.textSecondary,
-      tertiary: activeColors.textTertiary,
+      tertiary: activeColors.textSecondary, // words never sit below 4.5:1; textTertiary is for non-text marks only
       accent: activeColors.accent,
       warn: activeColors.warn,
     };

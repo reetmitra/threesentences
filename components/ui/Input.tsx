@@ -52,7 +52,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
           style,
         ]}
-        placeholderTextColor={c.textTertiary}
+        placeholderTextColor={c.textSecondary}
         selectionColor={(c as any).accent ?? c.textBright}
         cursorColor={(c as any).accent ?? c.textBright}
         onFocus={(e) => {

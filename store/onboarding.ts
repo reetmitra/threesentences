@@ -56,6 +56,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   notificationsEnabled: false,
   reminderHour: 20,
   reminderMinute: 0,
+  windDownEnabled: false,
+  windDownHour: 23,
 };
 
 /**

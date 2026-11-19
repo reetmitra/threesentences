@@ -16,6 +16,9 @@ import {
   formatRolloverLabel,
   isStaleDate,
   DEFAULT_DAY_ROLLOVER_HOUR,
+  DEFAULT_WIND_DOWN_HOUR,
+  WIND_DOWN_HOURS,
+  formatHourLabel,
 } from '@/types/entry';
 
 describe('entry type utilities', () => {
@@ -167,6 +170,15 @@ describe('logical day', () => {
   it('formats rollover labels', () => {
     expect(formatRolloverLabel(0)).toBe('midnight');
     expect(formatRolloverLabel(4)).toBe('4am');
+  });
+  it('formats hours for the wind-down nudge', () => {
+    expect(WIND_DOWN_HOURS.map(formatHourLabel)).toEqual(['9pm', '10pm', '11pm', 'midnight', '1am']);
+    expect(formatHourLabel(12)).toBe('noon');
+    expect(formatHourLabel(13)).toBe('1pm');
+    expect(formatHourLabel(11)).toBe('11am');
+  });
+  it('defaults the wind-down hour to one of the offered hours', () => {
+    expect(WIND_DOWN_HOURS).toContain(DEFAULT_WIND_DOWN_HOUR);
   });
   // A check-in tap on a screen loaded before the rollover must not write.
   it('isStaleDate flips at the rollover hour, not at midnight', () => {

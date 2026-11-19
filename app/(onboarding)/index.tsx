@@ -136,7 +136,7 @@ function PracticeInput() {
           Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
         ]}
         placeholder="Start typing..."
-        placeholderTextColor={c.textTertiary}
+        placeholderTextColor={c.textSecondary}
         multiline
         value={text}
         onChangeText={setText}
@@ -246,7 +246,7 @@ function NoEditDemo({ active }: { active: boolean }) {
       {/* Edit icon with strikethrough */}
       {typingDone && (
         <Animated.View style={[styles.noEditIconContainer, editStyle]}>
-          <Icon name="edit" size={22} color={c.textTertiary} />
+          <Icon name="edit" size={22} color={c.textSecondary} />
           <Animated.View
             style={[
               styles.strikethrough,

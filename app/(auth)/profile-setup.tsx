@@ -241,7 +241,7 @@ export default function ProfileSetupScreen() {
               <View style={styles.usernameContainer}>
                 <Text
                   variant="base"
-                  style={[styles.usernamePrefix, { color: c.textTertiary }]}
+                  style={[styles.usernamePrefix, { color: c.textSecondary }]}
                 >
                   @
                 </Text>
@@ -308,7 +308,7 @@ export default function ProfileSetupScreen() {
                 >
                   Bio (optional)
                 </Text>
-                <Text family="mono" variant="xs" style={{ color: c.textTertiary }}>
+                <Text family="mono" variant="xs" style={{ color: c.textSecondary }}>
                   {bio.length}/{PROFILE_CONSTRAINTS.bio.maxLength}
                 </Text>
               </View>

@@ -51,13 +51,15 @@ export function HabitCheckList({ habits, answers, onAnswer, onEdit }: HabitCheck
                 {habit.name}
               </Text>
               <AnswerButton
+                kind="yes"
                 selected={answer === true}
                 label={`${habit.name}, done`}
                 onPress={() => onAnswer(habit.id, answer === true ? null : true)}
               >
-                <Icon name="check" size={20} color={answer === true ? c.paper : c.textSecondary} />
+                <Icon name="check" size={20} color={answer === true ? c.background : c.textSecondary} />
               </AnswerButton>
               <AnswerButton
+                kind="no"
                 selected={answer === false}
                 label={`${habit.name}, not done`}
                 onPress={() => onAnswer(habit.id, answer === false ? null : false)}
@@ -75,11 +77,14 @@ export function HabitCheckList({ habits, answers, onAnswer, onEdit }: HabitCheck
 }
 
 function AnswerButton({
+  kind,
   selected,
   label,
   onPress,
   children,
 }: {
+  /** yes = kept (moonlight); no = answered "not today" (never celebrated, never red). */
+  kind: 'yes' | 'no';
   selected: boolean;
   label: string;
   onPress: () => void;
@@ -88,7 +93,7 @@ function AnswerButton({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.answer, selected && styles.answerSelected]}
+      style={[styles.answer, selected && (kind === 'yes' ? styles.answerYes : styles.answerNo)]}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={label}
@@ -118,7 +123,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  answerSelected: { backgroundColor: c.textBright },
+  answerYes: { backgroundColor: c.moon },
+  // Outline = answered "not done", matching the Patterns grid; clearly answered, never celebrated.
+  answerNo: { backgroundColor: c.surfaceHi, borderWidth: 1, borderColor: c.textSecondary },
   dash: { color: c.textSecondary },
-  dashSelected: { color: c.paper },
+  dashSelected: { color: c.textPrimary },
 });

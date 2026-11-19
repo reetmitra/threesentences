@@ -23,15 +23,17 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
     onPress();
   };
 
+  // Disabled stays readable (>= 4.5:1): a quiet surface pill with dim words,
+  // not a half-transparent one that fades the label into the ground.
   const bg = variant === 'primary'
-    ? (disabled ? c.frame : c.textBright)
+    ? (disabled ? c.surface : c.textBright)
     : 'transparent';
 
   const textColor = variant === 'primary'
-    ? (disabled ? c.textTertiary : c.paper)
-    : (disabled ? c.textTertiary : c.textPrimary);
+    ? (disabled ? c.textSecondary : c.paper)
+    : (disabled ? c.textSecondary : c.textPrimary);
 
-  const borderColor = variant === 'outline' ? (disabled ? c.textTertiary : c.textPrimary) : 'transparent';
+  const borderColor = variant === 'outline' ? (disabled ? c.textSecondary : c.textPrimary) : 'transparent';
 
   return (
     <TouchableOpacity
@@ -44,7 +46,6 @@ export function Button({ title, onPress, variant = 'primary', disabled, loading,
           backgroundColor: bg,
           borderColor,
           borderWidth: variant === 'outline' ? 1 : 0,
-          opacity: disabled ? 0.5 : 1,
         },
         style,
       ]}

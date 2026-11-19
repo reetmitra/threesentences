@@ -123,6 +123,18 @@ describe('onboarding store', () => {
       expect(prefs.theme).toBeNull(); // Default value
     });
 
+    it('defaults the wind-down nudge to off at 11pm, and old stored prefs pick that up', async () => {
+      expect(await getPreferences()).toMatchObject({ windDownEnabled: false, windDownHour: 23 });
+      // Preferences saved before the nudge existed must not lose it or break.
+      await AsyncStorage.setItem('@threesentences/preferences', JSON.stringify({ notificationsEnabled: true, reminderHour: 20 }));
+      expect(await getPreferences()).toMatchObject({ notificationsEnabled: true, windDownEnabled: false, windDownHour: 23 });
+    });
+
+    it('keeps a saved wind-down choice', async () => {
+      await updatePreferences({ windDownEnabled: true, windDownHour: 0 });
+      expect(await getPreferences()).toMatchObject({ windDownEnabled: true, windDownHour: 0 });
+    });
+
     it('handles corrupted data gracefully', async () => {
       await AsyncStorage.setItem('@threesentences/preferences', 'invalid json');
 

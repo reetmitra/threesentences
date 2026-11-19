@@ -11,7 +11,7 @@ export const colors = {
     textPrimary: '#ebe7dc',      // --ink bone-ivory, never pure white
     textBright: '#ffffff',       // --ink-bright CTAs, active states
     textSecondary: '#8a877f',    // --ink-dim secondary/metadata (>=4.5:1 on bg, paper, surface and surfaceHi)
-    textTertiary: '#36363a',     // --ink-fade placeholders/empty dots
+    textTertiary: '#36363a',     // --ink-fade NON-TEXT marks only (empty dots, outlines, disabled numerals): 1.7:1, never words
 
     // Cream
     cream:   '#efece5',
@@ -21,6 +21,7 @@ export const colors = {
     // Semantic
     accent: '#ffffff',           // --ink-bright for interactive elements
     warn: '#f6c177',             // --warn amber
+    moon: '#a9c1d9',             // the one accent: nights and habits kept. Data only, never chrome (buttons, links, mood, errors).
 
     // Legacy aliases kept for backward-compat during migration
     border: '#1e1e22',
@@ -45,6 +46,7 @@ export const colors = {
     creamLo: '#e4dfd2',
     accent: '#ffffff',
     warn: '#f6c177',
+    moon: '#a9c1d9',
     border: '#1e1e22',
     surfaceHover: '#1c1c22',
     error: '#f6c177',

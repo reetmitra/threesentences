@@ -252,7 +252,7 @@ export default function SocialScreen() {
         Search Results
       </Text>
       {searchResults.length === 0 ? (
-        <Text family="sans" variant="base" centered style={[styles.emptyText, { color: c.textTertiary }]}>
+        <Text family="sans" variant="base" centered style={[styles.emptyText, { color: c.textSecondary }]}>
           No users found
         </Text>
       ) : (
@@ -376,11 +376,11 @@ export default function SocialScreen() {
           searchAnimatedStyle,
         ]}
       >
-        <Icon name="search" size={20} color={c.textTertiary} strokeWidth={2} />
+        <Icon name="search" size={20} color={c.textSecondary} strokeWidth={2} />
         <TextInput
           style={[styles.searchInput, { color: c.textPrimary }]}
           placeholder="Search people..."
-          placeholderTextColor={c.textTertiary}
+          placeholderTextColor={c.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           onFocus={() => setIsSearchFocused(true)}
@@ -388,7 +388,7 @@ export default function SocialScreen() {
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => setSearchQuery('')}>
-            <Icon name="close" size={18} color={c.textTertiary} />
+            <Icon name="close" size={18} color={c.textSecondary} />
           </Pressable>
         )}
       </Animated.View>
