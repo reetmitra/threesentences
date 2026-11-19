@@ -123,10 +123,10 @@ export function RuleSection({ onCTAClick }: { onCTAClick: () => void }) {
   return (
     <section
       id="rule"
-      style={{ background: '#060608', padding: '180px 0' }}
+      className="lp-section" style={{ background: '#060608', padding: '180px 0' }}
     >
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
-        <div style={{
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+        <div className="lp-grid" style={{
           display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 80,
           alignItems: 'center',
         }}>
@@ -142,7 +142,7 @@ export function RuleSection({ onCTAClick }: { onCTAClick: () => void }) {
             </Reveal>
             <Reveal delay={300}>
               <Lead style={{ marginTop: 40, maxWidth: 460 }}>
-                Each day, write exactly three sentences about your day. Submit them and they're permanent. No edits. No deletions. Your words stand.
+                Each day, write exactly three sentences about your day. Refine them until the day ends; after that, no edits and no deletions. Your words stand.
               </Lead>
             </Reveal>
             <Reveal delay={500}>

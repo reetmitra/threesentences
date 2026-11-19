@@ -29,8 +29,8 @@ const quotes = [
 
 export function TrustSection() {
   return (
-    <section style={{ background: '#0e0e10', padding: '160px 0' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
+    <section className="lp-section" style={{ background: '#0e0e10', padding: '160px 0' }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 64px' }}>
         <Reveal>
           <div style={{ textAlign: 'center', marginBottom: 72 }}>
             <Eyebrow>From the beta</Eyebrow>
@@ -38,7 +38,7 @@ export function TrustSection() {
             <H2>What people say<br />after a hundred days.</H2>
           </div>
         </Reveal>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        <div className="lp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
           {quotes.map((q, i) => (
             <Reveal key={i} delay={i * 100}>
               <div style={{

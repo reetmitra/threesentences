@@ -36,8 +36,8 @@ const principles = [
 
 export function PrinciplesSection() {
   return (
-    <section style={{ background: LP_PAPER_2, padding: "180px 0" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
+    <section className="lp-section" style={{ background: LP_PAPER_2, padding: "180px 0" }}>
+      <div className="lp-wrap" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 64px" }}>
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: 80 }}>
             <Eyebrow>What we believe</Eyebrow>
@@ -46,7 +46,7 @@ export function PrinciplesSection() {
           </div>
         </Reveal>
         <div
-          style={{
+          className="lp-grid" style={{
             display: "grid",
             gridTemplateColumns: "repeat(2, 1fr)",
             gap: 20,

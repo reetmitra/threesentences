@@ -70,3 +70,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3a3a3a;
 }
+
+/* ── Phone and tablet layout ──────────────────────────────────────
+   Sections are styled inline for desktop; these classes let the same
+   markup fold to one column on narrow screens. */
+@media (max-width: 900px) {
+  .lp-grid { grid-template-columns: 1fr !important; gap: 56px !important; }
+  .lp-section { padding-top: 120px !important; padding-bottom: 120px !important; }
+  .lp-nav-links a { display: none; }
+}
+@media (max-width: 640px) {
+  .lp-wrap { padding-left: 20px !important; padding-right: 20px !important; }
+  .lp-section { padding-top: 88px !important; padding-bottom: 88px !important; }
+  .lp-nav { padding-left: 20px !important; padding-right: 20px !important; }
+}

@@ -14,6 +14,8 @@ import { spacing, edgePadding } from '@/theme/spacing';
 import { supabase } from '@/config/supabase';
 import { useToast } from '@/contexts/ToastContext';
 import { normalizeUsername } from '@/types/profile';
+import * as WebBrowser from 'expo-web-browser';
+import { PRIVACY_URL, TERMS_URL } from '@/constants/links';
 
 export default function SignupScreen() {
   const c = colors.dark;
@@ -106,6 +108,21 @@ export default function SignupScreen() {
             <Input label="Password" placeholder="••••••••" value={password} onChangeText={setPassword} secureTextEntry />
             <View style={{ height: spacing[6] }} />
             <Button title="Create account" onPress={handleSignup} loading={loading} />
+            <Text variant="xs" centered style={[styles.legal, { color: c.textSecondary }]}>
+              By creating an account you confirm you're 18 or older and agree to our Terms and Privacy Policy.
+            </Text>
+            <View style={styles.legalLinks}>
+              {[{ label: 'Terms', url: TERMS_URL }, { label: 'Privacy Policy', url: PRIVACY_URL }].map((l) => (
+                <TouchableOpacity
+                  key={l.label}
+                  onPress={() => WebBrowser.openBrowserAsync(l.url).catch(() => showToast('error', 'Could not open the page.'))}
+                  style={styles.legalLink}
+                  accessibilityRole="link"
+                >
+                  <Text family="mono" variant="xs" style={[styles.legalLinkText, { color: c.textBright }]}>{l.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           <View style={styles.footer}>
@@ -129,4 +146,8 @@ const styles = StyleSheet.create({
   logoSection: { alignItems: 'center', marginBottom: spacing[8] },
   form: {},
   footer: { marginTop: spacing[8] },
+  legal: { marginTop: spacing[4] },
+  legalLinks: { flexDirection: 'row', justifyContent: 'center', gap: spacing[4] },
+  legalLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing[2] },
+  legalLinkText: { textDecorationLine: 'underline', letterSpacing: 0.5 },
 });

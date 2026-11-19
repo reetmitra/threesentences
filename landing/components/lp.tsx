@@ -230,7 +230,7 @@ interface MiniPhoneProps {
 export function MiniPhone({ width = 380, height = 780, children, style = {} }: MiniPhoneProps) {
   return (
     <div style={{
-      width, height, background: LP_PAPER_2,
+      width, height, maxWidth: '100%', background: LP_PAPER_2,
       borderRadius: width * 0.13,
       border: `1.5px solid ${LP_FRAME}`,
       overflow: 'hidden', position: 'relative',
