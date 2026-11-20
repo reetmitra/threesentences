@@ -192,26 +192,40 @@ export function PhonePatternsPreview() {
 
       <div style={{ background: LP_SURFACE, borderRadius: 14, padding: "10px 10px 8px" }}>
         <div style={{ fontFamily: LP_SANS, fontSize: 13, fontWeight: 600, color: LP_INK, textAlign: "center", marginBottom: 6 }}>November 2026</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 2 }}>
+        {/* Like the app: the ring is centred on the cell and encloses the numeral and its dot, with room to spare. */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
           {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => {
             const today = d === 18;
             const future = d > 18;
             return (
-              <div key={d} style={{ height: 26, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
+              <div key={d} style={{ height: 36, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
                 {FULL_DAYS.has(d) && (
-                  <span style={{ position: "absolute", width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${LP_MOON}` }} />
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      width: 32,
+                      height: 32,
+                      transform: "translate(-50%, -50%)",
+                      borderRadius: 999,
+                      border: `1.5px solid ${LP_MOON}`,
+                      boxSizing: "border-box",
+                    }}
+                  />
                 )}
                 <span
                   style={{
                     fontFamily: LP_SANS,
                     fontSize: 11,
+                    lineHeight: "13px",
                     color: future ? LP_INK_FADE : today ? LP_INK_BRIGHT : LP_INK_DIM,
                     fontWeight: today ? 600 : 400,
                   }}
                 >
                   {d}
                 </span>
-                <span style={{ width: 5, height: 5, borderRadius: 999, background: ENTRY_DAYS.has(d) ? LP_MOON : "transparent" }} />
+                <span style={{ width: 5, height: 5, marginTop: 3, borderRadius: 999, background: ENTRY_DAYS.has(d) ? LP_MOON : "transparent" }} />
               </div>
             );
           })}

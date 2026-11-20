@@ -37,7 +37,7 @@ const STEPS: { tab: string; title: string; body: string; label: string; h: numbe
     title: "See the month you had.",
     body: "The calendar fills as you write, and a ring marks the days you kept all your habits. Mood as a quiet line, habits as a grid, over 7, 30 or 90 days. Tap any day to reread it.",
     label: "The Patterns screen: a month calendar, mood line and habit grid",
-    h: 700,
+    h: 740,
     screen: () => <PhonePatternsPreview />,
   },
   {
