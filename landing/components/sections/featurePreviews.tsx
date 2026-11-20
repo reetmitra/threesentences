@@ -10,7 +10,10 @@ import {
   LP_INK_BRIGHT,
   LP_INK_DIM,
   LP_INK_FADE,
+  LP_PAPER,
+  LP_MOON,
   LP_SURFACE,
+  LP_SURFACE_HI,
   LP_SANS,
   LP_SERIF,
   LP_MONO,
@@ -25,6 +28,14 @@ const label: React.CSSProperties = {
   color: LP_INK_DIM,
   letterSpacing: 1.8,
   textTransform: "uppercase",
+};
+
+// Section headings in the app are sentence-case Schibsted; mono is for the date and counts.
+const heading: React.CSSProperties = {
+  fontFamily: LP_SANS,
+  fontSize: 13,
+  fontWeight: 600,
+  color: LP_INK_DIM,
 };
 
 function Title({ children }: { children: React.ReactNode }) {
@@ -56,10 +67,10 @@ export function PhoneCheckinPreview() {
           Walked to the park this morning. The light was soft and gold. I felt calm for once.
         </div>
       </div>
-      <div style={{ ...label, fontSize: 9, textAlign: "center" }}>Locks at 4am · edit until then</div>
+      <div style={{ fontFamily: LP_SANS, fontSize: 11.5, color: LP_INK_DIM, textAlign: "center" }}>Locks at 4am · edit until then</div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-        <div style={label}>How was today</div>
+        <div style={heading}>How was today?</div>
         <div style={{ display: "flex", gap: 5 }} role="radiogroup" aria-label="Mood">
           {MOODS.map((m, i) => (
             <button
@@ -87,7 +98,7 @@ export function PhoneCheckinPreview() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
-        <div style={label}>Your three</div>
+        <div style={heading}>Your three</div>
         {HABITS.map((h, i) => (
           <div key={h} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, fontFamily: LP_SANS, fontSize: 14, color: LP_INK }}>{h}</div>
@@ -104,8 +115,10 @@ export function PhoneCheckinPreview() {
                     height: 38,
                     borderRadius: 999,
                     border: "none",
-                    background: on ? LP_INK_BRIGHT : LP_SURFACE,
-                    color: on ? "#0a0a0a" : LP_INK_DIM,
+                    // kept = moonlight; "not today" = an outline, never celebrated
+                    background: on ? (v ? LP_MOON : LP_SURFACE_HI) : LP_SURFACE,
+                    boxShadow: on && !v ? `inset 0 0 0 1px ${LP_INK_DIM}` : "none",
+                    color: on ? (v ? LP_PAPER : LP_INK) : LP_INK_DIM,
                     fontSize: 15,
                     lineHeight: 1,
                     cursor: "pointer",
@@ -164,35 +177,15 @@ export function PhonePatternsPreview() {
 
   return (
     <div style={{ flex: 1, padding: "10px 20px 16px", display: "flex", flexDirection: "column", gap: 12, overflow: "hidden" }}>
-      <Title>Patterns</Title>
-      <div style={{ display: "flex", gap: 6 }} role="radiogroup" aria-label="Range">
-        {([7, 30, 90] as const).map((r) => (
-          <button
-            key={r}
-            role="radio"
-            aria-checked={range === r}
-            aria-label={`${r} days`}
-            onClick={() => setRange(r)}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 999,
-              border: "none",
-              background: range === r ? LP_INK_BRIGHT : LP_SURFACE,
-              color: range === r ? "#0a0a0a" : LP_INK_DIM,
-              fontFamily: LP_MONO,
-              fontSize: 12,
-              cursor: "pointer",
-              transition: "background 160ms ease",
-            }}
-          >
-            {r}
-          </button>
-        ))}
+      <div>
+        <Title>Patterns</Title>
+        <div style={{ fontFamily: LP_SANS, fontSize: 12, color: LP_INK_DIM, marginTop: 6 }}>
+          {`${ENTRY_DAYS.size} of 18 nights this month · every habit kept on ${FULL_DAYS.size}`}
+        </div>
       </div>
 
       <div style={{ background: LP_SURFACE, borderRadius: 14, padding: "10px 10px 8px" }}>
-        <div style={{ ...label, textAlign: "center", marginBottom: 6, color: LP_INK }}>November 2026</div>
+        <div style={{ fontFamily: LP_SANS, fontSize: 13, fontWeight: 600, color: LP_INK, textAlign: "center", marginBottom: 6 }}>November 2026</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 2 }}>
           {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => {
             const today = d === 18;
@@ -200,7 +193,7 @@ export function PhonePatternsPreview() {
             return (
               <div key={d} style={{ height: 26, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative" }}>
                 {FULL_DAYS.has(d) && (
-                  <span style={{ position: "absolute", width: 22, height: 22, borderRadius: 999, border: `1px solid ${LP_INK_DIM}` }} />
+                  <span style={{ position: "absolute", width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${LP_MOON}` }} />
                 )}
                 <span
                   style={{
@@ -212,20 +205,45 @@ export function PhonePatternsPreview() {
                 >
                   {d}
                 </span>
-                <span style={{ width: 3, height: 3, borderRadius: 999, background: ENTRY_DAYS.has(d) ? LP_INK : "transparent" }} />
+                <span style={{ width: 5, height: 5, borderRadius: 999, background: ENTRY_DAYS.has(d) ? LP_MOON : "transparent" }} />
               </div>
             );
           })}
         </div>
       </div>
 
+      <div style={{ display: "flex", gap: 6 }} role="radiogroup" aria-label="Range">
+        {([7, 30, 90] as const).map((r) => (
+          <button
+            key={r}
+            role="radio"
+            aria-checked={range === r}
+            onClick={() => setRange(r)}
+            style={{
+              height: 34,
+              padding: "0 12px",
+              borderRadius: 999,
+              border: "none",
+              background: range === r ? LP_INK_BRIGHT : LP_SURFACE,
+              color: range === r ? LP_PAPER : LP_INK_DIM,
+              fontFamily: LP_SANS,
+              fontSize: 12,
+              cursor: "pointer",
+              transition: "background 160ms ease",
+            }}
+          >
+            {`${r} days`}
+          </button>
+        ))}
+      </div>
+
       <div>
-        <div style={label}>Mood</div>
+        <div style={{ ...heading, marginBottom: 4 }}>Mood</div>
         <MoodLine days={days} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-        <div style={label}>Habits</div>
+        <div style={heading}>Habits</div>
         {HABITS.map((h, k) => {
           const answered = days.filter((d) => d.habits[k] !== -1);
           const done = answered.filter((d) => d.habits[k] === 1).length;
@@ -244,7 +262,7 @@ export function PhonePatternsPreview() {
                     style={{
                       flex: 1,
                       borderRadius: 2,
-                      background: d.habits[k] === 1 ? LP_INK_BRIGHT : "transparent",
+                      background: d.habits[k] === 1 ? LP_MOON : LP_SURFACE,
                       boxShadow: d.habits[k] === 0 ? `inset 0 0 0 1px ${LP_INK_DIM}` : "none",
                     }}
                   />

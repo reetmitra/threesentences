@@ -12,6 +12,9 @@ export const LP_PAPER_2    = '#0e0e10';
 export const LP_SURFACE    = '#15151a';
 export const LP_FRAME      = '#1e1e22';
 export const LP_WARM       = '#e8d4b3';
+// The app's one accent: "kept" (habit checked, night written). Never chrome, never mood.
+export const LP_MOON       = '#a9c1d9';
+export const LP_SURFACE_HI = '#1c1c22';
 
 /* ── Font stacks ──────────────────────────────────────────────── */
 export const LP_SANS  = "var(--font-sans), 'Schibsted Grotesk', 'Helvetica Neue', Arial, sans-serif";

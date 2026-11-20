@@ -62,6 +62,12 @@ export interface UserPreferences {
 
   /** Daily reminder minute (0-59, default: 0) */
   reminderMinute: number;
+
+  /** Gentle evening nudge to start winding down (default: off) */
+  windDownEnabled: boolean;
+
+  /** Wind-down nudge hour, one of WIND_DOWN_HOURS (default: 23) */
+  windDownHour: number;
 }
 
 export const DEFAULT_DAY_ROLLOVER_HOUR = 4;
@@ -101,6 +107,17 @@ export function isStaleDate(date: string, now: Date = new Date()): boolean {
 
 export function formatRolloverLabel(hour: number): string {
   return hour === 0 ? 'midnight' : `${hour}am`;
+}
+
+/** Evening-to-small-hours choices for the wind-down nudge: 9pm to 1am. */
+export const WIND_DOWN_HOURS = [21, 22, 23, 0, 1] as const;
+export const DEFAULT_WIND_DOWN_HOUR = 23;
+
+/** 21 → "9pm", 0 → "midnight", 1 → "1am". */
+export function formatHourLabel(hour: number): string {
+  if (hour === 0) return 'midnight';
+  if (hour === 12) return 'noon';
+  return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
 }
 
 /**

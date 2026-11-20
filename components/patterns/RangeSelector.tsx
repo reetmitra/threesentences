@@ -1,7 +1,7 @@
 /**
  * Three™ - Range Selector (Patterns)
  *
- * Three chips: 7 / 30 / 90 days.
+ * Three chips: 7 days / 30 days / 90 days.
  */
 
 import React from 'react';
@@ -30,8 +30,8 @@ export function RangeSelector({ value, onChange }: RangeSelectorProps) {
             accessibilityState={{ selected }}
             accessibilityLabel={`${r} days`}
           >
-            <Text family="mono" variant="sm" style={selected ? styles.labelSelected : styles.label}>
-              {r}
+            <Text variant="sm" style={selected ? styles.labelSelected : styles.label}>
+              {`${r} days`}
             </Text>
           </Pressable>
         );

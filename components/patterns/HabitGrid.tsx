@@ -1,8 +1,8 @@
 /**
  * Three™ - Habit Grid (Patterns)
  *
- * Per habit, one cell per day: filled = done, outline = not done,
- * empty space = unanswered. Never red; no streak language.
+ * Per habit, one cell per day: moonlight = done, outline = not done,
+ * quiet surface = unanswered. Never red; no streak language.
  */
 
 import React from 'react';
@@ -78,8 +78,9 @@ const styles = StyleSheet.create({
   name: { flex: 1, color: c.textPrimary },
   count: { color: c.textSecondary },
   cells: { flexDirection: 'row', gap: 2, height: spacing[4], overflow: 'hidden' },
-  cell: { flex: 1, borderRadius: radius.sm },
-  done: { backgroundColor: c.textBright },
+  // Unanswered days are drawn too (a quiet surface cell), so a 7/30/90 row always reads as a full track.
+  cell: { flex: 1, borderRadius: radius.sm, backgroundColor: c.surface },
+  done: { backgroundColor: c.moon },
   notDone: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: radius.sm,

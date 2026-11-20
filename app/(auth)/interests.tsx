@@ -258,7 +258,7 @@ export default function InterestsScreen() {
       >
         {/* Header */}
         <Animated.View style={[styles.header, headerAnimatedStyle]}>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: spacing[2] }}>
+          <Text family="sansSemibold" variant="sm" style={{ color: c.textSecondary, marginBottom: spacing[2] }}>
             Interests
           </Text>
           <Text family="sansSemibold" variant="2xl" style={[styles.title, { color: c.textPrimary }]}>
@@ -279,7 +279,7 @@ export default function InterestsScreen() {
             {selectedInterests.length} of {MIN_INTERESTS}+ selected
           </Text>
           {isEnoughSelected && (
-            <Text family="mono" variant="sm" style={{ color: c.textBright }}>
+            <Text variant="sm" style={{ color: c.textBright }}>
               {' '}
               Ready to continue
             </Text>
@@ -392,7 +392,7 @@ export default function InterestsScreen() {
           loading={loading}
           style={styles.continueButton}
         />
-        <Text family="mono" variant="xs" style={[styles.hint, { color: c.textTertiary, textAlign: 'center' }]}>
+        <Text variant="xs" style={[styles.hint, { color: c.textSecondary, textAlign: 'center' }]}>
           You can always update these later
         </Text>
       </Animated.View>

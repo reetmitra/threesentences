@@ -248,11 +248,11 @@ export default function SocialScreen() {
 
   const renderSearchResults = () => (
     <Animated.View entering={FadeIn.duration(200)} style={styles.searchResults}>
-      <Text family="mono" variant="xs" uppercase style={[styles.sectionTitle, { color: c.textSecondary, letterSpacing: 1 }]}>
-        Search Results
+      <Text family="sansSemibold" variant="sm" style={[styles.sectionTitle, { color: c.textSecondary }]}>
+        Search results
       </Text>
       {searchResults.length === 0 ? (
-        <Text family="sans" variant="base" centered style={[styles.emptyText, { color: c.textTertiary }]}>
+        <Text family="sans" variant="base" centered style={[styles.emptyText, { color: c.textSecondary }]}>
           No users found
         </Text>
       ) : (
@@ -301,12 +301,11 @@ export default function SocialScreen() {
       {suggestedFriends.length > 0 && friends.length < 5 && (
         <Animated.View entering={FadeInDown.delay(200).duration(300)}>
           <Text
-            family="mono"
-            variant="xs"
-            uppercase
-            style={[styles.sectionTitle, { marginTop: spacing[6], color: c.textSecondary, letterSpacing: 1 }]}
+            family="sansSemibold"
+            variant="sm"
+            style={[styles.sectionTitle, { marginTop: spacing[6], color: c.textSecondary }]}
           >
-            Suggested Friends
+            Suggested friends
           </Text>
           {suggestedFriends.map((result, index) => (
             <FriendCard
@@ -358,7 +357,7 @@ export default function SocialScreen() {
       <View style={styles.header}>
         <View>
           <Text family="sansBold" variant="2xl" style={{ color: c.textPrimary }}>The Circle</Text>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: 4 }}>Friends · Requests</Text>
+          <Text variant="sm" style={{ color: c.textSecondary, marginTop: 4 }}>Friends and requests</Text>
         </View>
         <Pressable
           onPress={() => router.push('/(tabs)/conversations')}
@@ -376,11 +375,11 @@ export default function SocialScreen() {
           searchAnimatedStyle,
         ]}
       >
-        <Icon name="search" size={20} color={c.textTertiary} strokeWidth={2} />
+        <Icon name="search" size={20} color={c.textSecondary} strokeWidth={2} />
         <TextInput
           style={[styles.searchInput, { color: c.textPrimary }]}
           placeholder="Search people..."
-          placeholderTextColor={c.textTertiary}
+          placeholderTextColor={c.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
           onFocus={() => setIsSearchFocused(true)}
@@ -388,7 +387,7 @@ export default function SocialScreen() {
         />
         {searchQuery.length > 0 && (
           <Pressable onPress={() => setSearchQuery('')}>
-            <Icon name="close" size={18} color={c.textTertiary} />
+            <Icon name="close" size={18} color={c.textSecondary} />
           </Pressable>
         )}
       </Animated.View>
@@ -419,7 +418,7 @@ export default function SocialScreen() {
               </Text>
               {friends.length > 0 && (
                 <View style={[styles.tabBadge, { backgroundColor: c.surfaceHi }]}>
-                  <Text family="monoMedium" variant="xs" style={{ color: c.background }}>
+                  <Text family="monoMedium" variant="xs" style={{ color: c.textSecondary }}>
                     {friends.length}
                   </Text>
                 </View>
@@ -548,7 +547,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginHorizontal: spacing[5],
     marginBottom: spacing[3],
-    letterSpacing: 1,
   },
   searchResults: {
     flex: 1,

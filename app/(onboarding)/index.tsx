@@ -122,7 +122,7 @@ function PracticeInput() {
 
   return (
     <View style={styles.practiceContainer}>
-      <Text family="mono" variant="sm" style={[styles.practiceLabel, { color: c.textSecondary }]}>
+      <Text variant="sm" style={[styles.practiceLabel, { color: c.textSecondary }]}>
         Try it — write 3 sentences:
       </Text>
       <TextInput
@@ -136,7 +136,7 @@ function PracticeInput() {
           Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
         ]}
         placeholder="Start typing..."
-        placeholderTextColor={c.textTertiary}
+        placeholderTextColor={c.textSecondary}
         multiline
         value={text}
         onChangeText={setText}
@@ -246,7 +246,7 @@ function NoEditDemo({ active }: { active: boolean }) {
       {/* Edit icon with strikethrough */}
       {typingDone && (
         <Animated.View style={[styles.noEditIconContainer, editStyle]}>
-          <Icon name="edit" size={22} color={c.textTertiary} />
+          <Icon name="edit" size={22} color={c.textSecondary} />
           <Animated.View
             style={[
               styles.strikethrough,
@@ -259,7 +259,7 @@ function NoEditDemo({ active }: { active: boolean }) {
 
       {typingDone && (
         <Animated.View entering={FadeIn.delay(reduced ? 0 : 1400).duration(reduced ? 0 : 400)}>
-          <Text family="mono" variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
+          <Text variant="xs" style={[styles.noEditLabel, { color: c.textSecondary, textAlign: 'center' }]}>
             Entries lock for good when your day ends
           </Text>
         </Animated.View>
@@ -360,11 +360,8 @@ export default function OnboardingScreen() {
                 <Logo size={44} />
               </View>
             )}
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 2, marginBottom: spacing[4] }}>
-              {`0${index + 1} / 04`}
-            </Text>
             {item.subtitle && (
-              <Text family="mono" variant="sm" uppercase style={[styles.subtitle, { color: c.textSecondary, letterSpacing: 2 }]}>
+              <Text variant="sm" style={[styles.subtitle, { color: c.textSecondary }]}>
                 {item.subtitle}
               </Text>
             )}
@@ -430,7 +427,7 @@ export default function OnboardingScreen() {
               accessibilityRole="button"
               accessibilityLabel="Skip introduction"
             >
-              <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
+              <Text variant="sm" style={{ color: c.textSecondary }}>
                 Skip
               </Text>
             </TouchableOpacity>
@@ -500,8 +497,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginBottom: spacing[2],
-    textTransform: 'uppercase',
-    letterSpacing: 2,
   },
   title: {
     marginBottom: spacing[4],

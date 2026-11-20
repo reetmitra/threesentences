@@ -513,7 +513,7 @@ export default function ProfileScreen() {
                 <View style={styles.usernameRow}>
                   <Text
                     variant="base"
-                    style={[styles.usernamePrefix, { color: activeColors.textTertiary }]}
+                    style={[styles.usernamePrefix, { color: activeColors.textSecondary }]}
                   >
                     @
                   </Text>

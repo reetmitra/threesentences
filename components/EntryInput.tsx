@@ -57,7 +57,7 @@ export function EntryInput({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={activeColors.textTertiary}
+      placeholderTextColor={activeColors.textSecondary}
       multiline
       textAlignVertical="top"
       editable={editable}

@@ -3,11 +3,16 @@ import {
   habitStats,
   isFullHabitDay,
   mapPatternRows,
+  questionForWeek,
+  summarizeWeek,
+  WEEK_QUESTIONS,
   monthRange,
   moodPoints,
   moodSegments,
+  describeFewMoods,
   summarizeHabit,
   summarizeMood,
+  summarizeMonth,
   PatternDay,
 } from '@/types/patterns';
 import { parseDateString } from '@/types/entry';
@@ -150,5 +155,128 @@ describe('summarizeHabit', () => {
   });
   it('handles no answers', () => {
     expect(summarizeHabit('In bed by 1am', { done: 0, answered: 0 })).toBe('In bed by 1am: not checked in yet');
+  });
+});
+
+// One row per day of the month up to `last`, like get_patterns returns.
+function monthRows(year: number, month: number, last: number, opts: { entries?: number[]; full?: number[] } = {}): PatternDay[] {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return Array.from({ length: last }, (_, i) => {
+    const d = i + 1;
+    return {
+      date: `${year}-${pad(month)}-${pad(d)}`,
+      hasEntry: (opts.entries ?? []).includes(d),
+      mood: null,
+      answers: ((opts.full ?? []).includes(d) ? { h1: true, h2: true } : {}) as PatternDay['answers'],
+    };
+  });
+}
+
+describe('summarizeMonth', () => {
+  it('states the finding for the current month: nights written of nights so far, habits kept', () => {
+    const days = monthRows(2026, 11, 18, { entries: [1, 2, 5, 9], full: [2, 9] });
+    expect(summarizeMonth(days, 2026, 11, '2026-11-18', true)).toBe('4 of 18 nights this month · every habit kept on 2');
+  });
+  it('omits the habits clause when none were kept or Habits is off', () => {
+    const days = monthRows(2026, 11, 18, { entries: [1, 2, 5, 9], full: [2, 9] });
+    expect(summarizeMonth(days, 2026, 11, '2026-11-18', false)).toBe('4 of 18 nights this month');
+    expect(summarizeMonth(monthRows(2026, 11, 18, { entries: [3] }), 2026, 11, '2026-11-18', true)).toBe('1 of 18 nights this month');
+  });
+  it('names a past month and counts all of its days', () => {
+    const days = monthRows(2026, 10, 31, { entries: [1, 2, 3] });
+    expect(summarizeMonth(days, 2026, 10, '2026-11-18', true)).toBe('3 of 31 nights in October');
+  });
+  it('counts a month still in progress only up to today, ignoring later rows', () => {
+    const days = monthRows(2026, 11, 30, { entries: [1, 20, 25] }); // 20 and 25 are after today
+    expect(summarizeMonth(days, 2026, 11, '2026-11-18', true)).toBe('1 of 18 nights this month');
+  });
+  it('is singular on day one', () => {
+    expect(summarizeMonth(monthRows(2026, 11, 1, { entries: [1] }), 2026, 11, '2026-11-01', true)).toBe('1 of 1 night this month');
+  });
+  it('says an empty month plainly, never "0 of N"', () => {
+    expect(summarizeMonth(monthRows(2026, 11, 1), 2026, 11, '2026-11-01', true)).toBe('No nights written yet this month');
+    expect(summarizeMonth(monthRows(2026, 10, 31), 2026, 10, '2026-11-18', true)).toBe('No nights written in October');
+  });
+  it('is still "this month" on the last day of the month', () => {
+    expect(summarizeMonth(monthRows(2026, 11, 30, { entries: [30] }), 2026, 11, '2026-11-30', true)).toBe('1 of 30 nights this month');
+  });
+  it('is empty for a month that has not started', () => {
+    expect(summarizeMonth([], 2026, 12, '2026-11-18', true)).toBe('');
+  });
+  it('is correct across the DST start (Mar 8) and end (Nov 1) months', () => {
+    expect(summarizeMonth(monthRows(2026, 3, 10, { entries: [7, 8, 9] }), 2026, 3, '2026-03-10', true)).toBe('3 of 10 nights this month');
+    expect(summarizeMonth(monthRows(2026, 11, 3, { entries: [1, 2] }), 2026, 11, '2026-11-03', true)).toBe('2 of 3 nights this month');
+  });
+  it('ignores rows from outside the month', () => {
+    const days = [...monthRows(2026, 10, 31, { entries: [30, 31] }), ...monthRows(2026, 11, 5, { entries: [1] })];
+    expect(summarizeMonth(days, 2026, 11, '2026-11-05', true)).toBe('1 of 5 nights this month');
+  });
+});
+
+describe('describeFewMoods', () => {
+  it('says nothing logged when empty', () => {
+    expect(describeFewMoods([day('2026-03-01')])).toBe('No mood logged yet.');
+  });
+  it('names a single night', () => {
+    expect(describeFewMoods([day('2026-03-01', 4)])).toBe('1 night logged: good');
+  });
+  it('lists the moods in date order', () => {
+    expect(describeFewMoods([day('2026-03-01', 4), day('2026-03-02'), day('2026-03-03', 3)])).toBe('2 nights logged: good, okay');
+  });
+});
+
+describe('summarizeWeek', () => {
+  const d = (date: string, hasEntry: boolean, answers: PatternDay['answers'] = {}): PatternDay => ({ date, hasEntry, mood: null, answers });
+
+  it('counts nights written and habit check-ins kept of those answered', () => {
+    const days = [
+      d('2026-11-12', true, { a: true, b: true }),
+      d('2026-11-13', false),
+      d('2026-11-14', true, { a: true, b: false }),
+      d('2026-11-15', true, { a: false }),
+    ];
+    expect(summarizeWeek(days)).toEqual({ nights: 3, span: 4, kept: 3, answered: 5 });
+  });
+  it('is all zeros for an empty week', () => {
+    expect(summarizeWeek([])).toEqual({ nights: 0, span: 0, kept: 0, answered: 0 });
+  });
+  it('does not count unanswered habits as missed', () => {
+    expect(summarizeWeek([d('2026-11-12', true, {})])).toEqual({ nights: 1, span: 1, kept: 0, answered: 0 });
+  });
+});
+
+describe('questionForWeek', () => {
+  it('has enough distinct questions that a quarter does not repeat', () => {
+    expect(WEEK_QUESTIONS.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(WEEK_QUESTIONS).size).toBe(WEEK_QUESTIONS.length);
+  });
+  it('is the same from Monday to Sunday and changes on the next Monday', () => {
+    const week = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15'];
+    const qs = week.map(questionForWeek);
+    expect(new Set(qs).size).toBe(1);
+    expect(questionForWeek('2026-11-16')).not.toBe(qs[0]);
+  });
+  it('holds across the DST fall-back weekend (Sun Nov 1 2026, week of Oct 26)', () => {
+    expect(questionForWeek('2026-10-26')).toBe(questionForWeek('2026-11-01'));
+    expect(questionForWeek('2026-11-02')).not.toBe(questionForWeek('2026-11-01'));
+  });
+  it('holds across the DST spring-forward weekend (Sun Mar 8 2026, week of Mar 2)', () => {
+    expect(questionForWeek('2026-03-02')).toBe(questionForWeek('2026-03-08'));
+    expect(questionForWeek('2026-03-09')).not.toBe(questionForWeek('2026-03-08'));
+  });
+  it('cycles through every question before repeating and wraps cleanly over a year end', () => {
+    const seen = new Set<string>();
+    for (let w = 0; w < WEEK_QUESTIONS.length; w++) {
+      const date = new Date(Date.UTC(2026, 0, 5 + w * 7)); // Mondays from 5 Jan 2026
+      seen.add(questionForWeek(date.toISOString().slice(0, 10)));
+    }
+    expect(seen.size).toBe(WEEK_QUESTIONS.length);
+    expect(typeof questionForWeek('2026-12-31')).toBe('string');
+    expect(typeof questionForWeek('2027-01-01')).toBe('string');
+  });
+  it('is always one of the questions', () => {
+    for (const day of ['2026-01-01', '2026-06-15', '2026-12-31', '2028-02-29']) {
+      expect(WEEK_QUESTIONS).toContain(questionForWeek(day));
+    }
   });
 });

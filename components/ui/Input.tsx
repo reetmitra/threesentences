@@ -28,10 +28,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     <View style={containerStyle}>
       {label && (
         <Text
-          family="mono"
-          variant="xs"
-          uppercase
-          style={{ color: c.textSecondary, letterSpacing: 1.5, marginBottom: spacing[2] }}
+          family="sansSemibold"
+          variant="sm"
+          style={{ color: c.textSecondary, marginBottom: spacing[2] }}
         >
           {label}
         </Text>
@@ -52,7 +51,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           Platform.OS === 'web' && ({ outlineColor: c.creamLo, outlineWidth: 1 } as any),
           style,
         ]}
-        placeholderTextColor={c.textTertiary}
+        placeholderTextColor={c.textSecondary}
         selectionColor={(c as any).accent ?? c.textBright}
         cursorColor={(c as any).accent ?? c.textBright}
         onFocus={(e) => {

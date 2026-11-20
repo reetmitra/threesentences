@@ -80,7 +80,7 @@ export default function SignupScreen() {
             <Text family="serifItalic" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[4] }}>
               Three Sentences
             </Text>
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>
+            <Text variant="sm" style={{ color: c.textSecondary, marginTop: spacing[1] }}>
               Create account
             </Text>
           </View>
@@ -98,7 +98,7 @@ export default function SignupScreen() {
               error={!!usernameError}
             />
             {usernameError && (
-              <Text family="mono" variant="xs" style={{ color: c.warn, marginTop: spacing[1] }}>
+              <Text variant="xs" style={{ color: c.warn, marginTop: spacing[1] }}>
                 {usernameError}
               </Text>
             )}
@@ -119,7 +119,7 @@ export default function SignupScreen() {
                   style={styles.legalLink}
                   accessibilityRole="link"
                 >
-                  <Text family="mono" variant="xs" style={[styles.legalLinkText, { color: c.textBright }]}>{l.label}</Text>
+                  <Text variant="xs" style={[styles.legalLinkText, { color: c.textBright }]}>{l.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -127,9 +127,9 @@ export default function SignupScreen() {
 
           <View style={styles.footer}>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text family="mono" variant="xs" centered style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
+              <Text variant="sm" centered style={{ color: c.textSecondary }}>
                 Already have an account?{' '}
-                <Text family="mono" variant="xs" style={{ color: c.textBright }}>Sign in</Text>
+                <Text family="sansSemibold" variant="sm" style={{ color: c.textBright }}>Sign in</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -149,5 +149,5 @@ const styles = StyleSheet.create({
   legal: { marginTop: spacing[4] },
   legalLinks: { flexDirection: 'row', justifyContent: 'center', gap: spacing[4] },
   legalLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing[2] },
-  legalLinkText: { textDecorationLine: 'underline', letterSpacing: 0.5 },
+  legalLinkText: { textDecorationLine: 'underline' },
 });

@@ -61,7 +61,7 @@ export default function ResetPasswordScreen() {
             <Text family="serifItalic" variant="2xl" style={{ color: c.textPrimary, marginTop: spacing[4] }}>
               New password
             </Text>
-            <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5, marginTop: spacing[1] }}>
+            <Text variant="sm" style={{ color: c.textSecondary, marginTop: spacing[1] }}>
               Choose something memorable
             </Text>
           </View>

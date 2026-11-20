@@ -11,6 +11,7 @@ import Animated, {
 import { Text } from '@/components/ui/Text';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface StreakCounterProps {
   currentStreak: number;
@@ -18,17 +19,24 @@ interface StreakCounterProps {
   totalEntries: number;
 }
 
+const GOAL = 363;
+
+/**
+ * Patterns' answer to "Am I showing up?": nights written leads, the streak is a
+ * small sibling. Missed days are simply empty, so no figure here may shout a zero.
+ */
 export function StreakCounter({ currentStreak, longestStreak, totalEntries }: StreakCounterProps) {
   const c = colors.dark;
+  const reduceMotion = useReducedMotion();
   const progressWidth = useSharedValue(0);
-  const progressPercent = Math.min(totalEntries / 363, 1);
+  const progressPercent = Math.min(totalEntries / GOAL, 1);
+  const toGo = Math.max(GOAL - totalEntries, 0);
 
   useEffect(() => {
-    progressWidth.value = withDelay(
-      400,
-      withTiming(progressPercent, { duration: 800, easing: Easing.out(Easing.ease) })
-    );
-  }, [progressPercent]);
+    progressWidth.value = reduceMotion
+      ? progressPercent
+      : withDelay(400, withTiming(progressPercent, { duration: 800, easing: Easing.out(Easing.ease) }));
+  }, [progressPercent, reduceMotion]);
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value * 100}%`,
@@ -36,77 +44,64 @@ export function StreakCounter({ currentStreak, longestStreak, totalEntries }: St
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(400)}
+      entering={reduceMotion ? undefined : FadeInDown.duration(400)}
       style={[styles.container, { backgroundColor: c.surface, borderColor: c.frame }]}
     >
-      {/* Hero streak numeral */}
+      {/* Hero: nights written */}
       <View style={styles.heroRow}>
         <Text
           family="serifSemiboldItalic"
           fixedSize
           style={[styles.heroNumber, { color: c.textPrimary }]}
         >
-          {currentStreak}
+          {totalEntries}
         </Text>
         <View style={styles.heroMeta}>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1.5 }}>
-            Day streak
+          <Text family="sansSemibold" variant="sm" style={{ color: c.textPrimary }}>
+            {totalEntries === 1 ? 'night written' : 'nights written'}
           </Text>
-          {currentStreak > 0 && (
-            <Text family="mono" variant="xs" style={{ color: c.textTertiary, marginTop: 2, textTransform: 'uppercase' }}>
-              keep going
-            </Text>
-          )}
+          <Text variant="sm" style={{ color: c.textSecondary }}>
+            {toGo === 0 ? 'You made it to 363' : `${toGo} to go`}
+          </Text>
         </View>
       </View>
 
-      {/* 3-stat tiles */}
+      {/* Streaks, small */}
       <View style={[styles.statsRow, { borderTopColor: c.frame }]}>
         <View style={styles.statItem}>
-          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
+          <Text family="serifSemiboldItalic" variant="xl" fixedSize style={{ color: c.textPrimary }}>
+            {currentStreak}
+          </Text>
+          <Text variant="xs" style={{ color: c.textSecondary }}>
+            Current streak
+          </Text>
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: c.frame }]} />
+
+        <View style={styles.statItem}>
+          <Text family="serifSemiboldItalic" variant="xl" fixedSize style={{ color: c.textPrimary }}>
             {longestStreak}
           </Text>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
-            Best
-          </Text>
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: c.frame }]} />
-
-        <View style={styles.statItem}>
-          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
-            {totalEntries}
-          </Text>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
-            Total
-          </Text>
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: c.frame }]} />
-
-        <View style={styles.statItem}>
-          <Text family="serifSemiboldItalic" variant="2xl" fixedSize style={{ color: c.textPrimary }}>
-            {363 - totalEntries > 0 ? 363 - totalEntries : 0}
-          </Text>
-          <Text family="mono" variant="xs" uppercase style={{ color: c.textSecondary, letterSpacing: 1 }}>
-            To go
+          <Text variant="xs" style={{ color: c.textSecondary }}>
+            Best streak
           </Text>
         </View>
       </View>
 
-      {/* Progress to 363 */}
+      {/* Progress to 363: the same moonlight as every other "kept" mark */}
       <View style={[styles.progressSection, { borderTopColor: c.frame }]}>
         <View style={styles.progressLabelRow}>
-          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          <Text variant="xs" style={{ color: c.textSecondary }}>
             Progress to 363
           </Text>
-          <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-            {totalEntries}/363
+          <Text family="mono" variant="xs" style={{ color: c.textSecondary }}>
+            {totalEntries}/{GOAL}
           </Text>
         </View>
         <View style={[styles.progressTrack, { backgroundColor: c.frame }]}>
           <Animated.View
-            style={[styles.progressFill, { backgroundColor: c.textBright }, progressStyle]}
+            style={[styles.progressFill, { backgroundColor: c.moon }, progressStyle]}
           />
         </View>
       </View>
@@ -130,11 +125,11 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   heroNumber: {
-    fontSize: 64,
-    lineHeight: 68,
+    fontSize: 40,
+    lineHeight: 44,
   },
   heroMeta: {
-    paddingBottom: 6,
+    paddingBottom: 4,
   },
   statsRow: {
     flexDirection: 'row',

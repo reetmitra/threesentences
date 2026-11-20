@@ -143,7 +143,7 @@ export function ChatInput({
             Platform.OS === 'web' && ({ outlineColor: activeColors.creamLo, outlineWidth: 1 } as any),
           ]}
           placeholder={placeholder}
-          placeholderTextColor={activeColors.textTertiary}
+          placeholderTextColor={activeColors.textSecondary}
           value={message}
           onChangeText={handleChangeText}
           onFocus={handleFocus}

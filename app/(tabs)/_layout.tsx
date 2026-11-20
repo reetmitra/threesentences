@@ -68,7 +68,7 @@ function OfflineBanner() {
     <Animated.View style={[styles.offlineBanner, style]} pointerEvents="none">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#0a0a0a' }} />
-        <Text family="monoMedium" variant="xs" uppercase style={{ color: '#0a0a0a', letterSpacing: 1 }}>
+        <Text family="sansSemibold" variant="xs" style={{ color: '#0a0a0a' }}>
           Offline · drafts saved locally
         </Text>
       </View>

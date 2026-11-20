@@ -10,7 +10,7 @@ type FontFamily =
   | 'serif'              // Newsreader_400Regular — reading-mode entries (upright)
   | 'serifItalic'        // Newsreader_400Regular_Italic — wordmark, display numerals ≥ 40px ONLY
   | 'serifSemiboldItalic' // Newsreader_600SemiBold_Italic — milestone numbers
-  | 'mono'               // IBMPlexMono_400Regular — metadata, eyebrows
+  | 'mono'               // IBMPlexMono_400Regular — time and counts only (dateline, timestamps, figures)
   | 'monoMedium';        // IBMPlexMono_500Medium — counters
 
 interface TextProps extends RNTextProps {
@@ -57,7 +57,7 @@ export function Text({
       primary: activeColors.textPrimary,
       bright: activeColors.textBright,
       secondary: activeColors.textSecondary,
-      tertiary: activeColors.textTertiary,
+      tertiary: activeColors.textSecondary, // words never sit below 4.5:1; textTertiary is for non-text marks only
       accent: activeColors.accent,
       warn: activeColors.warn,
     };

@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 
 const DAILY_REMINDER_ID = 'daily-reminder';
 const STREAK_WARNING_ID = 'streak-warning';
+const WIND_DOWN_ID = 'wind-down';
 
 /** Request notification permissions. Returns true if granted. */
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -52,6 +53,35 @@ export async function scheduleDailyReminder(hour: number, minute: number): Promi
 /** Cancel the daily reminder */
 export async function cancelDailyReminder(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID).catch(() => {
+    // Ignore if no notification with this ID exists
+  });
+}
+
+/**
+ * Schedule the nightly wind-down nudge at `hour`:00. Replaces any earlier one.
+ * Gentle on purpose: an invitation, never a scolding.
+ */
+export async function scheduleWindDown(hour: number): Promise<void> {
+  await cancelWindDown();
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Time to wind down',
+      body: "Lights low, screens down. Start winding down when you're ready.",
+      sound: 'default',
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour,
+      minute: 0,
+    },
+    identifier: WIND_DOWN_ID,
+  });
+}
+
+/** Cancel the wind-down nudge */
+export async function cancelWindDown(): Promise<void> {
+  await Notifications.cancelScheduledNotificationAsync(WIND_DOWN_ID).catch(() => {
     // Ignore if no notification with this ID exists
   });
 }

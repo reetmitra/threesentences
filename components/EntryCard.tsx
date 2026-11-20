@@ -55,7 +55,7 @@ export function EntryCard({ entry, showDate = false }: EntryCardProps) {
       </Text>
 
       <View style={[styles.footer, { borderTopColor: c.frame }]}>
-        <Text family="mono" variant="xs" style={{ color: c.textTertiary, letterSpacing: 0.5 }}>
+        <Text family="mono" variant="xs" style={{ color: c.textSecondary, letterSpacing: 0.5 }}>
           {formatTime()}
         </Text>
       </View>

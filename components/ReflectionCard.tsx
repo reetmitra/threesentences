@@ -65,13 +65,13 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
       </Text>
 
       {/* Entries analyzed */}
-      <Text variant="xs" family="mono" color="tertiary" style={styles.meta}>
+      <Text variant="xs" color="tertiary" style={styles.meta}>
         Based on {reflection.entriesAnalyzed} {reflection.entriesAnalyzed === 1 ? 'entry' : 'entries'}
       </Text>
 
       {/* Mandatory disclaimer */}
       <View style={[styles.disclaimer, { borderTopColor: activeColors.frame }]}>
-        <Text variant="xs" family="mono" color="tertiary" style={styles.disclaimerText}>
+        <Text variant="xs" color="tertiary" style={styles.disclaimerText}>
           {REFLECTION_DISCLAIMER}
         </Text>
       </View>

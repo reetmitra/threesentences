@@ -1,6 +1,7 @@
 import { Eyebrow, H2, LP_INK, LP_INK_DIM, LP_PAPER, LP_SANS, LP_SERIF } from "./lp";
 
-export const SUPPORT_EMAIL = "support@example.com";
+// Forwarded to the owner's inbox at the registrar; keep that alias alive.
+export const SUPPORT_EMAIL = "support@three63.com";
 
 export type LegalSection = { heading: string; body: string[] };
 
