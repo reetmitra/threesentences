@@ -2,85 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Palette: the night the journal is written in, plus the paper the nights are written on.
+   Ground, panel and band are one hue in three steps; paper is the one light surface;
+   moonlight is the accent and means "kept", as it does in the app. */
 :root {
-  --background: #0e0e10;
-  --foreground: #ebe7dc;
-  --paper: #0e0e10;
-  --surface: #15151a;
-  --frame: #1e1e22;
-  --ink-fade: #3a3a3e;
-  --ink-dim: #75726a;
-  --ink: #ebe7dc;
-  --ink-bright: #ffffff;
-  --warn: #f6c177;
+  --ground: #0a0b0f;
+  --panel: #12141b;
+  --band: #1b1f2b;
+  --paper: #e8e6e0;
+  --paper-deep: #d8d6ce;
+  --paper-ink: #15161c;
+  --paper-soft: #55524b;
+  --ink: #e8e6e0;
+  --ink-soft: #aaa69b;
+  --moon: #a9c1d9;
+  --moon-ink: #0a0b0f;
+
+  /* Type steps: small, body, lead, head (every title), mega (the numerals and the closing word). */
+  --t-small: 0.9rem;
+  --t-body: clamp(1.1rem, 1.04rem + 0.3vw, 1.25rem);
+  --t-lead: clamp(1.2rem, 1.05rem + 0.65vw, 1.5rem);
+  --t-head: clamp(2.25rem, 1rem + 4.3vw, 5rem);
+  --t-mega: clamp(6rem, 17vw, 17rem);
+
+  --margin: clamp(16px, 3.2vw, 40px);
+  --section: clamp(64px, 7vw, 112px);
+  --radius: 4px;
+  --nav-h: 68px;
 }
 
 html {
   color-scheme: dark;
+  background: var(--ground);
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-text), "Source Serif 4", Georgia, serif;
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
-@layer base {
-  * {
-    @apply border-border;
+::selection {
+  background: var(--moon);
+  color: var(--moon-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-/* LP keyframes */
-@keyframes lp-float {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
-}
-@keyframes lp-cursor {
-  0%,49%   { opacity: 1; }
-  50%,100% { opacity: 0; }
-}
-@keyframes lp-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes lp-modal-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #000000;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3a;
-}
-
-/* ── Phone and tablet layout ──────────────────────────────────────
-   Sections are styled inline for desktop; these classes let the same
-   markup fold to one column on narrow screens. */
-@media (max-width: 900px) {
-  .lp-grid { grid-template-columns: 1fr !important; gap: 56px !important; }
-  .lp-section { padding-top: 120px !important; padding-bottom: 120px !important; }
-  .lp-nav-links a { display: none; }
-}
-@media (max-width: 640px) {
-  .lp-wrap { padding-left: 20px !important; padding-right: 20px !important; }
-  .lp-section { padding-top: 88px !important; padding-bottom: 88px !important; }
-  .lp-nav { padding-left: 20px !important; padding-right: 20px !important; }
 }
