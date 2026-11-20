@@ -474,8 +474,8 @@ p {
 }
 .plate {
   position: sticky;
-  top: 12px;
-  height: calc(100svh - 24px);
+  top: calc(var(--nav-h) + 8px);
+  height: calc(100svh - var(--nav-h) - 20px);
   background: var(--panel);
   display: grid;
   place-items: center;
@@ -484,6 +484,7 @@ p {
 }
 .plate-screen {
   grid-area: 1 / 1;
+  transform: scale(var(--s, 1));
   animation: plate-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 @keyframes plate-in {
@@ -566,16 +567,22 @@ p {
   display: flex;
 }
 .year-col {
+  position: relative;
+  z-index: 1;
   width: min(44rem, 52%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 24px;
-  padding: calc(var(--nav-h) + 28px) clamp(16px, 3vw, 44px) clamp(28px, 4vw, 56px) var(--margin);
+  gap: min(24px, 3svh);
+  padding: calc(var(--nav-h) + min(28px, 3svh)) clamp(16px, 3vw, 44px) min(clamp(28px, 4vw, 56px), 5svh) var(--margin);
+}
+.year-top {
+  font-size: min(var(--t-head), 10svh);
 }
 .year-phases {
   position: relative;
-  min-height: 11rem;
+  min-height: min(11rem, 22svh);
 }
 .year-phase {
   position: absolute;
@@ -598,14 +605,14 @@ p {
 }
 .year-numeral {
   font-family: var(--font-display), "Young Serif", Georgia, serif;
-  font-size: var(--t-mega);
+  font-size: min(var(--t-mega), 30svh);
   line-height: 0.78;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   display: block;
 }
 .year-label {
-  margin-top: 30px;
+  margin-top: min(30px, 4svh);
   color: var(--ink-soft);
 }
 .year-hit {
@@ -711,9 +718,11 @@ p {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  overflow: hidden;
 }
 .stack-card figure img {
-  flex: 1;
+  flex: 1 1 0;
+  height: 0;
   min-height: 0;
   width: 100%;
   object-fit: cover;
@@ -776,11 +785,14 @@ p {
 /* ── Close: one word is the button ──────────────────────────── */
 .close {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(28px, 5vw, 72px);
   width: 100%;
   min-height: 70svh;
   border: 0;
-  padding: clamp(24px, 3vw, 40px) var(--margin) 0;
+  padding: clamp(24px, 3vw, 40px) var(--margin) clamp(12px, 1.6vw, 28px);
   background: var(--moon);
   color: var(--moon-ink);
   border-radius: clamp(28px, 5vw, 72px) clamp(28px, 5vw, 72px) 0 0;
@@ -823,14 +835,14 @@ p {
   transform: translate(6px, -6px) rotate(8deg);
 }
 .close-word {
-  position: absolute;
-  left: var(--margin);
-  bottom: clamp(40px, 6.4vw, 104px);
+  display: block;
   font-family: var(--font-display), "Young Serif", Georgia, serif;
-  font-size: min(25.5vw, 40rem);
+  font-size: min(25.5vw, 56svh);
   line-height: 0.8;
   letter-spacing: -0.045em;
   white-space: nowrap;
+  padding-bottom: 0.14em; /* room for the q's tail */
+  pointer-events: none; /* the whole band is the link; the big glyph box must not shadow the sentence above it */
 }
 
 /* ── Footer: the back of the object ─────────────────────────── */
@@ -909,6 +921,9 @@ p {
   align-self: flex-end;
   width: 56px;
   height: 56px;
+}
+.tile-mail a {
+  overflow-wrap: anywhere;
 }
 .tile ul {
   list-style: none;
@@ -1042,7 +1057,7 @@ p {
 }
 
 /* ── Tablet and phone ───────────────────────────────────────── */
-@media (max-width: 1000px) {
+@media (max-width: 1200px) {
   .tile-statement {
     grid-column: 1 / span 6;
   }
@@ -1120,7 +1135,7 @@ p {
     min-height: 8.5rem;
   }
   .year-numeral {
-    font-size: min(36vw, 11rem);
+    font-size: min(36vw, 11rem, 22svh);
   }
   .stack-card {
     min-height: 56svh;
@@ -1139,6 +1154,9 @@ p {
   .stack-card figure img {
     flex: none;
     height: 240px;
+  }
+  .stack-card figure {
+    overflow: visible;
   }
   .faq-grid h2 {
     grid-column: 1 / -1;

@@ -46,23 +46,26 @@ interface Pose {
   moonS: number;
   /** How much of the scene shows through behind text (canvas opacity). */
   dim: number;
+  /** Extra darkening on the text side of the screen: strength 0..1, and where it ends as a fraction of the width. */
+  calm: number;
+  calmX: number;
 }
 
 const OVERVIEW_LOOK: V3 = [0, 0, 0];
 
 /** Stops, in page order. Each is held while its section is on screen. */
 const BASE_STOPS: Record<string, Pose> = {
-  hero: { cam: [0, 3.6, 25.5], look: [0, 0.2, 0], fov: 34, vx: 0.3, vy: -0.01, yaw: -0.35, lit: 70, moon: [0, 6.2, -10.4], moonS: 1.2, dim: 0.95 },
-  instead: { cam: [-2, 5, 26], look: [2, 0, 0], fov: 34, vx: 0.3, vy: -0.14, yaw: 0.4, lit: 60, moon: [-5.7, 9, -9.6], moonS: 1.1, dim: 0.4 },
-  rule: { cam: [-1.6, 0.8, 12.2], look: [0, 0, 3.5], fov: 38, vx: -0.14, vy: 0, yaw: 0, lit: 8, moon: [-6.5, 4.6, 0], moonS: 0.8, dim: 0.4 },
-  loop: { cam: [3, 6, 24], look: OVERVIEW_LOOK, fov: 34, vx: -0.3, vy: -0.16, yaw: 1.5, lit: 120, moon: [8.9, 8.4, -11.4], moonS: 1.1, dim: 0.4 },
-  inside: { cam: [0, 7, 25], look: OVERVIEW_LOOK, fov: 34, vx: 0.32, vy: -0.2, yaw: 2.6, lit: 180, moon: [-9, 8, -14], moonS: 1.1, dim: 0.3 },
-  "year-in": { cam: [0, 0.1, 0], look: [-2.6, 0, 6.7], fov: 78, vx: 0, vy: 0, yaw: 0, lit: 24, moon: [0, 0.2, 0], moonS: 0.4, dim: 1 },
-  "year-out": { cam: [0, 3.2, 22], look: [0, 0, 0], fov: 36, vx: 0.24, vy: 0, yaw: 3.45, lit: KEPT_NIGHTS, moon: [2.2, 5.6, -13.9], moonS: 1.1, dim: 1 },
-  reflection: { cam: [0, 5.5, 26], look: OVERVIEW_LOOK, fov: 34, vx: 0.32, vy: -0.16, yaw: 4.2, lit: KEPT_NIGHTS, moon: [-11, 8, -12], moonS: 1.1, dim: 0.4 },
-  principles: { cam: [0, 6, 26], look: OVERVIEW_LOOK, fov: 34, vx: -0.32, vy: -0.16, yaw: 4.9, lit: KEPT_NIGHTS, moon: [11, 8, -12], moonS: 1.1, dim: 0.3 },
-  faq: { cam: [0, 6, 27], look: OVERVIEW_LOOK, fov: 34, vx: 0.34, vy: -0.2, yaw: 5.6, lit: KEPT_NIGHTS, moon: [-11, 8, -12], moonS: 1.1, dim: 0.3 },
-  close: { cam: [0, 3, 22], look: OVERVIEW_LOOK, fov: 34, vx: 0, vy: 0.04, yaw: 6.5, lit: KEPT_NIGHTS, moon: [0, 3.8, -14], moonS: 1.4, dim: 0.6 },
+  hero: { cam: [0, 3.6, 25.5], look: [0, 0.2, 0], fov: 34, vx: 0.3, vy: -0.01, yaw: -0.35, lit: 70, moon: [0, 6.2, -10.4], moonS: 1.2, dim: 0.95, calm: 0.45, calmX: 0.52 },
+  instead: { cam: [-2, 5, 26], look: [2, 0, 0], fov: 34, vx: 0.3, vy: -0.14, yaw: 0.4, lit: 60, moon: [-5.7, 9, -9.6], moonS: 1.1, dim: 0.45, calm: 0.7, calmX: 0.52 },
+  rule: { cam: [-1.6, 0.8, 12.2], look: [0, 0, 3.5], fov: 38, vx: -0.14, vy: 0, yaw: 0, lit: 8, moon: [-6.5, 4.6, 0], moonS: 0.8, dim: 0.5, calm: 0.7, calmX: 0.52 },
+  loop: { cam: [3, 6, 24], look: OVERVIEW_LOOK, fov: 34, vx: -0.3, vy: -0.16, yaw: 1.5, lit: 120, moon: [8.9, 8.4, -11.4], moonS: 1.1, dim: 0.45, calm: 0.7, calmX: 0.52 },
+  inside: { cam: [0, 7, 25], look: OVERVIEW_LOOK, fov: 34, vx: 0.32, vy: -0.2, yaw: 2.6, lit: 180, moon: [-9, 8, -14], moonS: 1.1, dim: 0.3, calm: 0, calmX: 0.5 },
+  "year-in": { cam: [0, 0.1, 0], look: [-2.6, 0, 6.7], fov: 78, vx: 0, vy: 0, yaw: 0, lit: 24, moon: [0, 0.2, 0], moonS: 0.4, dim: 1, calm: 0, calmX: 0.5 },
+  "year-out": { cam: [0, 3.2, 22], look: [0, 0, 0], fov: 36, vx: 0.24, vy: 0, yaw: 3.45, lit: KEPT_NIGHTS, moon: [2.2, 5.6, -13.9], moonS: 1.1, dim: 1, calm: 0, calmX: 0.5 },
+  reflection: { cam: [0, 5.5, 26], look: OVERVIEW_LOOK, fov: 34, vx: 0.32, vy: -0.16, yaw: 4.2, lit: KEPT_NIGHTS, moon: [-11, 8, -12], moonS: 1.1, dim: 0.45, calm: 0.7, calmX: 0.52 },
+  principles: { cam: [0, 6, 26], look: OVERVIEW_LOOK, fov: 34, vx: -0.32, vy: -0.16, yaw: 4.9, lit: KEPT_NIGHTS, moon: [11, 8, -12], moonS: 1.1, dim: 0.3, calm: 0, calmX: 0.5 },
+  faq: { cam: [0, 6, 27], look: OVERVIEW_LOOK, fov: 34, vx: 0.34, vy: -0.2, yaw: 5.6, lit: KEPT_NIGHTS, moon: [-11, 8, -12], moonS: 1.1, dim: 0.3, calm: 0, calmX: 0.5 },
+  close: { cam: [0, 3, 22], look: OVERVIEW_LOOK, fov: 34, vx: 0, vy: 0.04, yaw: 6.5, lit: KEPT_NIGHTS, moon: [0, 3.8, -14], moonS: 1.4, dim: 0.6, calm: 0, calmX: 0.5 },
 };
 
 const ORDER = ["hero", "instead", "rule", "loop", "inside", "year", "reflection", "principles", "faq", "close"] as const;
@@ -86,6 +89,8 @@ function lerpPose(a: Pose, b: Pose, t: number): Pose {
     moon: lerp3(a.moon, b.moon, t),
     moonS: lerp(a.moonS, b.moonS, t),
     dim: lerp(a.dim, b.dim, t),
+    calm: lerp(a.calm, b.calm, t),
+    calmX: lerp(a.calmX, b.calmX, t),
   };
 }
 
@@ -200,11 +205,17 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
   const uIntro = { value: 0 };
   const uMoon = { value: new THREE.Color(MOON) };
   const uPaper = { value: new THREE.Color(0xfff0cf) };
+  const uCalm = { value: 0 };
+  const uCalmX = { value: 0.5 };
+  const uRes = { value: new THREE.Vector2(1, 1) };
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.42, metalness: 0.3 });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uIntro = uIntro;
     shader.uniforms.uMoon = uMoon;
     shader.uniforms.uPaper = uPaper;
+    shader.uniforms.uCalm = uCalm;
+    shader.uniforms.uCalmX = uCalmX;
+    shader.uniforms.uRes = uRes;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", "#include <common>\nattribute float aLit;\nattribute float aHover;\nattribute float aDelay;\nuniform float uIntro;\nvarying float vLit;")
       .replace(
@@ -217,8 +228,13 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
         transformed.z += aHover * 0.42 + (1.0 - grow) * -1.2;`,
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform vec3 uMoon;\nuniform vec3 uPaper;\nvarying float vLit;")
-      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vLit >= 0.0 ? uMoon * vLit * 0.62 : uPaper * (-vLit) * 0.95;");
+      .replace("#include <common>", "#include <common>\nuniform vec3 uMoon;\nuniform vec3 uPaper;\nuniform float uCalm;\nuniform float uCalmX;\nuniform vec2 uRes;\nvarying float vLit;")
+      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vLit >= 0.0 ? uMoon * vLit * 0.62 : uPaper * (-vLit) * 0.95;")
+      // The side of the screen where the words are is quieter, so grey text never sits on a bright slip.
+      .replace(
+        "#include <dithering_fragment>",
+        "#include <dithering_fragment>\ngl_FragColor.rgb *= 1.0 - uCalm * (1.0 - smoothstep(uCalmX * 0.5, uCalmX, gl_FragCoord.x / uRes.x));",
+      );
   };
 
   const slips = new THREE.InstancedMesh(geo, mat, NIGHTS);
@@ -297,6 +313,7 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
     const cam = new THREE.Vector3(...p.cam).sub(look).multiplyScalar(p.fov > 60 ? 1 : out).add(look);
     return {
       ...p,
+      calm: 0,
       cam: [cam.x, cam.y, cam.z],
       fov: p.fov > 60 ? Math.min(100, p.fov * 1.3) : p.fov,
       vx: 0,
@@ -357,6 +374,7 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
     height = window.innerHeight;
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
+    renderer.getDrawingBufferSize(uRes.value);
     camera.aspect = width / height;
     layout();
   }
@@ -438,6 +456,10 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
     cur.moon = lerp3(cur.moon, target.moon, k);
     cur.moonS = lerp(cur.moonS, target.moonS, k);
     cur.dim = lerp(cur.dim, target.dim, k);
+    cur.calm = lerp(cur.calm, target.calm, k);
+    cur.calmX = lerp(cur.calmX, target.calmX, k);
+    uCalm.value = cur.calm;
+    uCalmX.value = cur.calmX;
     fade = Math.min(1, fade + dt * 0.8);
     const boost = kickT < 1 ? Math.sin(kickT * Math.PI) : 0;
     const dimNow = lerp(reduced ? target.dim : cur.dim, 1, boost * 0.85);
@@ -449,7 +471,9 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
     pointer.sy = lerp(pointer.sy, reduced ? 0 : pointer.y, 1 - Math.exp(-dt * 3));
 
     const t = now / 1000;
-    drum.rotation.y = cur.yaw + (reduced ? 0 : Math.sin(t * 0.18) * 0.035);
+    // The drum breathes: a slow sway, wider while the hero is on screen.
+    const heroness = clamp(1 - window.scrollY / (window.innerHeight * 0.8));
+    drum.rotation.y = cur.yaw + (reduced ? 0 : Math.sin(t * 0.16) * (0.035 + 0.1 * heroness));
     stars.rotation.y = reduced ? 0 : t * 0.004 + window.scrollY * 0.00006;
 
     camV.set(cur.cam[0] + pointer.sx * 0.7, cur.cam[1] + pointer.sy * 0.45, cur.cam[2]);
@@ -485,6 +509,7 @@ export function createYearScene(canvas: HTMLCanvasElement): YearScene {
     for (let i = 0; i < NIGHTS; i++) {
       const r = rank[i];
       let want = r >= 0 && r < litCount ? 1 : 0;
+      if (!reduced && want > 0.5 && want < 1.2) want *= 1 + 0.16 * Math.sin(t * 1.1 + i * 1.7); // lit nights shimmer
       if (i === tonight) {
         want = tonightKept ? 1 + tonightPulse * 1.6 : 0.3 + (reduced ? 0 : 0.18 * Math.sin(t * 2.2));
       }
