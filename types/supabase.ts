@@ -173,19 +173,19 @@ export interface Database {
             waitlist: {
                 Row: {
                     id: string
-                    name: string
+                    name: string | null
                     email: string
                     created_at: string
                 }
                 Insert: {
                     id?: string
-                    name: string
+                    name?: string | null
                     email: string
                     created_at?: string
                 }
                 Update: {
                     id?: string
-                    name?: string
+                    name?: string | null
                     email?: string
                     created_at?: string
                 }

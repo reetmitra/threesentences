@@ -101,7 +101,7 @@ CREATE TABLE public.reflections (
 
 CREATE TABLE public.waitlist (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL CHECK (char_length(name) >= 1 AND char_length(name) <= 100),
+  name TEXT CHECK (char_length(name) >= 1 AND char_length(name) <= 100), -- optional: the landing form only asks for an email
   email TEXT NOT NULL UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

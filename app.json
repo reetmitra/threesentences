@@ -17,7 +17,6 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.threesixtythree.threesentences",
       "backgroundColor": "#0e0e10",
-      "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -37,13 +36,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-apple-authentication",
-      [
-        "expo-notifications",
-        {
-          "sounds": []
-        }
-      ],
       [
         "expo-image-picker",
         {
