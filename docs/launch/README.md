@@ -17,7 +17,7 @@ Last updated 2026-11-21. "Owner" means it needs your Apple, Supabase or Anthropi
 | 11 | Wipe test accounts from the live database | Needs your list | 13 accounts exist; see below |
 | 12 | Decide public release vs invite-only first wave | Owner | Landing says invite-only; app sign-up is open |
 | 13 | "Up to eight friends" (landing + FAQ) vs the app | Owner | The app does not enforce a limit; enforce it or change the copy |
-| 15 | **Waitlist form is broken**: the table requires a `name`, the form sends only an email, so every sign-up fails with "Something went wrong". Last successful sign-up was 26 May | Needs OK | Fix: make `name` optional in the database (or add a name field) |
+| 15 | Waitlist form was broken (table required a `name` the form never sends; last good sign-up 26 May) | Done | `name` made optional 2026-11-21; email-only insert and duplicate handling verified |
 | 14 | "Simple subscription" (FAQ) vs the app | Owner | No in-app purchase exists; v1 is free. Keep or reword the FAQ |
 
 ## Accounts in the live database (2026-11-21): 13
