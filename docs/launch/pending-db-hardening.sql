@@ -5,8 +5,10 @@
 --   1. add_group_creator_as_admin() and update_updated_at_column() have a mutable search_path (advisor WARN).
 --   2. `anon` (the public key every install and the landing page carries) holds ALL privileges on every
 --      public table, including TRUNCATE/REFERENCES/TRIGGER, which row-level security does not police. RLS is
---      on for all 15 tables and the policies are sound, so nothing is exposed today; this is least privilege.
+--      on for all 16 tables and the policies are sound, so nothing is exposed today; this is least privilege.
 --      The only thing `anon` legitimately does is INSERT into public.waitlist (landing page).
+--      New tables inherit these grants from the default ACL (owner postgres), so step 2 also resets that default.
+--      Defaults set for the supabase_admin owner are left alone (the dashboard creates tables as postgres).
 --   3. `authenticated` also holds TRUNCATE/REFERENCES/TRIGGER, which the app never needs.
 --
 -- Not changed here (intentional): the six SECURITY DEFINER RPCs callable by signed-in users (send_dm,
