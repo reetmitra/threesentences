@@ -1,4 +1,4 @@
--- PENDING: NOT APPLIED. Needs the owner's OK; move to supabase/migrations/ when approved.
+-- APPLIED to the live project on 2026-11-21 (version 20261121123217) with the owner's OK.
 -- Project: three (imgwxjauygnzrekgprkm). Written 2026-11-21 from the live advisor + grants audit.
 --
 -- What the audit found
@@ -29,6 +29,9 @@ alter default privileges in schema public revoke all on tables from anon;
 revoke truncate, references, trigger on all tables in schema public from authenticated;
 alter default privileges in schema public revoke truncate, references, trigger on tables from authenticated;
 
+-- Result: 15/15 privilege checks passed; anon GET on profiles/entries/waitlist/messages -> 401 permission denied;
+-- anon INSERT into waitlist -> 201 (with a name); advisors dropped the 16 anon-GraphQL and 2 search_path warnings.
+--
 -- ── Test after applying (all must pass) ─────────────────────────────────────────────────────────────
 --   a) Landing page: Request access with a throwaway email still says "You're on the list" (then delete that row).
 --   b) With the anon key: GET /rest/v1/profiles?select=id  -> permission denied (was: [] under RLS).

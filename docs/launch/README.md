@@ -13,10 +13,11 @@ Last updated 2026-11-21. "Owner" means it needs your Apple, Supabase or Anthropi
 | 7 | App Store Connect listing, see `app-store-listing.md` | Owner | Copy drafted |
 | 8 | App Privacy answers, age rating, review notes + two demo accounts, see `app-privacy-and-review.md` | Owner | Answers drafted; demo accounts not created |
 | 9 | Process for the in-app reports (Terms promise a review within 24 hours) | Owner | Open: nothing alerts you; the `reports` table is empty today |
-| 10 | Database hardening, see `pending-db-hardening.sql` | Needs OK | Written, not applied |
+| 10 | Database hardening (`supabase/migrations/20261121123217_store_hardening.sql`) | Done | Applied 2026-11-21, tested |
 | 11 | Wipe test accounts from the live database | Needs your list | 13 accounts exist; see below |
 | 12 | Decide public release vs invite-only first wave | Owner | Landing says invite-only; app sign-up is open |
 | 13 | "Up to eight friends" (landing + FAQ) vs the app | Owner | The app does not enforce a limit; enforce it or change the copy |
+| 15 | **Waitlist form is broken**: the table requires a `name`, the form sends only an email, so every sign-up fails with "Something went wrong". Last successful sign-up was 26 May | Needs OK | Fix: make `name` optional in the database (or add a name field) |
 | 14 | "Simple subscription" (FAQ) vs the app | Owner | No in-app purchase exists; v1 is free. Keep or reword the FAQ |
 
 ## Accounts in the live database (2026-11-21): 13
